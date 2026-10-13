@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niyyah Admin</title>
+<style>
+  :root {
+    --ink: #1d2b2a;
+    --muted: #5d6b69;
+    --paper: #f6f7f5;
+    --card: #ffffff;
+    --line: #dde2df;
+    --green: #14584d;
+    --green-soft: #e3efec;
+    --sand: #efe9da;
+    --danger: #a3412c;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { margin: 0; line-height: 1.25; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid #5aa897; outline-offset: 2px; }
+
+  /* Screens: login / denied */
+  .center { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: 14px; padding: 24px; }
+  .center h1 { font-size: 30px; letter-spacing: -0.01em; }
+  .center p { margin: 0; color: var(--muted); max-width: 40ch; }
+
+  /* Buttons */
+  .btn { border: 1px solid var(--line); background: var(--card); padding: 8px 14px; border-radius: var(--radius); }
+  .btn:hover { border-color: var(--green); }
+  .btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn.primary:hover { background: #0f463d; }
+  .btn.danger { color: var(--danger); }
+  .btn.small { padding: 3px 9px; font-size: 13px; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+
+  /* App shell */
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; background: var(--green); color: #fff; }
+  header.top h1 { font-size: 18px; }
+  header.top .who { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+  header.top .btn { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
+  nav.tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--sand); border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav.tabs button { border: 0; background: transparent; padding: 12px 16px; border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav.tabs button[aria-selected="true"] { border-bottom-color: var(--green); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .bar h2 { font-size: 20px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .filters input, .filters select { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+  .filters input { flex: 1 1 200px; }
+  .muted { color: var(--muted); }
+  .empty { padding: 32px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--card); }
+  .empty p { margin: 0 0 12px; color: var(--muted); }
+
+  /* Actions tree */
+  .cat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
+  .row .name { flex: 1; min-width: 0; }
+  .row .count { color: var(--muted); font-size: 13px; }
+  .row .tools { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .cat > .row { background: var(--green-soft); border-radius: var(--radius) var(--radius) 0 0; font-weight: 600; }
+  .cat .kids .row { border-top: 1px solid var(--line); }
+  .cat .kids { padding-left: 14px; }
+
+  /* Niyyah + location type cards */
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .item .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .item .en { font-weight: 500; }
+  .item .ar { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 20px; line-height: 1.8; margin: 4px 0; }
+  .item .src { color: var(--muted); font-size: 13px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { background: var(--sand); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
+  .badge { border-radius: 999px; padding: 2px 10px; font-size: 12.5px; white-space: nowrap; }
+  .badge.draft { background: #f1ece0; color: #6d5d2b; }
+  .badge.reviewed { background: #dfe9f5; color: #2a4a74; }
+  .badge.published { background: var(--green-soft); color: var(--green); }
+  .item .tools { display: flex; gap: 4px; margin-top: 10px; }
+
+  /* Dialog */
+  dialog { border: 0; border-radius: 12px; padding: 0; width: min(640px, 94vw); max-height: 92vh; box-shadow: 0 20px 60px rgba(0,0,0,.28); }
+  dialog::backdrop { background: rgba(20, 35, 33, .5); }
+  .dlg { padding: 22px; display: grid; gap: 14px; }
+  .dlg h2 { font-size: 19px; }
+  .dlg label.f { display: grid; gap: 4px; font-weight: 500; }
+  .dlg label.f small { font-weight: 400; color: var(--muted); }
+  .dlg input[type=text], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+  .dlg textarea { min-height: 76px; resize: vertical; }
+  .dlg textarea.ar { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
+  .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
+  .grp-h { font-weight: 600; margin-top: 6px; }
+  .chk { display: flex; align-items: center; gap: 8px; padding: 2px 0 2px 4px; font-weight: 400; }
+  .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
+  .preview b { display: block; }
+  .preview small { color: var(--muted); }
+
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--radius); max-width: 90vw; z-index: 50; }
+  #toast.err { background: var(--danger); }
+  @media (max-width: 560px) { main, header.top, nav.tabs { padding-left: 14px; padding-right: 14px; } .row { flex-wrap: wrap; } }
+  @media (prefers-reduced-motion: no-preference) { .btn { transition: border-color .15s, background .15s; } }
+</style>
+</head>
+<body>
+
+<!-- Loading / login / denied -->
+<div id="loading" class="center"><p>Loading…</p></div>
+
+<div id="login" class="center" hidden>
+  <h1>Niyyah Admin</h1>
+  <p>Sign in with the Google account that is on the admin list to manage actions, niyyahs, and location types.</p>
+  <div><button class="btn primary" id="btn-login">Sign in with Google</button></div>
+  <p id="login-error" style="color:var(--danger)"></p>
+</div>
+
+<div id="denied" class="center" hidden>
+  <h1>No admin access</h1>
+  <p>Signed in as <b id="denied-email"></b>. This account is not on the admin list. Add its email as a document in the <code>admins</code> collection, or sign in with a different account.</p>
+  <div><button class="btn" id="btn-denied-out">Sign out</button></div>
+</div>
+
+<!-- App -->
+<div id="app" hidden>
+  <header class="top">
+    <h1>Niyyah Admin</h1>
+    <div class="who"><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="actions" aria-selected="true">Actions</button>
+    <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
+    <button role="tab" data-tab="types" aria-selected="false">Location types</button>
+  </nav>
+  <main>
+    <section id="tab-actions"></section>
+    <section id="tab-niyyahs" hidden></section>
+    <section id="tab-types" hidden></section>
+  </main>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
+         serverTimestamp, writeBatch, arrayRemove }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ============================================================
+   1. PASTE YOUR FIREBASE WEB CONFIG HERE
+      Firebase console > Project settings > General > Your apps > Web app
+   ============================================================ */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAG8k5ytThM9Eq8emC0E7ulcfSuq_ciTQc",
+  authDomain: "niyyah-4618a.firebaseapp.com",
+  projectId: "niyyah-4618a",
+  storageBucket: "niyyah-4618a.firebasestorage.app",
+  messagingSenderId: "405892887034",
+  appId: "1:405892887034:web:4cf5de3b0fa3ca3911f443",
+  measurementId: "G-NJK08JHVM6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- state ---------- */
+let actions = [], niyyahs = [], types = [];
+let listening = false;
+const DEF_TITLE = "Set your niyyah: {action}";
+const DEF_BODY = "{niyyah}";
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).localeCompare(String(b.name));
+const dlg = $("#dlg");
+
+function toast(msg, isErr = false) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = isErr ? "err" : "";
+  t.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => (t.hidden = true), isErr ? 6000 : 2500);
+}
+const fail = e => { console.error(e); toast(e.message || String(e), true); };
+
+function show(id) {
+  for (const s of ["loading", "login", "denied", "app"]) $("#" + s).hidden = s !== id;
+}
+const childrenOf = pid => actions.filter(a => (a.parentId || "") === pid).sort(byOrder);
+const actionById = id => actions.find(a => a.id === id);
+function actionLabel(id) {
+  const a = actionById(id);
+  if (!a) return "(deleted action)";
+  const p = a.parentId && actionById(a.parentId);
+  return p ? `${p.name} › ${a.name}` : a.name;
+}
+const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).length;
+
+/* ============================================================
+   2. SIGN IN + ADMIN CHECK
+   ============================================================ */
+$("#btn-login").onclick = async () => {
+  $("#login-error").textContent = "";
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (e) { $("#login-error").textContent = e.code === "auth/unauthorized-domain"
+      ? "This domain is not authorized. Add it in Firebase > Authentication > Settings > Authorized domains."
+      : (e.message || e.code); }
+};
+const doSignOut = () => signOut(auth).then(() => location.reload());
+$("#btn-out").onclick = doSignOut;
+$("#btn-denied-out").onclick = doSignOut;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return show("login");
+  let isAdmin = false;
+  try { isAdmin = (await getDoc(doc(db, "admins", user.email))).exists(); }
+  catch (e) { console.warn("Admin check failed:", e.code); }
+  if (!isAdmin) { $("#denied-email").textContent = user.email; return show("denied"); }
+  $("#who").textContent = user.email;
+  show("app");
+  startListening();
+});
+
+function startListening() {
+  if (listening) return;
+  listening = true;
+  const watch = (name, set) => onSnapshot(collection(db, name),
+    snap => { set(snap.docs.map(d => ({ id: d.id, ...d.data() }))); renderAll(); }, fail);
+  watch("actions", v => (actions = v));
+  watch("niyyahs", v => (niyyahs = v));
+  watch("locationTypes", v => (types = v));
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  for (const t of ["actions", "niyyahs", "types"]) $("#tab-" + t).hidden = t !== b.dataset.tab;
+});
+
+/* ============================================================
+   3. RENDERING
+   ============================================================ */
+function renderAll() { renderActions(); renderNiyyahs(); renderTypes(); }
+
+function renderActions() {
+  const tops = childrenOf("");
+  let html = `<div class="bar"><h2>Actions</h2>
+    <button class="btn primary" data-act="new-cat">Add category</button></div>`;
+  if (!tops.length) {
+    html += `<div class="empty"><p>No actions yet. Start with a ready-made list, or add your own category.</p>
+      <button class="btn primary" data-act="seed-actions">Add starter list</button></div>`;
+  }
+  for (const c of tops) {
+    const kids = childrenOf(c.id);
+    html += `<div class="cat"><div class="row">
+        <span class="name">${esc(c.name)}</span>
+        <span class="count">${niyyahCount(c.id) ? niyyahCount(c.id) + " niyyahs" : ""}</span>
+        <span class="tools">
+          <button class="btn small" data-act="up" data-id="${c.id}" title="Move up">↑</button>
+          <button class="btn small" data-act="down" data-id="${c.id}" title="Move down">↓</button>
+          <button class="btn small" data-act="new-mini" data-id="${c.id}">Add action</button>
+          <button class="btn small" data-act="edit-action" data-id="${c.id}">Edit</button>
+          <button class="btn small danger" data-act="del-action" data-id="${c.id}">Delete</button>
+        </span></div>`;
+    if (kids.length) {
+      html += `<div class="kids">` + kids.map(k => `<div class="row">
+          <span class="name">${esc(k.name)}</span>
+          <span class="count">${niyyahCount(k.id)} niyyahs</span>
+          <span class="tools">
+            <button class="btn small" data-act="up" data-id="${k.id}" title="Move up">↑</button>
+            <button class="btn small" data-act="down" data-id="${k.id}" title="Move down">↓</button>
+            <button class="btn small" data-act="edit-action" data-id="${k.id}">Edit</button>
+            <button class="btn small danger" data-act="del-action" data-id="${k.id}">Delete</button>
+          </span></div>`).join("") + `</div>`;
+    }
+    html += `</div>`;
+  }
+  $("#tab-actions").innerHTML = html;
+}
+
+function renderNiyyahs() {
+  const root = $("#tab-niyyahs");
+  // keep filter values across re-renders
+  const q = ($("#f-q", root)?.value || "").toLowerCase();
+  const st = $("#f-status", root)?.value || "";
+  const ac = $("#f-action", root)?.value || "";
+  const published = niyyahs.filter(n => n.status === "published").length;
+
+  const actionOpts = [...actions].sort((a, b) => actionLabel(a.id).localeCompare(actionLabel(b.id)))
+    .map(a => `<option value="${a.id}" ${a.id === ac ? "selected" : ""}>${esc(actionLabel(a.id))}</option>`).join("");
+
+  let list = niyyahs.filter(n =>
+    (!st || n.status === st) &&
+    (!ac || (n.actionIds || []).includes(ac)) &&
+    (!q || `${n.textEn} ${n.textAr} ${n.source}`.toLowerCase().includes(q)));
+  list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+
+  let html = `<div class="bar"><h2>Niyyahs <span class="muted" style="font-weight:400;font-size:14px">
+      ${niyyahs.length} total, ${published} published</span></h2>
+    <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div>
+    <div class="filters">
+      <input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
+      <select id="f-status"><option value="">All statuses</option>
+        ${["draft", "reviewed", "published"].map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select>
+      <select id="f-action"><option value="">All actions</option>${actionOpts}</select>
+    </div>`;
+
+  if (!niyyahs.length) html += `<div class="empty"><p>No niyyahs yet. Add the first one.</p></div>`;
+  else if (!list.length) html += `<div class="empty"><p>No niyyah matches these filters.</p></div>`;
+  for (const n of list) {
+    html += `<div class="item"><div class="head"><div>
+        ${n.textEn ? `<div class="en">${esc(n.textEn)}</div>` : ""}
+        ${n.textAr ? `<div class="ar">${esc(n.textAr)}</div>` : ""}
+        ${n.source ? `<div class="src">Source: ${esc(n.source)}</div>` : ""}
+      </div><span class="badge ${esc(n.status)}">${esc(n.status)}</span></div>
+      <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
+        ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}</div>
+      <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
+        <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div>`;
+  }
+  root.innerHTML = html;
+  const rerender = () => renderNiyyahs();
+  $("#f-q", root).oninput = () => { rerender(); const i = $("#f-q", root); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+  $("#f-status", root).onchange = rerender;
+  $("#f-action", root).onchange = rerender;
+}
+
+function renderTypes() {
+  const list = [...types].sort(byOrder);
+  let html = `<div class="bar"><h2>Location types</h2>
+    <button class="btn primary" data-act="new-type">Add location type</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>No location types yet.</p>
+      <button class="btn primary" data-act="seed-types">Add starter types</button></div>`;
+  for (const t of list) {
+    html += `<div class="item"><div class="head"><h3>${esc(t.name)}</h3></div>
+      <div class="chips">${(t.actionIds || []).length
+        ? t.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
+        : `<span class="muted">No actions linked yet</span>`}</div>
+      <div class="tools"><button class="btn small" data-act="edit-type" data-id="${t.id}">Edit</button>
+        <button class="btn small danger" data-act="del-type" data-id="${t.id}">Delete</button></div></div>`;
+  }
+  $("#tab-types").innerHTML = html;
+}
+
+/* ============================================================
+   4. CLICK HANDLING
+   ============================================================ */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]");
+  if (!b) return;
+  const id = b.dataset.id;
+  const map = {
+    "new-cat": () => openAction(null, ""),
+    "new-mini": () => openAction(null, id),
+    "edit-action": () => openAction(id),
+    "del-action": () => delAction(id),
+    "up": () => move(id, -1),
+    "down": () => move(id, 1),
+    "seed-actions": seedActions,
+    "new-niyyah": () => openNiyyah(),
+    "edit-niyyah": () => openNiyyah(id),
+    "del-niyyah": () => delNiyyah(id),
+    "new-type": () => openType(),
+    "edit-type": () => openType(id),
+    "del-type": () => delType(id),
+    "seed-types": seedTypes
+  };
+  (map[b.dataset.act] || (() => {}))();
+});
+
+/* ============================================================
+   5. ACTIONS
+   ============================================================ */
+function openAction(id, presetParent = "") {
+  const a = id ? actionById(id)
+    : { name: "", parentId: presetParent, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY };
+  const hasKids = id && childrenOf(id).length > 0;
+  const tops = childrenOf("").filter(x => x.id !== id);
+  dlg.innerHTML = `<div class="dlg">
+    <h2>${id ? "Edit action" : (a.parentId ? "Add action" : "Add category")}</h2>
+    <label class="f">Name<input type="text" id="a-name" value="${esc(a.name)}" placeholder="e.g. Helping a coworker"></label>
+    <label class="f">Category
+      <select id="a-parent" ${hasKids ? "disabled" : ""}>
+        <option value="">None (this is a main category)</option>
+        ${tops.map(t => `<option value="${t.id}" ${t.id === a.parentId ? "selected" : ""}>${esc(t.name)}</option>`).join("")}
+      </select>
+      ${hasKids ? "<small>This category has actions inside it, so it stays a main category.</small>" : ""}
+    </label>
+    <label class="f">Notification title<small>Use {action} for the action name.</small>
+      <input type="text" id="a-title" value="${esc(a.titleTemplate ?? DEF_TITLE)}"></label>
+    <label class="f">Notification text<small>Use {niyyah} for a random niyyah from this action.</small>
+      <input type="text" id="a-body" value="${esc(a.bodyTemplate ?? DEF_BODY)}"></label>
+    <div class="preview" aria-live="polite"><small>Preview</small><b id="p-title"></b><span id="p-body"></span></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save action</button></div></div>`;
+  const preview = () => {
+    const fill = (t, extra = {}) => t.replaceAll("{action}", $("#a-name").value || "Action name")
+      .replaceAll("{niyyah}", "A random niyyah from this action appears here");
+    $("#p-title").textContent = fill($("#a-title").value);
+    $("#p-body").textContent = fill($("#a-body").value);
+  };
+  ["#a-name", "#a-title", "#a-body"].forEach(s => $(s).oninput = preview);
+  preview();
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const name = $("#a-name").value.trim();
+    if (!name) return toast("Enter a name for the action.", true);
+    const parentId = hasKids ? "" : $("#a-parent").value;
+    const data = { name, parentId, titleTemplate: $("#a-title").value.trim() || DEF_TITLE,
+      bodyTemplate: $("#a-body").value.trim() || DEF_BODY, updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "actions", id), data);
+      else {
+        const sibs = childrenOf(parentId);
+        data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
+        await addDoc(collection(db, "actions"), data);
+      }
+      dlg.close(); toast("Action saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+  $("#a-name").focus();
+}
+
+async function move(id, dir) {
+  const a = actionById(id);
+  const sibs = childrenOf(a.parentId || "");
+  const i = sibs.findIndex(s => s.id === id), j = i + dir;
+  if (j < 0 || j >= sibs.length) return;
+  [sibs[i], sibs[j]] = [sibs[j], sibs[i]];
+  try {
+    const batch = writeBatch(db);
+    sibs.forEach((s, idx) => batch.update(doc(db, "actions", s.id), { order: idx }));
+    await batch.commit();
+  } catch (e) { fail(e); }
+}
+
+async function delAction(id) {
+  const a = actionById(id);
+  if (childrenOf(id).length) return toast("Delete or move the actions inside this category first.", true);
+  const n = niyyahCount(id);
+  if (!confirm(`Delete "${a.name}"?` + (n ? `\n\n${n} niyyah(s) will be unlinked from it (the niyyahs are kept).` : ""))) return;
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "actions", id));
+    niyyahs.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "niyyahs", x.id), { actionIds: arrayRemove(id) }));
+    types.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) }));
+    await batch.commit();
+    toast("Action deleted.");
+  } catch (e) { fail(e); }
+}
+
+async function seedActions() {
+  const starter = {
+    "Work and earning": ["Earning halal income", "Honesty in dealings", "Helping a coworker", "Patience with a manager"],
+    "Home and family": ["Family time", "Caring for the children", "Cooking for the family", "Serving parents"],
+    "Friends and community": ["Visiting a friend", "Passing a friend's home", "Helping a Muslim in need", "Visiting the sick"],
+    "Body and health": ["Exercising", "Eating", "Sleeping"],
+    "Travel and moving": ["Leaving home", "Commuting", "Arriving"],
+    "Learning and growth": ["Studying", "Reading", "Teaching"],
+    "Places with memories": ["Gratitude", "Reflection", "Dua for someone"]
+  };
+  try {
+    const batch = writeBatch(db);
+    let order = 0;
+    for (const [cat, kids] of Object.entries(starter)) {
+      const cref = doc(collection(db, "actions"));
+      batch.set(cref, { name: cat, parentId: "", order: order++, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() });
+      kids.forEach((k, i) => batch.set(doc(collection(db, "actions")),
+        { name: k, parentId: cref.id, order: i, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() }));
+    }
+    await batch.commit();
+    toast("Starter list added. Rename or delete anything you don't need.");
+  } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   6. NIYYAHS
+   ============================================================ */
+function checklist(selected) {
+  const tops = childrenOf("");
+  if (!tops.length) return `<p class="muted">Create actions first.</p>`;
+  const box = a => `<label class="chk"><input type="checkbox" value="${a.id}" ${selected.includes(a.id) ? "checked" : ""}> ${esc(a.name)}</label>`;
+  return tops.map(t => {
+    const kids = childrenOf(t.id);
+    return kids.length ? `<div><div class="grp-h">${esc(t.name)}</div>${kids.map(box).join("")}</div>` : box(t);
+  }).join("");
+}
+const checkedIds = () => [...dlg.querySelectorAll(".checklist input:checked")].map(i => i.value);
+
+function openNiyyah(id) {
+  const n = id ? niyyahs.find(x => x.id === id)
+    : { textAr: "", textEn: "", source: "", status: "draft", general: false, actionIds: [] };
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit niyyah" : "Add niyyah"}</h2>
+    <label class="f">Arabic text<textarea class="ar" id="n-ar">${esc(n.textAr)}</textarea></label>
+    <label class="f">English text<textarea id="n-en">${esc(n.textEn)}</textarea></label>
+    <label class="f">Source<small>Hadith or Quran reference.</small>
+      <input type="text" id="n-src" value="${esc(n.source)}"></label>
+    <label class="f">Status<small>Only "published" niyyahs reach users.</small>
+      <select id="n-status">${["draft", "reviewed", "published"].map(s => `<option ${s === n.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    <label class="chk"><input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> Fits any action (can be shown anywhere as a fallback)</label>
+    <div class="f"><b>Actions this niyyah belongs to</b>
+      <div class="checklist">${checklist(n.actionIds || [])}</div></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save niyyah</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const data = { textAr: $("#n-ar").value.trim(), textEn: $("#n-en").value.trim(), source: $("#n-src").value.trim(),
+      status: $("#n-status").value, general: $("#n-gen").checked, actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    if (!data.textAr && !data.textEn) return toast("Enter the niyyah text in Arabic, English, or both.", true);
+    if (data.status === "published" && !data.general && !data.actionIds.length)
+      return toast("A published niyyah needs at least one action, or 'Fits any action'.", true);
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "niyyahs", id), data);
+      else await addDoc(collection(db, "niyyahs"), { ...data, createdAt: serverTimestamp() });
+      dlg.close(); toast("Niyyah saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+}
+
+async function delNiyyah(id) {
+  if (!confirm("Delete this niyyah? This cannot be undone.")) return;
+  try { await deleteDoc(doc(db, "niyyahs", id)); toast("Niyyah deleted."); } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   7. LOCATION TYPES
+   ============================================================ */
+function openType(id) {
+  const t = id ? types.find(x => x.id === id) : { name: "", actionIds: [] };
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit location type" : "Add location type"}</h2>
+    <label class="f">Name<input type="text" id="t-name" value="${esc(t.name)}" placeholder="e.g. Gym"></label>
+    <div class="f"><b>Actions that usually happen here</b>
+      <div class="checklist">${checklist(t.actionIds || [])}</div></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save location type</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const name = $("#t-name").value.trim();
+    if (!name) return toast("Enter a name for the location type.", true);
+    const data = { name, actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "locationTypes", id), data);
+      else { data.order = types.length; await addDoc(collection(db, "locationTypes"), data); }
+      dlg.close(); toast("Location type saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+  $("#t-name").focus();
+}
+
+async function delType(id) {
+  const t = types.find(x => x.id === id);
+  if (!confirm(`Delete the location type "${t.name}"?`)) return;
+  try { await deleteDoc(doc(db, "locationTypes", id)); toast("Location type deleted."); } catch (e) { fail(e); }
+}
+
+async function seedTypes() {
+  try {
+    const batch = writeBatch(db);
+    ["Home", "Work", "Friend's house", "Gym", "Place with a memory"].forEach((name, i) =>
+      batch.set(doc(collection(db, "locationTypes")), { name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Starter types added. Open each one to link its actions.");
+  } catch (e) { fail(e); }
+}
+</script>
+</body>
+</html>
