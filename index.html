@@ -112,6 +112,13 @@
   .lpanel { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; background: #fbfcfb; }
   .src-row { display: flex; gap: 6px; margin-bottom: 6px; }
   .src-row input { flex: 1; }
+  .imp-list { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  .imp-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--line); }
+  .imp-row:first-child { border-top: 0; }
+  .imp-row.skip { opacity: .5; }
+  .imp-row .snip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .imp-row .id { color: var(--muted); font-size: 12.5px; min-width: 38px; }
+  .imp-row .badge { padding: 0 8px; font-size: 12px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
   .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
   .preview b { display: block; }
@@ -161,6 +168,7 @@
   </main>
 </div>
 
+<input type="file" id="import-file" accept=".json,application/json" hidden>
 <dialog id="dlg"></dialog>
 <div id="toast" hidden></div>
 
@@ -246,6 +254,16 @@ function trOf(n, code) {
     text,
     sources: (t.sources || []).map(x => String(x).trim()).filter(Boolean),
     status: text ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
+  };
+}
+// Old single-language fields, kept in sync so anything still reading them keeps working.
+function mirrorFields(translations) {
+  const filled = Object.values(translations).filter(t => t.text);
+  const joined = c => (translations[c]?.sources || []).join("; ");
+  return {
+    textAr: translations.ar?.text || "", textEn: translations.en?.text || "",
+    source: joined("en") || joined("ar"),
+    status: filled.some(t => t.status === "published") ? "published" : filled.some(t => t.status === "reviewed") ? "reviewed" : "draft"
   };
 }
 const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
@@ -355,7 +373,9 @@ function renderNiyyahs() {
 
   let html = `<div class="bar"><h2>Niyyahs <span class="muted" style="font-weight:400;font-size:14px">
       ${niyyahs.length} total, ${published} with a published language</span></h2>
-    <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-act="import-json">Import JSON</button>
+      <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div></div>
     <div class="filters">
       <input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
       <select id="f-status"><option value="">Any language status</option>
@@ -427,6 +447,7 @@ document.addEventListener("click", e => {
     "del-type": () => delType(id),
     "seed-types": seedTypes,
     "go-settings": () => goTab("settings"),
+    "import-json": () => $("#import-file").click(),
     "new-lang": () => openLanguage(),
     "edit-lang": () => openLanguage(id),
     "del-lang": () => delLanguage(id),
@@ -640,12 +661,7 @@ function openNiyyah(id) {
     const general = $("#n-gen").checked, actionIds = checkedIds();
     if (filled.some(t => t.status === "published") && !general && !actionIds.length)
       return toast("A published niyyah needs at least one action, or 'Fits any action'.", true);
-    // Mirror into the old single-language fields so anything still reading them keeps working.
-    const first = c => (translations[c]?.sources || []).join("; ");
-    const overall = filled.some(t => t.status === "published") ? "published" : filled.some(t => t.status === "reviewed") ? "reviewed" : "draft";
-    const data = { translations, general, actionIds, updatedAt: serverTimestamp(),
-      textAr: translations.ar?.text || "", textEn: translations.en?.text || "",
-      source: first("en") || first("ar"), status: overall };
+    const data = { translations, general, actionIds, updatedAt: serverTimestamp(), ...mirrorFields(translations) };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "niyyahs", id), data);
@@ -783,6 +799,86 @@ async function seedLanguages() {
     toast("Arabic and English added.");
   } catch (e) { fail(e); }
 }
+/* ============================================================
+   9. IMPORT NIYYAHS FROM JSON
+   Shape: { "<id>": { "<lang>": { situation, niyyah: [..], sources: [..] } } }
+   Each entry of "niyyah" becomes its own niyyah. All niyyahs of one id share that id's sources.
+   The same position in each language is the same niyyah. "situation" is ignored.
+   ============================================================ */
+const asArray = v => Array.isArray(v) ? v : (v ? [v] : []);
+
+// The export split every source text at its commas. Put the pieces back together,
+// then start a new source after each closing citation like [Al-Bukhari].
+function rebuildSources(raw, code) {
+  const parts = asArray(raw).map(x => String(x).trim()).filter(Boolean);
+  if (parts.length <= 1) return parts;
+  const joined = parts.join(code === "ar" ? "، " : ", ");
+  return joined.replace(/(\]\.?)[،,]?\s+(?=\S)/g, "$1\u0000").split("\u0000").map(x => x.trim()).filter(Boolean);
+}
+
+function buildImportPlan(json) {
+  if (!json || typeof json !== "object" || Array.isArray(json)) throw new Error("This file is not in the expected format (an object keyed by id).");
+  const items = [], codes = new Set();
+  const ids = Object.keys(json).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  for (const id of ids) {
+    const langEntries = Object.entries(json[id] || {}).filter(([, v]) => v && typeof v === "object");
+    langEntries.forEach(([c]) => codes.add(c));
+    const sources = Object.fromEntries(langEntries.map(([c, v]) => [c, rebuildSources(v.sources, c)]));
+    const count = Math.max(0, ...langEntries.map(([, v]) => asArray(v.niyyah).length));
+    for (let i = 0; i < count; i++) {
+      const translations = {};
+      for (const [c, v] of langEntries) {
+        const text = String(asArray(v.niyyah)[i] ?? "").trim();
+        translations[c] = { text, sources: [...sources[c]], status: text ? "draft" : "empty" };
+      }
+      items.push({ importId: id, importIndex: i, translations,
+        skip: niyyahs.some(n => n.importId === id && n.importIndex === i) });
+    }
+  }
+  return { items, codes: [...codes] };
+}
+
+function openImport(plan, fileName) {
+  const fresh = plan.items.filter(x => !x.skip), skipped = plan.items.length - fresh.length;
+  const missing = plan.codes.filter(c => !languages.some(l => l.code === c));
+  const snip = it => { const t = it.translations; const c = ["en", "ar", ...Object.keys(t)].find(k => t[k]?.text); return c ? t[c].text : ""; };
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>Import niyyahs</h2>
+    <p style="margin:0"><b>${esc(fileName)}</b>: ${fresh.length} niyyah${fresh.length === 1 ? "" : "s"} to add${skipped ? `, ${skipped} already imported (skipped)` : ""}.
+      Languages in the file: ${plan.codes.map(esc).join(", ") || "none"}.</p>
+    <p class="muted" style="margin:0">All texts are added as draft, with no actions yet. Situations in the file are ignored. A language with no text for a niyyah shows red.</p>
+    ${missing.length ? `<p style="margin:0;color:var(--danger)">Not in Settings yet: ${missing.map(esc).join(", ")}. Their texts are still saved and appear once you add that language.</p>` : ""}
+    <div class="imp-list">${plan.items.map(it => `<div class="imp-row ${it.skip ? "skip" : ""}">
+        <span class="id">#${esc(it.importId)}.${it.importIndex + 1}</span>
+        ${Object.entries(it.translations).map(([c, t]) => `<span class="badge st-${t.status}">${esc(c)}</span>`).join("")}
+        <span class="snip" dir="auto">${esc(snip(it))}</span></div>`).join("")}</div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save" ${fresh.length ? "" : "disabled"}>Import ${fresh.length}</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    $("#d-save").disabled = true;
+    try {
+      for (let i = 0; i < fresh.length; i += 400) {
+        const batch = writeBatch(db);
+        fresh.slice(i, i + 400).forEach(it => batch.set(doc(collection(db, "niyyahs")), {
+          translations: it.translations, general: false, actionIds: [],
+          importId: it.importId, importIndex: it.importIndex,
+          ...mirrorFields(it.translations), createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+        await batch.commit();
+      }
+      dlg.close(); toast(`${fresh.length} niyyahs imported.`);
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+}
+
+$("#import-file").onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { openImport(buildImportPlan(JSON.parse(await f.text())), f.name); }
+  catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message, true); }
+};
 </script>
 </body>
 </html>
