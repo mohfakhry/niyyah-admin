@@ -76,14 +76,20 @@
   .item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
   .item .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .item .en { font-weight: 500; }
-  .item .ar { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 20px; line-height: 1.8; margin: 4px 0; }
+  .item .rtl { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 20px; line-height: 1.8; }
   .item .src { color: var(--muted); font-size: 13px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .chip { background: var(--sand); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
   .badge { border-radius: 999px; padding: 2px 10px; font-size: 12.5px; white-space: nowrap; }
-  .badge.draft { background: #f1ece0; color: #6d5d2b; }
-  .badge.reviewed { background: #dfe9f5; color: #2a4a74; }
-  .badge.published { background: var(--green-soft); color: var(--green); }
+  /* Status colours: empty = red, draft = pink, reviewed = yellow, published = green */
+  .st-empty { background: #e5484d; color: #fff; border-color: #e5484d; }
+  .st-draft { background: #f7b2cc; color: #6b1d3a; border-color: #f7b2cc; }
+  .st-reviewed { background: #f6d54a; color: #5a4600; border-color: #f6d54a; }
+  .st-published { background: #2e9e5b; color: #fff; border-color: #2e9e5b; }
+  .lrow { padding: 8px 0; border-top: 1px solid var(--line); }
+  .lrow:first-child { border-top: 0; padding-top: 0; }
+  .lrow .ltext { margin: 4px 0 2px; }
+  .lrow .ltext:not(.rtl) { font-weight: 500; }
   .item .tools { display: flex; gap: 4px; margin-top: 10px; }
 
   /* Dialog */
@@ -95,11 +101,18 @@
   .dlg label.f small { font-weight: 400; color: var(--muted); }
   .dlg input[type=text], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
   .dlg textarea { min-height: 76px; resize: vertical; }
-  .dlg textarea.ar { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
+  .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
   .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; }
   .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
   .grp-h { font-weight: 600; margin-top: 6px; }
   .chk { display: flex; align-items: center; gap: 8px; padding: 2px 0 2px 4px; font-weight: 400; }
+  .ltabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ltab { border: 2px solid transparent; border-radius: var(--radius); padding: 7px 16px; font-weight: 600; }
+  .ltab[aria-selected="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+  .lpanel { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; background: #fbfcfb; }
+  .src-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .src-row input { flex: 1; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
   .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
   .preview b { display: block; }
   .preview small { color: var(--muted); }
@@ -138,11 +151,13 @@
     <button role="tab" data-tab="actions" aria-selected="true">Actions</button>
     <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
     <button role="tab" data-tab="types" aria-selected="false">Location types</button>
+    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main>
     <section id="tab-actions"></section>
     <section id="tab-niyyahs" hidden></section>
     <section id="tab-types" hidden></section>
+    <section id="tab-settings" hidden></section>
   </main>
 </div>
 
@@ -177,7 +192,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [];
+let actions = [], niyyahs = [], types = [], languages = [];
 let listening = false;
 const DEF_TITLE = "Set your niyyah: {action}";
 const DEF_BODY = "{niyyah}";
@@ -210,6 +225,30 @@ function actionLabel(id) {
   return p ? `${p.name} › ${a.name}` : a.name;
 }
 const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).length;
+
+/* ---------- languages + per-language niyyah text ---------- */
+const STATUSES = ["draft", "reviewed", "published"];
+const langs = () => [...languages].sort(byOrder);
+// Niyyahs saved before languages existed only have textAr / textEn / source / status.
+// Treat those as the "ar" and "en" translations so nothing is lost.
+function allTr(n) {
+  if (n.translations) return n.translations;
+  const src = n.source ? [n.source] : [];
+  return {
+    ar: { text: n.textAr || "", sources: src, status: n.status },
+    en: { text: n.textEn || "", sources: src, status: n.status }
+  };
+}
+function trOf(n, code) {
+  const t = allTr(n)[code] || {};
+  const text = String(t.text || "").trim();
+  return {
+    text,
+    sources: (t.sources || []).map(x => String(x).trim()).filter(Boolean),
+    status: text ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
+  };
+}
+const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
 /* ============================================================
    2. SIGN IN + ADMIN CHECK
@@ -244,18 +283,20 @@ function startListening() {
   watch("actions", v => (actions = v));
   watch("niyyahs", v => (niyyahs = v));
   watch("locationTypes", v => (types = v));
+  watch("languages", v => (languages = v));
 }
 
 /* ---------- tabs ---------- */
-document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
-  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
-  for (const t of ["actions", "niyyahs", "types"]) $("#tab-" + t).hidden = t !== b.dataset.tab;
-});
+function goTab(name) {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
+  for (const t of ["actions", "niyyahs", "types", "settings"]) $("#tab-" + t).hidden = t !== name;
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => goTab(b.dataset.tab));
 
 /* ============================================================
    3. RENDERING
    ============================================================ */
-function renderAll() { renderActions(); renderNiyyahs(); renderTypes(); }
+function renderAll() { renderActions(); renderNiyyahs(); renderTypes(); renderSettings(); }
 
 function renderActions() {
   const tops = childrenOf("");
@@ -299,35 +340,41 @@ function renderNiyyahs() {
   const q = ($("#f-q", root)?.value || "").toLowerCase();
   const st = $("#f-status", root)?.value || "";
   const ac = $("#f-action", root)?.value || "";
-  const published = niyyahs.filter(n => n.status === "published").length;
+  const L = langs();
+  const published = niyyahs.filter(n => hasStatus(n, "published")).length;
 
   const actionOpts = [...actions].sort((a, b) => actionLabel(a.id).localeCompare(actionLabel(b.id)))
     .map(a => `<option value="${a.id}" ${a.id === ac ? "selected" : ""}>${esc(actionLabel(a.id))}</option>`).join("");
 
+  const haystack = n => L.map(l => { const t = trOf(n, l.code); return `${t.text} ${t.sources.join(" ")}`; }).join(" ").toLowerCase();
   let list = niyyahs.filter(n =>
-    (!st || n.status === st) &&
+    (!st || hasStatus(n, st)) &&
     (!ac || (n.actionIds || []).includes(ac)) &&
-    (!q || `${n.textEn} ${n.textAr} ${n.source}`.toLowerCase().includes(q)));
+    (!q || haystack(n).includes(q)));
   list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
 
   let html = `<div class="bar"><h2>Niyyahs <span class="muted" style="font-weight:400;font-size:14px">
-      ${niyyahs.length} total, ${published} published</span></h2>
+      ${niyyahs.length} total, ${published} with a published language</span></h2>
     <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div>
     <div class="filters">
       <input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
-      <select id="f-status"><option value="">All statuses</option>
-        ${["draft", "reviewed", "published"].map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select>
+      <select id="f-status"><option value="">Any language status</option>
+        ${["empty", ...STATUSES].map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select>
       <select id="f-action"><option value="">All actions</option>${actionOpts}</select>
     </div>`;
 
-  if (!niyyahs.length) html += `<div class="empty"><p>No niyyahs yet. Add the first one.</p></div>`;
+  if (!L.length) html += `<div class="empty"><p>No languages yet. Add them in Settings to see and edit niyyah texts.</p>
+      <button class="btn primary" data-act="go-settings">Open Settings</button></div>`;
+  else if (!niyyahs.length) html += `<div class="empty"><p>No niyyahs yet. Add the first one.</p></div>`;
   else if (!list.length) html += `<div class="empty"><p>No niyyah matches these filters.</p></div>`;
-  for (const n of list) {
-    html += `<div class="item"><div class="head"><div>
-        ${n.textEn ? `<div class="en">${esc(n.textEn)}</div>` : ""}
-        ${n.textAr ? `<div class="ar">${esc(n.textAr)}</div>` : ""}
-        ${n.source ? `<div class="src">Source: ${esc(n.source)}</div>` : ""}
-      </div><span class="badge ${esc(n.status)}">${esc(n.status)}</span></div>
+  if (L.length) for (const n of list) {
+    const rows = L.map(l => {
+      const t = trOf(n, l.code);
+      return `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.status}</span>
+        ${t.text ? `<div class="ltext ${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(t.text)}</div>` : ""}
+        ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`;
+    }).join("");
+    html += `<div class="item">${rows}
       <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
         ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}</div>
       <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
@@ -378,7 +425,14 @@ document.addEventListener("click", e => {
     "new-type": () => openType(),
     "edit-type": () => openType(id),
     "del-type": () => delType(id),
-    "seed-types": seedTypes
+    "seed-types": seedTypes,
+    "go-settings": () => goTab("settings"),
+    "new-lang": () => openLanguage(),
+    "edit-lang": () => openLanguage(id),
+    "del-lang": () => delLanguage(id),
+    "lang-up": () => moveLang(id, -1),
+    "lang-down": () => moveLang(id, 1),
+    "seed-langs": seedLanguages
   };
   (map[b.dataset.act] || (() => {}))();
 });
@@ -507,28 +561,91 @@ function checklist(selected) {
 const checkedIds = () => [...dlg.querySelectorAll(".checklist input:checked")].map(i => i.value);
 
 function openNiyyah(id) {
-  const n = id ? niyyahs.find(x => x.id === id)
-    : { textAr: "", textEn: "", source: "", status: "draft", general: false, actionIds: [] };
+  const L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const n = id ? niyyahs.find(x => x.id === id) : { general: false, actionIds: [] };
+
+  // one working copy per language, edited while the dialog is open
+  const draft = {};
+  L.forEach(l => {
+    const t = id ? trOf(n, l.code) : { text: "", sources: [], status: "draft" };
+    draft[l.code] = { text: t.text, sources: t.sources.length ? [...t.sources] : [""], status: t.status === "empty" ? "draft" : t.status };
+  });
+  let cur = L[0].code;
+  const stOf = c => (draft[c].text.trim() ? draft[c].status : "empty");
+
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
     <h2>${id ? "Edit niyyah" : "Add niyyah"}</h2>
-    <label class="f">Arabic text<textarea class="ar" id="n-ar">${esc(n.textAr)}</textarea></label>
-    <label class="f">English text<textarea id="n-en">${esc(n.textEn)}</textarea></label>
-    <label class="f">Source<small>Hadith or Quran reference.</small>
-      <input type="text" id="n-src" value="${esc(n.source)}"></label>
-    <label class="f">Status<small>Only "published" niyyahs reach users.</small>
-      <select id="n-status">${["draft", "reviewed", "published"].map(s => `<option ${s === n.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+    <div class="ltabs" id="l-tabs" role="tablist"></div>
+    <div class="legend"><span class="badge st-empty">empty</span><span class="badge st-draft">draft</span>
+      <span class="badge st-reviewed">reviewed</span><span class="badge st-published">published</span></div>
+    <div class="lpanel" id="l-panel"></div>
     <label class="chk"><input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> Fits any action (can be shown anywhere as a fallback)</label>
     <div class="f"><b>Actions this niyyah belongs to</b>
       <div class="checklist">${checklist(n.actionIds || [])}</div></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save niyyah</button></div></div>`;
+
+  const paintTabs = () => {
+    $("#l-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stOf(l.code)}"
+      data-lang="${esc(l.code)}" aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stOf(l.code)}">${esc(l.name)}</button>`).join("");
+  };
+  // copy what is typed in the visible panel into the working copy
+  const capture = () => {
+    if (!$("#l-text")) return;
+    draft[cur].text = $("#l-text").value;
+    draft[cur].sources = [...dlg.querySelectorAll(".src-in")].map(i => i.value);
+    draft[cur].status = $("#l-status").value;
+  };
+  const paintPanel = () => {
+    const l = L.find(x => x.code === cur), d = draft[cur];
+    $("#l-panel").innerHTML = `
+      <label class="f">${esc(l.name)} text<textarea id="l-text" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(d.text)}</textarea></label>
+      <div class="f"><b>Sources</b><small>Hadith or Quran reference. Add as many as you need.</small>
+        ${d.sources.map((s, i) => `<div class="src-row"><input type="text" class="src-in" value="${esc(s)}">
+          <button type="button" class="btn small danger" data-rm="${i}" title="Remove source">Remove</button></div>`).join("")}
+        <div><button type="button" class="btn small" id="l-addsrc">Add source</button></div></div>
+      <label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
+        <select id="l-status">${STATUSES.map(s => `<option ${s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>`;
+    $("#l-text").oninput = () => { draft[cur].text = $("#l-text").value; paintTabs(); };
+    $("#l-status").onchange = () => { draft[cur].status = $("#l-status").value; paintTabs(); };
+    $("#l-addsrc").onclick = () => {
+      capture(); draft[cur].sources.push(""); paintPanel();
+      [...dlg.querySelectorAll(".src-in")].pop().focus();
+    };
+    dlg.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => {
+      capture(); draft[cur].sources.splice(+b.dataset.rm, 1);
+      if (!draft[cur].sources.length) draft[cur].sources.push("");
+      paintPanel();
+    });
+  };
+  $("#l-tabs").onclick = e => {
+    const b = e.target.closest("[data-lang]");
+    if (!b || b.dataset.lang === cur) return;
+    capture(); cur = b.dataset.lang; paintTabs(); paintPanel();
+  };
+  paintTabs(); paintPanel();
+
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
-    const data = { textAr: $("#n-ar").value.trim(), textEn: $("#n-en").value.trim(), source: $("#n-src").value.trim(),
-      status: $("#n-status").value, general: $("#n-gen").checked, actionIds: checkedIds(), updatedAt: serverTimestamp() };
-    if (!data.textAr && !data.textEn) return toast("Enter the niyyah text in Arabic, English, or both.", true);
-    if (data.status === "published" && !data.general && !data.actionIds.length)
+    capture();
+    // keep texts for languages that are not configured any more, then overwrite the configured ones
+    const translations = { ...(id ? allTr(n) : {}) };
+    L.forEach(l => {
+      const d = draft[l.code], text = d.text.trim();
+      translations[l.code] = { text, sources: d.sources.map(s => s.trim()).filter(Boolean), status: text ? d.status : "empty" };
+    });
+    const filled = Object.values(translations).filter(t => t.text);
+    if (!filled.length) return toast("Write the niyyah in at least one language.", true);
+    const general = $("#n-gen").checked, actionIds = checkedIds();
+    if (filled.some(t => t.status === "published") && !general && !actionIds.length)
       return toast("A published niyyah needs at least one action, or 'Fits any action'.", true);
+    // Mirror into the old single-language fields so anything still reading them keeps working.
+    const first = c => (translations[c]?.sources || []).join("; ");
+    const overall = filled.some(t => t.status === "published") ? "published" : filled.some(t => t.status === "reviewed") ? "reviewed" : "draft";
+    const data = { translations, general, actionIds, updatedAt: serverTimestamp(),
+      textAr: translations.ar?.text || "", textEn: translations.en?.text || "",
+      source: first("en") || first("ar"), status: overall };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "niyyahs", id), data);
@@ -585,6 +702,85 @@ async function seedTypes() {
       batch.set(doc(collection(db, "locationTypes")), { name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
     await batch.commit();
     toast("Starter types added. Open each one to link its actions.");
+  } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   8. SETTINGS: LANGUAGES
+   ============================================================ */
+function renderSettings() {
+  const L = langs();
+  const used = code => niyyahs.filter(n => trOf(n, code).text).length;
+  let html = `<div class="bar"><h2>Settings</h2></div>
+    <div class="bar"><h3>Languages</h3><button class="btn primary" data-act="new-lang">Add language</button></div>
+    <p class="muted" style="margin-top:0">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>`;
+  if (!L.length) html += `<div class="empty"><p>No languages yet.</p>
+      <button class="btn primary" data-act="seed-langs">Add Arabic and English</button></div>`;
+  else html += `<div class="cat"><div class="kids" style="padding-left:0">` + L.map(l => `<div class="row">
+      <span class="name">${esc(l.name)} <span class="chip">${esc(l.code)}</span>${l.rtl ? ` <span class="chip">right to left</span>` : ""}</span>
+      <span class="count">${used(l.code)} niyyahs</span>
+      <span class="tools">
+        <button class="btn small" data-act="lang-up" data-id="${l.id}" title="Move up">↑</button>
+        <button class="btn small" data-act="lang-down" data-id="${l.id}" title="Move down">↓</button>
+        <button class="btn small" data-act="edit-lang" data-id="${l.id}">Edit</button>
+        <button class="btn small danger" data-act="del-lang" data-id="${l.id}">Delete</button>
+      </span></div>`).join("") + `</div></div>`;
+  $("#tab-settings").innerHTML = html;
+}
+
+function openLanguage(id) {
+  const l = id ? languages.find(x => x.id === id) : { name: "", code: "", rtl: false };
+  dlg.innerHTML = `<div class="dlg">
+    <h2>${id ? "Edit language" : "Add language"}</h2>
+    <label class="f">Name<input type="text" id="l-name" value="${esc(l.name)}" placeholder="e.g. French"></label>
+    <label class="f">Code<small>Short code such as fr, ur, tr. ${id ? "It cannot be changed because saved texts are stored under it." : "It cannot be changed later."}</small>
+      <input type="text" id="l-code" value="${esc(l.code)}" placeholder="fr" ${id ? "disabled" : ""}></label>
+    <label class="chk"><input type="checkbox" id="l-rtl" ${l.rtl ? "checked" : ""}> Written right to left (Arabic, Urdu, Persian...)</label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save language</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const name = $("#l-name").value.trim();
+    const code = (id ? l.code : $("#l-code").value.trim().toLowerCase());
+    if (!name) return toast("Enter a name for the language.", true);
+    if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(code)) return toast("Enter a short language code like fr, ur or pt-br.", true);
+    if (!id && languages.some(x => x.code === code)) return toast(`The code "${code}" is already used.`, true);
+    const data = { name, code, rtl: $("#l-rtl").checked, updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "languages", id), data);
+      else { data.order = languages.length ? Math.max(...languages.map(x => x.order ?? 0)) + 1 : 0; await addDoc(collection(db, "languages"), data); }
+      dlg.close(); toast("Language saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+  $("#l-name").focus();
+}
+
+async function delLanguage(id) {
+  const l = languages.find(x => x.id === id);
+  if (!confirm(`Delete the language "${l.name}"?\n\nTexts already written in it are kept in the database but hidden. Adding a language with the same code ("${l.code}") brings them back.`)) return;
+  try { await deleteDoc(doc(db, "languages", id)); toast("Language deleted."); } catch (e) { fail(e); }
+}
+
+async function moveLang(id, dir) {
+  const L = langs(), i = L.findIndex(x => x.id === id), j = i + dir;
+  if (j < 0 || j >= L.length) return;
+  [L[i], L[j]] = [L[j], L[i]];
+  try {
+    const batch = writeBatch(db);
+    L.forEach((x, idx) => batch.update(doc(db, "languages", x.id), { order: idx }));
+    await batch.commit();
+  } catch (e) { fail(e); }
+}
+
+async function seedLanguages() {
+  try {
+    const batch = writeBatch(db);
+    [["Arabic", "ar", true], ["English", "en", false]].forEach(([name, code, rtl], i) =>
+      batch.set(doc(collection(db, "languages")), { name, code, rtl, order: i, updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Arabic and English added.");
   } catch (e) { fail(e); }
 }
 </script>
