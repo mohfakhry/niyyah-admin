@@ -20,7 +20,7 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 500 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
     background: var(--paper);
   }
@@ -41,7 +41,7 @@
   .btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
   .btn.primary:hover { background: #0f463d; }
   .btn.danger { color: var(--danger); }
-  .btn.small { padding: 3px 9px; font-size: 13px; }
+  .btn.small { padding: 3px 9px; font-size: 14px; }
   .btn[disabled] { opacity: .5; cursor: default; }
 
   /* App shell */
@@ -58,6 +58,12 @@
   .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .filters input, .filters select { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
   .filters input { flex: 1 1 200px; }
+  .searchbox { position: relative; flex: 1 1 200px; display: flex; }
+  .searchbox input { width: 100%; padding-right: 34px; }
+  .searchbox input::-webkit-search-cancel-button { display: none; }
+  .clear-x { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 0; }
+  .clear-x:hover { background: var(--sand); color: var(--ink); }
+  .expandbar { display: flex; gap: 8px; margin: -6px 0 14px; }
   .muted { color: var(--muted); }
   .empty { padding: 32px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--card); }
   .empty p { margin: 0 0 12px; color: var(--muted); }
@@ -76,11 +82,11 @@
   .item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
   .item .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .item .en { font-weight: 500; }
-  .item .rtl { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 20px; line-height: 1.8; }
-  .item .src { color: var(--muted); font-size: 13px; }
+  .item .rtl { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 22px; line-height: 1.8; font-weight: 600; }
+  .item .src { color: var(--muted); font-size: 14px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip { background: var(--sand); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; }
-  .badge { border-radius: 999px; padding: 2px 10px; font-size: 12.5px; white-space: nowrap; }
+  .chip { background: var(--sand); border-radius: 999px; padding: 2px 10px; font-size: 13.5px; }
+  .badge { border-radius: 999px; padding: 2px 10px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
   /* Status colours: empty = red, draft = pink, reviewed = yellow, published = green */
   .st-empty { background: #e5484d; color: #fff; border-color: #e5484d; }
   .st-draft { background: #f7b2cc; color: #6b1d3a; border-color: #f7b2cc; }
@@ -89,7 +95,7 @@
   .lrow { padding: 8px 0; border-top: 1px solid var(--line); }
   .lrow:first-child { border-top: 0; padding-top: 0; }
   .lrow .ltext { margin: 4px 0 2px; }
-  .lrow .ltext:not(.rtl) { font-weight: 500; }
+  .lrow .ltext:not(.rtl) { font-weight: 600; font-size: 16.5px; }
   .item .tools { display: flex; gap: 4px; margin-top: 10px; }
 
   /* Dialog */
@@ -101,7 +107,7 @@
   .dlg label.f small { font-weight: 400; color: var(--muted); }
   .dlg input[type=text], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
   .dlg textarea { min-height: 76px; resize: vertical; }
-  .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
+  .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 21px; font-weight: 600; }
   .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; }
   .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
   .grp-h { font-weight: 600; margin-top: 6px; }
@@ -119,6 +125,18 @@
   .imp-row .snip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .imp-row .id { color: var(--muted); font-size: 12.5px; min-width: 38px; }
   .imp-row .badge { padding: 0 8px; font-size: 12px; }
+  .nitem { padding: 0; }
+  .nhead { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; text-align: start; padding: 12px 16px; border-radius: var(--radius); }
+  .nhead:hover { background: var(--paper); }
+  .nhead .chev { color: var(--muted); transition: transform .15s; flex: none; }
+  .nitem.open .chev { transform: rotate(90deg); }
+  .nhead .prev { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nhead .prev { font-weight: 600; }
+  .nhead .prev.rtl { font-size: 20px; line-height: 1.6; }
+  .dots { display: flex; gap: 4px; flex: none; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .nbody { padding: 2px 16px 14px; border-top: 1px solid var(--line); margin-top: 0; }
+  .nbody .lrow:first-child { padding-top: 10px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
   .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
   .preview b { display: block; }
@@ -202,6 +220,8 @@ const db = getFirestore(app);
 /* ---------- state ---------- */
 let actions = [], niyyahs = [], types = [], languages = [];
 let listening = false;
+const openN = new Set();      // niyyah ids that are expanded
+let shownN = [];              // ids currently listed (after filters)
 const DEF_TITLE = "Set your niyyah: {action}";
 const DEF_BODY = "{niyyah}";
 
@@ -377,34 +397,57 @@ function renderNiyyahs() {
       <button class="btn" data-act="import-json">Import JSON</button>
       <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div></div>
     <div class="filters">
-      <input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
+      <div class="searchbox"><input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
+        <button type="button" class="clear-x" id="f-clear" aria-label="Clear search" title="Clear search" ${q ? "" : "hidden"}>×</button></div>
       <select id="f-status"><option value="">Any language status</option>
         ${["empty", ...STATUSES].map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select>
       <select id="f-action"><option value="">All actions</option>${actionOpts}</select>
-    </div>`;
+    </div>
+    <div class="expandbar">
+      <button class="btn small" data-act="expand-all">Expand all</button>
+      <button class="btn small" data-act="collapse-all">Collapse all</button></div>`;
 
   if (!L.length) html += `<div class="empty"><p>No languages yet. Add them in Settings to see and edit niyyah texts.</p>
       <button class="btn primary" data-act="go-settings">Open Settings</button></div>`;
   else if (!niyyahs.length) html += `<div class="empty"><p>No niyyahs yet. Add the first one.</p></div>`;
   else if (!list.length) html += `<div class="empty"><p>No niyyah matches these filters.</p></div>`;
+  shownN = L.length ? list.map(n => n.id) : [];
   if (L.length) for (const n of list) {
-    const rows = L.map(l => {
-      const t = trOf(n, l.code);
-      return `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.status}</span>
+    const trs = L.map(l => ({ l, t: trOf(n, l.code) }));
+    // collapsed preview: Arabic only (falls back to the first language that has text)
+    const pick = trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text);
+    const isOpen = openN.has(n.id);
+    const rows = trs.map(({ l, t }) => `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.status}</span>
         ${t.text ? `<div class="ltext ${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(t.text)}</div>` : ""}
-        ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`;
-    }).join("");
-    html += `<div class="item">${rows}
-      <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
-        ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}</div>
-      <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
-        <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div>`;
+        ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`).join("");
+    html += `<div class="item nitem ${isOpen ? "open" : ""}" data-nid="${n.id}">
+      <button type="button" class="nhead" data-act="toggle-niyyah" data-id="${n.id}" aria-expanded="${isOpen}">
+        <span class="chev">▶</span>
+        <span class="prev ${pick?.l.rtl ? "rtl" : ""}" ${pick?.l.rtl ? 'dir="rtl"' : ""}>${pick ? esc(pick.t.text) : '<span class="muted">(no text)</span>'}</span>
+        <span class="dots">${trs.map(({ l, t }) => `<span class="dot st-${t.status}" title="${esc(l.name)}: ${t.status}"></span>`).join("")}</span>
+      </button>
+      <div class="nbody" ${isOpen ? "" : "hidden"}>${rows}
+        <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
+          ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}</div>
+        <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
+          <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div></div>`;
   }
   root.innerHTML = html;
   const rerender = () => renderNiyyahs();
   $("#f-q", root).oninput = () => { rerender(); const i = $("#f-q", root); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+  $("#f-clear", root).onclick = () => { $("#f-q", root).value = ""; rerender(); $("#f-q", root).focus(); };
   $("#f-status", root).onchange = rerender;
   $("#f-action", root).onchange = rerender;
+}
+
+function toggleN(id) {
+  const open = !openN.has(id);
+  open ? openN.add(id) : openN.delete(id);
+  const el = document.querySelector(`.nitem[data-nid="${id}"]`);
+  if (!el) return;
+  el.classList.toggle("open", open);
+  $(".nbody", el).hidden = !open;
+  $(".nhead", el).setAttribute("aria-expanded", open);
 }
 
 function renderTypes() {
@@ -448,6 +491,9 @@ document.addEventListener("click", e => {
     "seed-types": seedTypes,
     "go-settings": () => goTab("settings"),
     "import-json": () => $("#import-file").click(),
+    "toggle-niyyah": () => toggleN(id),
+    "expand-all": () => { shownN.forEach(x => openN.add(x)); renderNiyyahs(); },
+    "collapse-all": () => { openN.clear(); renderNiyyahs(); },
     "new-lang": () => openLanguage(),
     "edit-lang": () => openLanguage(id),
     "del-lang": () => delLanguage(id),
