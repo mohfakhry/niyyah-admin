@@ -129,11 +129,12 @@
   .nhead { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; text-align: start; padding: 12px 16px; border-radius: var(--radius); }
   .nhead:hover { background: var(--paper); }
   .nhead .chev { color: var(--muted); transition: transform .15s; flex: none; }
-  .nitem.open .chev { transform: rotate(90deg); }
-  .nhead .prev { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nitem.open .chev { transform: rotate(180deg); }
+  .nhead .main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+  .nhead .prev { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nhead .prev { font-weight: 600; }
   .nhead .prev.rtl { font-size: 20px; line-height: 1.6; }
-  .dots { display: flex; gap: 4px; flex: none; }
+  .dots { display: flex; flex-wrap: wrap; gap: 4px; }
   .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .nbody { padding: 2px 16px 14px; border-top: 1px solid var(--line); margin-top: 0; }
   .nbody .lrow:first-child { padding-top: 10px; }
@@ -422,9 +423,11 @@ function renderNiyyahs() {
         ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`).join("");
     html += `<div class="item nitem ${isOpen ? "open" : ""}" data-nid="${n.id}">
       <button type="button" class="nhead" data-act="toggle-niyyah" data-id="${n.id}" aria-expanded="${isOpen}">
-        <span class="chev">▶</span>
-        <span class="prev ${pick?.l.rtl ? "rtl" : ""}" ${pick?.l.rtl ? 'dir="rtl"' : ""}>${pick ? esc(pick.t.text) : '<span class="muted">(no text)</span>'}</span>
-        <span class="dots">${trs.map(({ l, t }) => `<span class="dot st-${t.status}" title="${esc(l.name)}: ${t.status}"></span>`).join("")}</span>
+        <span class="main">
+          <span class="dots">${trs.map(({ l, t }) => `<span class="dot st-${t.status}" title="${esc(l.name)}: ${t.status}"></span>`).join("")}</span>
+          <span class="prev ${pick?.l.rtl ? "rtl" : ""}" ${pick?.l.rtl ? 'dir="rtl"' : ""}>${pick ? esc(pick.t.text) : '<span class="muted">(no text)</span>'}</span>
+        </span>
+        <span class="chev">▼</span>
       </button>
       <div class="nbody" ${isOpen ? "" : "hidden"}>${rows}
         <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
