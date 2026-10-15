@@ -142,6 +142,9 @@
   .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
   .preview b { display: block; }
   .preview small { color: var(--muted); }
+  header.top select { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius); padding: 3px 6px; font-size: 14px; }
+  header.top select option { color: var(--ink); }
+  .dlg input[type=text].rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
 
   #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--radius); max-width: 90vw; z-index: 50; }
   #toast.err { background: var(--danger); }
@@ -171,18 +174,20 @@
 <div id="app" hidden>
   <header class="top">
     <h1>Niyyah Admin</h1>
-    <div class="who"><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
+    <div class="who"><select id="view-lang" aria-label="Show names in" title="Show names in" hidden></select><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
   </header>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="actions" aria-selected="true">Actions</button>
     <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
     <button role="tab" data-tab="types" aria-selected="false">Location types</button>
+    <button role="tab" data-tab="jobs" aria-selected="false">Job types</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main>
     <section id="tab-actions"></section>
     <section id="tab-niyyahs" hidden></section>
     <section id="tab-types" hidden></section>
+    <section id="tab-jobs" hidden></section>
     <section id="tab-settings" hidden></section>
   </main>
 </div>
@@ -219,7 +224,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [], languages = [];
+let actions = [], niyyahs = [], types = [], jobs = [], languages = [];
 let listening = false;
 const openN = new Set();      // niyyah ids that are expanded
 let shownN = [];              // ids currently listed (after filters)
@@ -251,7 +256,7 @@ function actionLabel(id) {
   const a = actionById(id);
   if (!a) return "(deleted action)";
   const p = a.parentId && actionById(a.parentId);
-  return p ? `${p.name} › ${a.name}` : a.name;
+  return p ? `${nm(p)} › ${nm(a)}` : nm(a);
 }
 const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).length;
 
@@ -289,6 +294,68 @@ function mirrorFields(translations) {
 }
 const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
+/* ---------- names + notification templates in several languages ----------
+   New format:  names: {ar: "...", en: "..."}   titleTemplates: {...}   bodyTemplates: {...}
+   Older documents only have name / titleTemplate / bodyTemplate: those are treated as the default language.
+   name / titleTemplate / bodyTemplate are still written too, so anything reading them keeps working. */
+let viewLang = "";
+try { viewLang = localStorage.getItem("viewLang") || ""; } catch (e) {}
+const defLang = () => (langs().find(l => l.code === "en") || langs()[0])?.code || "en";
+const viewCode = () => (langs().some(l => l.code === viewLang) ? viewLang : defLang());
+const nameMap = x => x.names || (x.name ? { [defLang()]: x.name } : {});
+const tplMap = (x, kind) => x[kind + "Templates"] || (x[kind + "Template"] ? { [defLang()]: x[kind + "Template"] } : {});
+const firstOf = map => langs().map(l => map[l.code]).find(Boolean) || Object.values(map).find(Boolean) || "";
+const pickName = map => map[defLang()] || firstOf(map);
+const nm = x => { const m = nameMap(x); return m[viewCode()] || firstOf(m) || "(no name)"; };
+const isLegacyDoc = x => !x.names && !!x.name;
+// keep texts of languages that were removed from Settings
+function keepUnknown(old, out) {
+  const L = langs();
+  for (const c of Object.keys(old)) if (!L.some(l => l.code === c) && !(c in out)) out[c] = old[c];
+  return out;
+}
+function renderViewLang() {
+  const sel = $("#view-lang"), L = langs();
+  sel.hidden = L.length < 2;
+  sel.innerHTML = L.map(l => `<option value="${esc(l.code)}" ${l.code === viewCode() ? "selected" : ""}>Names: ${esc(l.name)}</option>`).join("");
+}
+$("#view-lang").onchange = e => {
+  viewLang = e.target.value;
+  try { localStorage.setItem("viewLang", viewLang); } catch (err) {}
+  renderAll();
+};
+
+// Language tabs for a dialog. The tab is red while the first field is empty, green once it is filled.
+// The caller writes <div id="lf-tabs">, <div id="lf-panel"> (see langFieldsHtml) before calling this.
+const langFieldsHtml = () => `<div class="ltabs" id="lf-tabs" role="tablist"></div>
+  <div class="legend"><span class="badge st-empty">missing</span><span class="badge st-published">filled</span></div>
+  <div class="lpanel" id="lf-panel"></div>`;
+function langFields(L, fields, initial, onChange = () => {}) {
+  const draft = {};
+  L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
+  let cur = L[0].code;
+  const stateOf = c => (String(draft[c][fields[0].key]).trim() ? "published" : "empty");
+  const capture = () => fields.forEach(f => { const el = $("#lf-" + f.key); if (el) draft[cur][f.key] = el.value; });
+  const paintTabs = () => {
+    $("#lf-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stateOf(l.code)}" data-lang="${esc(l.code)}"
+      aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stateOf(l.code) === "empty" ? "missing" : "filled"}">${esc(l.name)}</button>`).join("");
+  };
+  const paintPanel = () => {
+    const l = L.find(x => x.code === cur), d = draft[cur];
+    $("#lf-panel").innerHTML = fields.map(f => `<label class="f">${esc(f.label)} (${esc(l.name)})${f.hint ? `<small>${esc(f.hint)}</small>` : ""}
+      <input type="text" id="lf-${f.key}" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""} value="${esc(d[f.key])}"
+        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"></label>`).join("");
+    fields.forEach(f => { $("#lf-" + f.key).oninput = () => { capture(); paintTabs(); onChange(); }; });
+  };
+  $("#lf-tabs").onclick = e => {
+    const b = e.target.closest("[data-lang]");
+    if (!b || b.dataset.lang === cur) return;
+    capture(); cur = b.dataset.lang; paintTabs(); paintPanel(); onChange();
+  };
+  paintTabs(); paintPanel();
+  return { values: () => { capture(); return draft; }, current: () => cur };
+}
+
 /* ============================================================
    2. SIGN IN + ADMIN CHECK
    ============================================================ */
@@ -323,19 +390,20 @@ function startListening() {
   watch("niyyahs", v => (niyyahs = v));
   watch("locationTypes", v => (types = v));
   watch("languages", v => (languages = v));
+  watch("jobTypes", v => (jobs = v));
 }
 
 /* ---------- tabs ---------- */
 function goTab(name) {
   document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
-  for (const t of ["actions", "niyyahs", "types", "settings"]) $("#tab-" + t).hidden = t !== name;
+  for (const t of ["actions", "niyyahs", "types", "jobs", "settings"]) $("#tab-" + t).hidden = t !== name;
 }
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => goTab(b.dataset.tab));
 
 /* ============================================================
    3. RENDERING
    ============================================================ */
-function renderAll() { renderActions(); renderNiyyahs(); renderTypes(); renderSettings(); }
+function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderSettings(); }
 
 function renderActions() {
   const tops = childrenOf("");
@@ -348,7 +416,7 @@ function renderActions() {
   for (const c of tops) {
     const kids = childrenOf(c.id);
     html += `<div class="cat"><div class="row">
-        <span class="name">${esc(c.name)}</span>
+        <span class="name">${esc(nm(c))}</span>
         <span class="count">${niyyahCount(c.id) ? niyyahCount(c.id) + " niyyahs" : ""}</span>
         <span class="tools">
           <button class="btn small" data-act="up" data-id="${c.id}" title="Move up">↑</button>
@@ -359,7 +427,7 @@ function renderActions() {
         </span></div>`;
     if (kids.length) {
       html += `<div class="kids">` + kids.map(k => `<div class="row">
-          <span class="name">${esc(k.name)}</span>
+          <span class="name">${esc(nm(k))}</span>
           <span class="count">${niyyahCount(k.id)} niyyahs</span>
           <span class="tools">
             <button class="btn small" data-act="up" data-id="${k.id}" title="Move up">↑</button>
@@ -453,21 +521,36 @@ function toggleN(id) {
   $(".nhead", el).setAttribute("aria-expanded", open);
 }
 
-function renderTypes() {
-  const list = [...types].sort(byOrder);
-  let html = `<div class="bar"><h2>Location types</h2>
-    <button class="btn primary" data-act="new-type">Add location type</button></div>`;
-  if (!list.length) html += `<div class="empty"><p>No location types yet.</p>
-      <button class="btn primary" data-act="seed-types">Add starter types</button></div>`;
-  for (const t of list) {
-    html += `<div class="item"><div class="head"><h3>${esc(t.name)}</h3></div>
-      <div class="chips">${(t.actionIds || []).length
-        ? t.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
+const KINDS = {
+  types: { coll: "locationTypes", tab: "#tab-types", one: "location type", many: "Location types", ph: "e.g. Gym",
+    hint: "Actions that usually happen here", add: "new-type", edit: "edit-type", del: "del-type", seed: "seed-types",
+    list: () => types, empty: "No location types yet.", seedLabel: "Add starter types",
+    starter: ["Home", "Work", "Friend's house", "Gym", "Place with a memory"] },
+  jobs: { coll: "jobTypes", tab: "#tab-jobs", one: "job type", many: "Job types", ph: "e.g. Teacher",
+    hint: "Actions that belong to this job", add: "new-job", edit: "edit-job", del: "del-job", seed: "seed-jobs",
+    list: () => jobs, empty: "No job types yet.", seedLabel: "Add starter jobs",
+    starter: ["Teacher", "Doctor or nurse", "Engineer or IT", "Driver", "Shop owner or trader", "Farmer", "Craftsman or laborer",
+              "Office employee", "Business owner", "Freelancer", "Student", "Homemaker", "Caregiver", "Job seeker", "Retired"] }
+};
+
+function renderNamed(key) {
+  const K = KINDS[key], L = langs();
+  const list = [...K.list()].sort(byOrder);
+  let html = `<div class="bar"><h2>${K.many}</h2>
+    <button class="btn primary" data-act="${K.add}">Add ${K.one}</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>${K.empty}</p>
+      <button class="btn primary" data-act="${K.seed}">${K.seedLabel}</button></div>`;
+  for (const x of list) {
+    const m = nameMap(x);
+    html += `<div class="item"><div class="head"><h3>${esc(nm(x))}</h3>
+        <span class="dots">${L.map(l => `<span class="dot ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}"></span>`).join("")}</span></div>
+      <div class="chips">${(x.actionIds || []).length
+        ? x.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
         : `<span class="muted">No actions linked yet</span>`}</div>
-      <div class="tools"><button class="btn small" data-act="edit-type" data-id="${t.id}">Edit</button>
-        <button class="btn small danger" data-act="del-type" data-id="${t.id}">Delete</button></div></div>`;
+      <div class="tools"><button class="btn small" data-act="${K.edit}" data-id="${x.id}">Edit</button>
+        <button class="btn small danger" data-act="${K.del}" data-id="${x.id}">Delete</button></div></div>`;
   }
-  $("#tab-types").innerHTML = html;
+  $(K.tab).innerHTML = html;
 }
 
 /* ============================================================
@@ -488,10 +571,15 @@ document.addEventListener("click", e => {
     "new-niyyah": () => openNiyyah(),
     "edit-niyyah": () => openNiyyah(id),
     "del-niyyah": () => delNiyyah(id),
-    "new-type": () => openType(),
-    "edit-type": () => openType(id),
-    "del-type": () => delType(id),
-    "seed-types": seedTypes,
+    "new-type": () => openNamed("types"),
+    "edit-type": () => openNamed("types", id),
+    "del-type": () => delNamed("types", id),
+    "seed-types": () => seedNamed("types"),
+    "new-job": () => openNamed("jobs"),
+    "edit-job": () => openNamed("jobs", id),
+    "del-job": () => delNamed("jobs", id),
+    "seed-jobs": () => seedNamed("jobs"),
+    "convert-names": openConvertNames,
     "go-settings": () => goTab("settings"),
     "import-json": () => $("#import-file").click(),
     "toggle-niyyah": () => toggleN(id),
@@ -511,42 +599,61 @@ document.addEventListener("click", e => {
    5. ACTIONS
    ============================================================ */
 function openAction(id, presetParent = "") {
-  const a = id ? actionById(id)
-    : { name: "", parentId: presetParent, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY };
+  const L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const a = id ? actionById(id) : { parentId: presetParent };
   const hasKids = id && childrenOf(id).length > 0;
   const tops = childrenOf("").filter(x => x.id !== id);
-  dlg.innerHTML = `<div class="dlg">
+  const names = nameMap(a), titles = tplMap(a, "title"), bodies = tplMap(a, "body");
+  const initial = {};
+  L.forEach(l => (initial[l.code] = {
+    name: names[l.code] || "",
+    title: titles[l.code] ?? (id ? "" : (l.code === "en" ? DEF_TITLE : "")),
+    body: bodies[l.code] ?? (id ? "" : DEF_BODY)
+  }));
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
     <h2>${id ? "Edit action" : (a.parentId ? "Add action" : "Add category")}</h2>
-    <label class="f">Name<input type="text" id="a-name" value="${esc(a.name)}" placeholder="e.g. Helping a coworker"></label>
     <label class="f">Category
       <select id="a-parent" ${hasKids ? "disabled" : ""}>
         <option value="">None (this is a main category)</option>
-        ${tops.map(t => `<option value="${t.id}" ${t.id === a.parentId ? "selected" : ""}>${esc(t.name)}</option>`).join("")}
+        ${tops.map(t => `<option value="${t.id}" ${t.id === a.parentId ? "selected" : ""}>${esc(nm(t))}</option>`).join("")}
       </select>
       ${hasKids ? "<small>This category has actions inside it, so it stays a main category.</small>" : ""}
     </label>
-    <label class="f">Notification title<small>Use {action} for the action name.</small>
-      <input type="text" id="a-title" value="${esc(a.titleTemplate ?? DEF_TITLE)}"></label>
-    <label class="f">Notification text<small>Use {niyyah} for a random niyyah from this action.</small>
-      <input type="text" id="a-body" value="${esc(a.bodyTemplate ?? DEF_BODY)}"></label>
-    <div class="preview" aria-live="polite"><small>Preview</small><b id="p-title"></b><span id="p-body"></span></div>
+    ${langFieldsHtml()}
+    <div class="preview" aria-live="polite"><small>Preview (language of the open tab)</small><b id="p-title"></b><span id="p-body"></span></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save action</button></div></div>`;
-  const preview = () => {
-    const fill = (t, extra = {}) => t.replaceAll("{action}", $("#a-name").value || "Action name")
-      .replaceAll("{niyyah}", "A random niyyah from this action appears here");
-    $("#p-title").textContent = fill($("#a-title").value);
-    $("#p-body").textContent = fill($("#a-body").value);
+  const paintPreview = () => {
+    const d = lf.values()[lf.current()];
+    const fill = s => s.replaceAll("{action}", d.name || "Action name").replaceAll("{niyyah}", "A random niyyah from this action appears here");
+    const dflt = "(the app's default wording for this language)";
+    $("#p-title").textContent = d.title.trim() ? fill(d.title) : dflt;
+    $("#p-body").textContent = d.body.trim() ? fill(d.body) : dflt;
   };
-  ["#a-name", "#a-title", "#a-body"].forEach(s => $(s).oninput = preview);
-  preview();
+  const lf = langFields(L, [
+    { key: "name", label: "Name", ph: "e.g. Helping a coworker" },
+    { key: "title", label: "Notification title", hint: "Use {action} for the action name. Leave empty to use the app's default wording.",
+      placeholderFor: l => (l.code === "en" ? DEF_TITLE : "Empty = app's default wording") },
+    { key: "body", label: "Notification text", hint: "Use {niyyah} for a random niyyah from this action.", ph: DEF_BODY }
+  ], initial, paintPreview);
+  paintPreview();
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
-    const name = $("#a-name").value.trim();
-    if (!name) return toast("Enter a name for the action.", true);
+    const v = lf.values(), nmOut = {}, tOut = {}, bOut = {};
+    L.forEach(l => {
+      const d = v[l.code];
+      if (d.name.trim()) nmOut[l.code] = d.name.trim();
+      if (d.title.trim()) tOut[l.code] = d.title.trim();
+      if (d.body.trim()) bOut[l.code] = d.body.trim();
+    });
+    keepUnknown(nameMap(a), nmOut); keepUnknown(tplMap(a, "title"), tOut); keepUnknown(tplMap(a, "body"), bOut);
+    if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
     const parentId = hasKids ? "" : $("#a-parent").value;
-    const data = { name, parentId, titleTemplate: $("#a-title").value.trim() || DEF_TITLE,
-      bodyTemplate: $("#a-body").value.trim() || DEF_BODY, updatedAt: serverTimestamp() };
+    const data = { names: nmOut, name: pickName(nmOut), parentId,
+      titleTemplates: tOut, bodyTemplates: bOut,
+      titleTemplate: pickName(tOut) || DEF_TITLE, bodyTemplate: pickName(bOut) || DEF_BODY,
+      updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "actions", id), data);
@@ -559,7 +666,7 @@ function openAction(id, presetParent = "") {
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
   dlg.showModal();
-  $("#a-name").focus();
+  $("#lf-name").focus();
 }
 
 async function move(id, dir) {
@@ -579,7 +686,7 @@ async function delAction(id) {
   const a = actionById(id);
   if (childrenOf(id).length) return toast("Delete or move the actions inside this category first.", true);
   const n = niyyahCount(id);
-  if (!confirm(`Delete "${a.name}"?` + (n ? `\n\n${n} niyyah(s) will be unlinked from it (the niyyahs are kept).` : ""))) return;
+  if (!confirm(`Delete "${nm(a)}"?` + (n ? `\n\n${n} niyyah(s) will be unlinked from it (the niyyahs are kept).` : ""))) return;
   try {
     const batch = writeBatch(db);
     batch.delete(doc(db, "actions", id));
@@ -587,11 +694,19 @@ async function delAction(id) {
       .forEach(x => batch.update(doc(db, "niyyahs", x.id), { actionIds: arrayRemove(id) }));
     types.filter(x => (x.actionIds || []).includes(id))
       .forEach(x => batch.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) }));
+    jobs.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "jobTypes", x.id), { actionIds: arrayRemove(id) }));
     await batch.commit();
     toast("Action deleted.");
   } catch (e) { fail(e); }
 }
 
+function seedFields(name, parentId, order) {
+  const dl = defLang();
+  return { names: { [dl]: name }, name, parentId, order,
+    titleTemplates: dl === "en" ? { en: DEF_TITLE } : {}, bodyTemplates: { [dl]: DEF_BODY },
+    titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() };
+}
 async function seedActions() {
   const starter = {
     "Work and earning": ["Earning halal income", "Honesty in dealings", "Helping a coworker", "Patience with a manager"],
@@ -607,9 +722,9 @@ async function seedActions() {
     let order = 0;
     for (const [cat, kids] of Object.entries(starter)) {
       const cref = doc(collection(db, "actions"));
-      batch.set(cref, { name: cat, parentId: "", order: order++, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() });
+      batch.set(cref, seedFields(cat, "", order++));
       kids.forEach((k, i) => batch.set(doc(collection(db, "actions")),
-        { name: k, parentId: cref.id, order: i, titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() }));
+        seedFields(k, cref.id, i)));
     }
     await batch.commit();
     toast("Starter list added. Rename or delete anything you don't need.");
@@ -622,10 +737,10 @@ async function seedActions() {
 function checklist(selected) {
   const tops = childrenOf("");
   if (!tops.length) return `<p class="muted">Create actions first.</p>`;
-  const box = a => `<label class="chk"><input type="checkbox" value="${a.id}" ${selected.includes(a.id) ? "checked" : ""}> ${esc(a.name)}</label>`;
+  const box = a => `<label class="chk"><input type="checkbox" value="${a.id}" ${selected.includes(a.id) ? "checked" : ""}> ${esc(nm(a))}</label>`;
   return tops.map(t => {
     const kids = childrenOf(t.id);
-    return kids.length ? `<div><div class="grp-h">${esc(t.name)}</div>${kids.map(box).join("")}</div>` : box(t);
+    return kids.length ? `<div><div class="grp-h">${esc(nm(t))}</div>${kids.map(box).join("")}</div>` : box(t);
   }).join("");
 }
 const checkedIds = () => [...dlg.querySelectorAll(".checklist input:checked")].map(i => i.value);
@@ -729,44 +844,53 @@ async function delNiyyah(id) {
 /* ============================================================
    7. LOCATION TYPES
    ============================================================ */
-function openType(id) {
-  const t = id ? types.find(x => x.id === id) : { name: "", actionIds: [] };
+function openNamed(key, id) {
+  const K = KINDS[key], L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const x = id ? K.list().find(y => y.id === id) : { actionIds: [] };
+  const names = nameMap(x);
+  const initial = {};
+  L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
-    <h2>${id ? "Edit location type" : "Add location type"}</h2>
-    <label class="f">Name<input type="text" id="t-name" value="${esc(t.name)}" placeholder="e.g. Gym"></label>
-    <div class="f"><b>Actions that usually happen here</b>
-      <div class="checklist">${checklist(t.actionIds || [])}</div></div>
+    <h2>${id ? "Edit" : "Add"} ${K.one}</h2>
+    ${langFieldsHtml()}
+    <div class="f"><b>${K.hint}</b>
+      <div class="checklist">${checklist(x.actionIds || [])}</div></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
-      <button class="btn primary" id="d-save">Save location type</button></div></div>`;
+      <button class="btn primary" id="d-save">Save ${K.one}</button></div></div>`;
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: K.ph }], initial);
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
-    const name = $("#t-name").value.trim();
-    if (!name) return toast("Enter a name for the location type.", true);
-    const data = { name, actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
+    keepUnknown(names, out);
+    if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
+    const data = { names: out, name: pickName(out), actionIds: checkedIds(), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
-      if (id) await updateDoc(doc(db, "locationTypes", id), data);
-      else { data.order = types.length; await addDoc(collection(db, "locationTypes"), data); }
-      dlg.close(); toast("Location type saved.");
+      if (id) await updateDoc(doc(db, K.coll, id), data);
+      else { data.order = K.list().length; await addDoc(collection(db, K.coll), data); }
+      dlg.close(); toast("Saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
   dlg.showModal();
-  $("#t-name").focus();
+  $("#lf-name").focus();
 }
 
-async function delType(id) {
-  const t = types.find(x => x.id === id);
-  if (!confirm(`Delete the location type "${t.name}"?`)) return;
-  try { await deleteDoc(doc(db, "locationTypes", id)); toast("Location type deleted."); } catch (e) { fail(e); }
+async function delNamed(key, id) {
+  const K = KINDS[key], x = K.list().find(y => y.id === id);
+  if (!confirm(`Delete the ${K.one} "${nm(x)}"?`)) return;
+  try { await deleteDoc(doc(db, K.coll, id)); toast("Deleted."); } catch (e) { fail(e); }
 }
 
-async function seedTypes() {
+async function seedNamed(key) {
+  const K = KINDS[key], dl = defLang();
   try {
     const batch = writeBatch(db);
-    ["Home", "Work", "Friend's house", "Gym", "Place with a memory"].forEach((name, i) =>
-      batch.set(doc(collection(db, "locationTypes")), { name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
+    K.starter.forEach((name, i) => batch.set(doc(collection(db, K.coll)),
+      { names: { [dl]: name }, name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
     await batch.commit();
-    toast("Starter types added. Open each one to link its actions.");
+    toast("Starter list added. Open each one to link its actions.");
   } catch (e) { fail(e); }
 }
 
@@ -790,6 +914,11 @@ function renderSettings() {
         <button class="btn small" data-act="edit-lang" data-id="${l.id}">Edit</button>
         <button class="btn small danger" data-act="del-lang" data-id="${l.id}">Delete</button>
       </span></div>`).join("") + `</div></div>`;
+  const legacyN = [...actions, ...types].filter(isLegacyDoc).length;
+  if (L.length && legacyN) html += `<div class="bar" style="margin-top:24px"><h3>Names in several languages</h3></div>
+    <p class="muted" style="margin-top:0">${legacyN} action / location type name(s) were saved before names could have languages. They still display correctly.
+      Convert them so each language can have its own name and notification wording.</p>
+    <button class="btn primary" data-act="convert-names">Convert names</button>`;
   $("#tab-settings").innerHTML = html;
 }
 
@@ -848,6 +977,40 @@ async function seedLanguages() {
     toast("Arabic and English added.");
   } catch (e) { fail(e); }
 }
+function openConvertNames() {
+  const L = langs();
+  const todo = [...actions.filter(isLegacyDoc).map(x => ["actions", x]), ...types.filter(isLegacyDoc).map(x => ["locationTypes", x])];
+  if (!L.length || !todo.length) return;
+  dlg.innerHTML = `<div class="dlg">
+    <h2>Convert names</h2>
+    <p style="margin:0">${todo.length} name(s) will be moved into the new per-language format. Nothing is deleted.</p>
+    <label class="f">The existing names are written in
+      <select id="c-lang">${L.map(l => `<option value="${esc(l.code)}" ${l.code === defLang() ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select></label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Convert ${todo.length}</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const c = $("#c-lang").value;
+    $("#d-save").disabled = true;
+    try {
+      for (let i = 0; i < todo.length; i += 400) {
+        const batch = writeBatch(db);
+        todo.slice(i, i + 400).forEach(([coll, x]) => {
+          const data = { names: { [c]: x.name } };
+          if (coll === "actions") {
+            data.titleTemplates = x.titleTemplate ? { [c]: x.titleTemplate } : {};
+            data.bodyTemplates = x.bodyTemplate ? { [c]: x.bodyTemplate } : {};
+          }
+          batch.update(doc(db, coll, x.id), data);
+        });
+        await batch.commit();
+      }
+      dlg.close(); toast("Names converted.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+}
+
 /* ============================================================
    9. IMPORT NIYYAHS FROM JSON
    Shape: { "<id>": { "<lang>": { situation, niyyah: [..], sources: [..] } } }
