@@ -152,6 +152,29 @@
   #toast.err { background: var(--danger); }
   @media (max-width: 560px) { main, header.top, nav.tabs { padding-left: 14px; padding-right: 14px; } .row { flex-wrap: wrap; } }
   @media (prefers-reduced-motion: no-preference) { .btn { transition: border-color .15s, background .15s; } }
+
+  /* Events calendar */
+  .calbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .calbar .ttl { font-weight: 600; font-size: 17px; flex: 1 1 220px; }
+  .calbar .ttl small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
+  .calbar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+  .btn.on { background: var(--green-soft); border-color: var(--green); }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cal .dow { background: var(--sand); padding: 6px; text-align: center; font-size: 13px; font-weight: 600; }
+  .cday { background: var(--card); border: 0; border-radius: 0; min-height: 88px; padding: 5px 6px; text-align: start; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cday:hover { background: #f1f6f4; }
+  .cday.other { background: var(--paper); color: var(--muted); }
+  .cday.sel { background: var(--green-soft); box-shadow: inset 0 0 0 2px var(--green); }
+  .cday .g { font-weight: 600; align-self: flex-start; line-height: 1.4; }
+  .cday.today .g { background: var(--green); color: #fff; border-radius: 999px; padding: 0 7px; }
+  .cday .h { font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.2; }
+  .cday .ev { font-size: 11px; background: var(--sand); border-radius: 4px; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+  .cday .evn { display: none; font-size: 11px; color: var(--green); font-weight: 700; }
+  .daypanel { margin-top: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; }
+  .daypanel h3 { font-size: 16px; }
+  .daypanel .erow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 8px; }
+  .daypanel .erow .name { flex: 1 1 160px; font-weight: 600; }
+  @media (max-width: 640px) { .cday { min-height: 56px; } .cday .ev { display: none; } .cday .evn { display: block; } main { padding: 14px; } }
 </style>
 </head>
 <body>
@@ -232,6 +255,9 @@ const db = getFirestore(app);
 /* ---------- state ---------- */
 let actions = [], niyyahs = [], types = [], jobs = [], languages = [], tips = [], events = [];
 let listening = false;
+let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
+let calView = "cal", calSel = null, calRange = false, calCountry = "";
+let hijriDocs = {};           // "SA_2026" -> { days: { "2026-10-15": "3-4-1448" } }
 const openN = new Set();      // niyyah ids that are expanded
 let shownN = [];              // ids currently listed (after filters)
 const DEF_TITLE = "Set your niyyah: {action}";
@@ -300,6 +326,25 @@ function mirrorFields(translations) {
 }
 const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
+// Per-language status for records that keep their text in a map (names, tip texts).
+// Stored as  statuses: {ar: "reviewed", en: "published"}  next to the text map.
+// Older records have no statuses: tips and events fall back to their old published flag, everything else to draft.
+const langSt = (x, code, text) => {
+  if (!String(text || "").trim()) return "empty";
+  const s = (x.statuses || {})[code];
+  return STATUSES.includes(s) ? s : (x.published ? "published" : "draft");
+};
+const statusInit = (x, L, m) => { const o = {}; L.forEach(l => (o[l.code] = langSt(x, l.code, m[l.code]))); return o; };
+// statuses to save: only languages that have text, plus statuses of languages removed from Settings
+const statusOut = (x, L, out, lf) => {
+  const all = lf.statuses(), st = {};
+  L.forEach(l => { if (out[l.code]) st[l.code] = all[l.code]; });
+  return keepUnknown(x.statuses || {}, st);
+};
+const anyPublished = st => Object.values(st).includes("published");
+const lcodes = (L, m, x = {}) => `<span class="dots">${L.map(l => { const s = langSt(x, l.code, m[l.code]);
+  return `<span class="lcode st-${s}" title="${esc(l.name)}: ${s}">${esc(l.code)}</span>`; }).join("")}</span>`;
+
 /* ---------- names + notification templates in several languages ----------
    New format:  names: {ar: "...", en: "..."}   titleTemplates: {...}   bodyTemplates: {...}
    Older documents only have name / titleTemplate / bodyTemplate: those are treated as the default language.
@@ -334,24 +379,32 @@ $("#view-lang").onchange = e => {
 // Language tabs for a dialog. The tab is red while the first field is empty, green once it is filled.
 // The caller writes <div id="lf-tabs">, <div id="lf-panel"> (see langFieldsHtml) before calling this.
 const langFieldsHtml = () => `<div class="ltabs" id="lf-tabs" role="tablist"></div>
-  <div class="legend"><span class="badge st-empty">missing</span><span class="badge st-published">filled</span></div>
+  <div class="legend"><span class="badge st-empty">empty</span><span class="badge st-draft">draft</span>
+    <span class="badge st-reviewed">reviewed</span><span class="badge st-published">published</span></div>
   <div class="lpanel" id="lf-panel"></div>`;
-function langFields(L, fields, initial, onChange = () => {}) {
-  const draft = {};
+function langFields(L, fields, initial, onChange = () => {}, initialStatus = {}) {
+  const draft = {}, status = {};
+  L.forEach(l => (status[l.code] = STATUSES.includes(initialStatus[l.code]) ? initialStatus[l.code] : "draft"));
   L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
   let cur = L[0].code;
-  const stateOf = c => (String(draft[c][fields[0].key]).trim() ? "published" : "empty");
-  const capture = () => fields.forEach(f => { const el = $("#lf-" + f.key); if (el) draft[cur][f.key] = el.value; });
+  const stateOf = c => (String(draft[c][fields[0].key]).trim() ? status[c] : "empty");
+  const capture = () => {
+    fields.forEach(f => { const el = $("#lf-" + f.key); if (el) draft[cur][f.key] = el.value; });
+    const st = $("#lf-status"); if (st) status[cur] = st.value;
+  };
   const paintTabs = () => {
     $("#lf-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stateOf(l.code)}" data-lang="${esc(l.code)}"
-      aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stateOf(l.code) === "empty" ? "missing" : "filled"}">${esc(l.name)}</button>`).join("");
+      aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stateOf(l.code)}">${esc(l.name)}</button>`).join("");
   };
   const paintPanel = () => {
     const l = L.find(x => x.code === cur), d = draft[cur];
     $("#lf-panel").innerHTML = fields.map(f => `<label class="f">${esc(f.label)} (${esc(l.name)})${f.hint ? `<small>${esc(f.hint)}</small>` : ""}
       <input type="text" id="lf-${f.key}" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""} value="${esc(d[f.key])}"
-        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"></label>`).join("");
+        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"></label>`).join("") +
+      `<label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
+        <select id="lf-status">${STATUSES.map(x => `<option ${x === status[cur] ? "selected" : ""}>${x}</option>`).join("")}</select></label>`;
     fields.forEach(f => { $("#lf-" + f.key).oninput = () => { capture(); paintTabs(); onChange(); }; });
+    $("#lf-status").onchange = () => { capture(); paintTabs(); onChange(); };
   };
   $("#lf-tabs").onclick = e => {
     const b = e.target.closest("[data-lang]");
@@ -359,7 +412,11 @@ function langFields(L, fields, initial, onChange = () => {}) {
     capture(); cur = b.dataset.lang; paintTabs(); paintPanel(); onChange();
   };
   paintTabs(); paintPanel();
-  return { values: () => { capture(); return draft; }, current: () => cur };
+  return {
+    values: () => { capture(); return draft; },
+    statuses: () => { capture(); const o = {}; L.forEach(l => (o[l.code] = stateOf(l.code))); return o; },
+    current: () => cur
+  };
 }
 
 /* ============================================================
@@ -399,6 +456,10 @@ function startListening() {
   watch("jobTypes", v => (jobs = v));
   watch("tips", v => (tips = v));
   watch("events", v => (events = v));
+  // Fetched calendars: failures here (e.g. security rules) must not break the rest of the app.
+  onSnapshot(collection(db, "hijriCalendars"),
+    snap => { hijriDocs = Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); renderEvents(); },
+    err => console.warn("hijriCalendars not readable", err));
 }
 
 /* ---------- tabs ---------- */
@@ -414,7 +475,7 @@ document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => goTa
 function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderTips(); renderEvents(); renderSettings(); }
 
 function renderActions() {
-  const tops = childrenOf("");
+  const tops = childrenOf(""), L = langs();
   let html = `<div class="bar"><h2>Actions</h2>
     <button class="btn primary" data-act="new-cat">Add category</button></div>`;
   if (!tops.length) {
@@ -425,6 +486,7 @@ function renderActions() {
     const kids = childrenOf(c.id);
     html += `<div class="cat"><div class="row">
         <span class="name">${esc(nm(c))}</span>
+        ${lcodes(L, nameMap(c), c)}
         <span class="count">${niyyahCount(c.id) ? niyyahCount(c.id) + " niyyahs" : ""}</span>
         <span class="tools">
           <button class="btn small" data-act="up" data-id="${c.id}" title="Move up">↑</button>
@@ -436,6 +498,7 @@ function renderActions() {
     if (kids.length) {
       html += `<div class="kids">` + kids.map(k => `<div class="row">
           <span class="name">${esc(nm(k))}</span>
+          ${lcodes(L, nameMap(k), k)}
           <span class="count">${niyyahCount(k.id)} niyyahs</span>
           <span class="tools">
             <button class="btn small" data-act="up" data-id="${k.id}" title="Move up">↑</button>
@@ -552,7 +615,7 @@ function renderNamed(key) {
   for (const x of list) {
     const m = nameMap(x);
     html += `<div class="item"><div class="head"><h3>${esc(nm(x))}</h3>
-        <span class="dots">${L.map(l => `<span class="lcode ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}">${esc(l.code)}</span>`).join("")}</span></div>
+        ${lcodes(L, m, x)}</div>
       <div class="chips">${(x.actionIds || []).length
         ? x.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
         : `<span class="muted">No actions linked yet</span>`}</div>
@@ -606,10 +669,20 @@ document.addEventListener("click", e => {
     "new-event": () => openEvent(),
     "edit-event": () => openEvent(id),
     "del-event": () => delEvent(id),
-    "seed-events": seedEvents
+    "seed-events": seedEvents,
+    "cal-prev": () => { calMonth.setMonth(calMonth.getMonth() - 1); renderEvents(); },
+    "cal-next": () => { calMonth.setMonth(calMonth.getMonth() + 1); renderEvents(); },
+    "cal-today": () => { calMonth = new Date(); calMonth.setDate(1); renderEvents(); },
+    "cal-view": () => { calView = calView === "cal" ? "list" : "cal"; renderEvents(); },
+    "cal-range": () => { calRange = !calRange; renderEvents(); },
+    "cal-day": () => pickDay(b.dataset.date, e.shiftKey),
+    "cal-add": addFromSelection,
+    "cal-shift": () => setShift(+b.dataset.v),
+    "cal-fetch": openFetch
   };
   (map[b.dataset.act] || (() => {}))();
 });
+document.addEventListener("change", e => { if (e.target.id === "cal-country") { calCountry = e.target.value; renderEvents(); } });
 
 /* ============================================================
    5. ACTIONS
@@ -652,7 +725,7 @@ function openAction(id, presetParent = "") {
     { key: "title", label: "Notification title", hint: "Use {action} for the action name. Leave empty to use the app's default wording.",
       placeholderFor: l => (l.code === "en" ? DEF_TITLE : "Empty = app's default wording") },
     { key: "body", label: "Notification text", hint: "Use {niyyah} for a random niyyah from this action.", ph: DEF_BODY }
-  ], initial, paintPreview);
+  ], initial, paintPreview, statusInit(a, L, names));
   paintPreview();
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
@@ -667,7 +740,7 @@ function openAction(id, presetParent = "") {
     if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
     const parentId = hasKids ? "" : $("#a-parent").value;
     const data = { names: nmOut, name: pickName(nmOut), parentId,
-      titleTemplates: tOut, bodyTemplates: bOut,
+      statuses: statusOut(a, L, nmOut, lf), titleTemplates: tOut, bodyTemplates: bOut,
       titleTemplate: pickName(tOut) || DEF_TITLE, bodyTemplate: pickName(bOut) || DEF_BODY,
       updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
@@ -876,14 +949,14 @@ function openNamed(key, id) {
       <div class="checklist">${checklist(x.actionIds || [])}</div></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save ${K.one}</button></div></div>`;
-  const lf = langFields(L, [{ key: "name", label: "Name", ph: K.ph }], initial);
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: K.ph }], initial, () => {}, statusInit(x, L, names));
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
     const v = lf.values(), out = {};
     L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
     keepUnknown(names, out);
     if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
-    const data = { names: out, name: pickName(out), actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: checkedIds(), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, K.coll, id), data);
@@ -918,7 +991,6 @@ async function seedNamed(key) {
 const TIP_CATS = { habit: "Habit anchor", knowledge: "Knowledge", practical: "Practical" };
 const HIJRI = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"];
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; // value 1-7, same as Dart's DateTime.weekday
-const lcodes = (L, m) => `<span class="dots">${L.map(l => `<span class="lcode ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}">${esc(l.code)}</span>`).join("")}</span>`;
 const needLang = () => { goTab("settings"); toast("Add at least one language in Settings first.", true); };
 const eventLabel = id => { const e = events.find(x => x.id === id); return e ? nm(e) : "(deleted event)"; };
 const eventChecklist = sel => events.length
@@ -932,7 +1004,7 @@ function renderTips() {
   if (!list.length) html += `<div class="empty"><p>No tips yet. Add the first tip of the day.</p></div>`;
   for (const t of list) {
     const m = t.texts || {};
-    html += `<div class="item"><div class="head"><div class="${rtl ? "rtl" : "en"}" ${rtl ? 'dir="rtl"' : ""}>${esc(m[viewCode()] || firstOf(m))}</div>${lcodes(L, m)}</div>
+    html += `<div class="item"><div class="head"><div class="${rtl ? "rtl" : "en"}" ${rtl ? 'dir="rtl"' : ""}>${esc(m[viewCode()] || firstOf(m))}</div>${lcodes(L, m, t)}</div>
       <div class="chips"><span class="chip">${esc(TIP_CATS[t.category] || TIP_CATS.habit)}</span>
         <span class="badge ${t.published ? "st-published" : "st-draft"}">${t.published ? "published" : "draft"}</span>
         ${t.source ? `<span class="chip">${esc(t.source)}</span>` : ""}</div>
@@ -953,17 +1025,18 @@ function openTip(id) {
     ${langFieldsHtml()}
     <label class="f">Type<select id="t-cat">${Object.entries(TIP_CATS).map(([k, v]) => `<option value="${k}" ${k === (t.category || "habit") ? "selected" : ""}>${v}</option>`).join("")}</select></label>
     <label class="f">Source<small>Optional: hadith or Quran reference.</small><input type="text" id="t-src" value="${esc(t.source || "")}"></label>
-    <label class="chk"><input type="checkbox" id="t-pub" ${t.published ? "checked" : ""}> Published (only published tips reach users)</label>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save tip</button></div></div>`;
-  const lf = langFields(L, [{ key: "text", label: "Tip", ph: "e.g. Pause for a second before you open the door and set your niyyah." }], initial);
+  const lf = langFields(L, [{ key: "text", label: "Tip", ph: "e.g. Pause for a second before you open the door and set your niyyah." }], initial, () => {}, statusInit(t, L, t.texts || {}));
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
     const v = lf.values(), out = {};
     L.forEach(l => { const s = v[l.code].text.trim(); if (s) out[l.code] = s; });
     keepUnknown(t.texts || {}, out);
     if (!Object.keys(out).length) return toast("Write the tip in at least one language.", true);
-    const data = { texts: out, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: $("#t-pub").checked, updatedAt: serverTimestamp() };
+    const statuses = statusOut(t, L, out, lf);
+    // "published" is kept as a summary flag: true when at least one language is published
+    const data = { texts: out, statuses, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: anyPublished(statuses), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "tips", id), data);
@@ -985,14 +1058,14 @@ const ruleText = e => {
   return `${r.month ? HIJRI[r.month - 1] : "Every Hijri month"} ${r.day || 1}${r.days > 1 ? ` · ${r.days} days` : ""}`;
 };
 
-function renderEvents() {
+function renderEventList() {
   const L = langs(), list = [...events].sort(byOrder);
   let html = `<div class="bar"><h2>Events <span class="muted" style="font-weight:400;font-size:14px">common niyyahs by date</span></h2>
-    <button class="btn primary" data-act="new-event">Add event</button></div>`;
+    <span><button class="btn" data-act="cal-view">Calendar view</button> <button class="btn primary" data-act="new-event">Add event</button></span></div>`;
   if (!list.length) html += `<div class="empty"><p>No events yet.</p><button class="btn primary" data-act="seed-events">Add starter events</button></div>`;
   for (const e of list) {
     const m = nameMap(e), cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
-    html += `<div class="item"><div class="head"><h3>${esc(nm(e))}</h3>${lcodes(L, m)}</div>
+    html += `<div class="item"><div class="head"><h3>${esc(nm(e))}</h3>${lcodes(L, m, e)}</div>
       <div class="chips"><span class="chip">${esc(ruleText(e))}</span>
         <span class="chip">${e.remindDaysBefore ? `${e.remindDaysBefore} day(s) before, ` : "On the day, "}${esc(e.notifyTime || "09:00")}</span>
         <span class="chip">${cnt} niyyah${cnt === 1 ? "" : "s"}</span>
@@ -1004,10 +1077,10 @@ function renderEvents() {
   $("#tab-events").innerHTML = html;
 }
 
-function openEvent(id) {
+function openEvent(id, preset) {
   const L = langs();
   if (!L.length) return needLang();
-  const e = id ? events.find(x => x.id === id) : { rule: { type: "hijri", month: 1, day: 1, days: 1 }, remindDaysBefore: 1, notifyTime: "09:00" };
+  const e = id ? events.find(x => x.id === id) : (preset || { rule: { type: "hijri", month: 1, day: 1, days: 1 }, remindDaysBefore: 1, notifyTime: "09:00" });
   const r = e.rule || {}, names = nameMap(e), initial = {};
   L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
   const opts = (arr, sel, first = 0) => arr.map((x, i) => `<option value="${i + first}" ${i + first === sel ? "selected" : ""}>${x}</option>`).join("");
@@ -1025,11 +1098,10 @@ function openEvent(id) {
       <label class="f">Remind<select id="e-before">${[0, 1, 2, 3].map(d => `<option value="${d}" ${d === (e.remindDaysBefore ?? 1) ? "selected" : ""}>${d ? d + " day(s) before" : "On the day"}</option>`).join("")}</select></label>
       <label class="f">Notify at (user's local time)<input type="time" id="e-time" value="${esc(e.notifyTime || "09:00")}"></label></div>
     <label class="chk"><input type="checkbox" id="e-disp" ${e.disputed ? "checked" : ""}> Scholars differ on this event (off by default for users)</label>
-    <label class="chk"><input type="checkbox" id="e-pub" ${e.published ? "checked" : ""}> Published</label>
     <p class="muted" style="margin:0">Link niyyahs to this event from the Add / Edit niyyah box.</p>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save event</button></div></div>`;
-  const lf = langFields(L, [{ key: "name", label: "Name", ph: "e.g. Day of Arafah" }], initial);
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: "e.g. Day of Arafah" }], initial, () => {}, statusInit(e, L, names));
   const sync = () => { const w = $("#e-type").value === "weekly"; $("#e-hijri").hidden = w; $("#e-weekly").hidden = !w; };
   $("#e-type").onchange = sync; sync();
   $("#d-cancel").onclick = () => dlg.close();
@@ -1044,8 +1116,9 @@ function openEvent(id) {
       rule = { type: "hijri", month: +$("#e-month").value, day: +$("#e-day").value, days: +$("#e-days").value };
       if (!(rule.day >= 1 && rule.day <= 30) || !(rule.days >= 1 && rule.days <= 30)) return toast("Day and length must be between 1 and 30.", true);
     }
-    const data = { names: out, name: pickName(out), rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
-      disputed: $("#e-disp").checked, published: $("#e-pub").checked, updatedAt: serverTimestamp() };
+    const statuses = statusOut(e, L, out, lf);
+    const data = { names: out, name: pickName(out), statuses, rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
+      disputed: $("#e-disp").checked, published: anyPublished(statuses), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "events", id), data);
@@ -1085,6 +1158,168 @@ async function seedEvents() {
     await batch.commit();
     toast("Starter events added as drafts. Add names in other languages and link niyyahs.");
   } catch (e) { fail(e); }
+}
+
+
+/* ============================================================
+   7c. EVENTS CALENDAR (Gregorian days, small Hijri date) + FETCH
+   ============================================================ */
+// Each country picks the Hijri calendar method that AlAdhan offers (UAQ, DIYANET, MATHEMATICAL).
+// Countries that follow local moon sighting have no exact method: edit this table when you pick a source for them.
+const COUNTRIES = [
+  { code: "SA", name: "Saudi Arabia", method: "UAQ" },
+  { code: "TR", name: "Türkiye", method: "DIYANET" },
+  { code: "EG", name: "Egypt", method: "UAQ" },
+  { code: "AE", name: "United Arab Emirates", method: "UAQ" },
+  { code: "PK", name: "Pakistan", method: "MATHEMATICAL" },
+  { code: "ID", name: "Indonesia", method: "MATHEMATICAL" }
+];
+const pad2 = n => String(n).padStart(2, "0");
+const isoOf = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const dateOf = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d, 12); };
+let _hf;
+function baseHijri(d) {
+  const fetched = hijriDocs[`${calCountry}_${d.getFullYear()}`]?.days?.[isoOf(d)];
+  if (fetched) { const [day, m, y] = fetched.split("-").map(Number); return { d: day, m, y }; }
+  _hf = _hf || new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { day: "numeric", month: "numeric", year: "numeric" });
+  const p = Object.fromEntries(_hf.formatToParts(d).map(x => [x.type, x.value]));
+  return { d: +p.day, m: +p.month, y: parseInt(p.year, 10) };
+}
+// Month-start corrections: shifts["1448-4"] = +1 means that Hijri month starts a day later in this calendar, -1 a day earlier.
+const shiftKey = h => `${h.y}-${h.m}`;
+const shiftsNow = () => hijriDocs[`${calCountry || "DEFAULT"}_shifts`]?.shifts || {};
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
+function hijriOf(d) {
+  const b = baseHijri(d), sh = shiftsNow();
+  if (!Object.values(sh).some(v => v)) return b;
+  const bs = addDays(d, -(b.d - 1));                              // base start of this month
+  const pb = baseHijri(addDays(bs, -1)), ps = addDays(bs, -pb.d); // previous month
+  const ns = addDays(bs, baseHijri(addDays(bs, 29)).m === b.m ? 30 : 29), nb = baseHijri(ns); // next month
+  const months = [[pb, ps], [b, bs], [nb, ns]].map(([h, st]) => ({ h, start: addDays(st, sh[shiftKey(h)] || 0) }));
+  const cur = months.filter(x => x.start <= d).pop() || months[0];
+  return { d: Math.round((d - cur.start) / 864e5) + 1, m: cur.h.m, y: cur.h.y };
+}
+async function setShift(v) {
+  const r = selRange(); if (!r) return;
+  const key = shiftKey(baseHijri(dateOf(r[0])));
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(db, "hijriCalendars", `${calCountry || "DEFAULT"}_shifts`), { shifts: { [key]: v }, updatedAt: serverTimestamp() }, { merge: true });
+    await batch.commit();
+    toast(v ? `Hijri month start moved ${v > 0 ? "a day later" : "a day earlier"}.` : "Hijri month start reset.");
+  } catch (e) { fail(e); }
+}
+const eventsOn = (d, h) => [...events].sort(byOrder).filter(e => {
+  const r = e.rule || {};
+  if (r.type === "weekly") return ((d.getDay() + 6) % 7) + 1 === (r.weekday || 5);
+  if (r.month && r.month !== h.m) return false;
+  const start = r.day || 1;
+  return h.d >= start && h.d < start + (r.days || 1);
+});
+const hLabel = h => `${h.d} ${HIJRI[h.m - 1]} ${h.y}`;
+const selRange = () => calSel ? (calSel.a <= calSel.b ? [calSel.a, calSel.b] : [calSel.b, calSel.a]) : null;
+
+function pickDay(iso, shift) {
+  calSel = (shift || calRange) && calSel ? { a: calSel.a, b: iso } : { a: iso, b: iso };
+  renderEvents();
+}
+
+function renderEvents() {
+  if (calView === "list") return renderEventList();
+  const y = calMonth.getFullYear(), m = calMonth.getMonth(), today = isoOf(new Date());
+  const first = new Date(y, m, 1, 12), lead = (first.getDay() + 6) % 7;
+  const weeks = Math.ceil((lead + new Date(y, m + 1, 0).getDate()) / 7);
+  const h1 = hijriOf(first), h2 = hijriOf(new Date(y, m + 1, 0, 12));
+  const hTitle = h1.m === h2.m ? `${HIJRI[h1.m - 1]} ${h1.y}` : `${HIJRI[h1.m - 1]} – ${HIJRI[h2.m - 1]} ${h2.y}`;
+  const r = selRange();
+  const hasData = !!hijriDocs[`${calCountry}_${y}`];
+  let html = `<div class="calbar">
+      <button class="btn small" data-act="cal-prev" aria-label="Previous month">‹</button>
+      <button class="btn small" data-act="cal-next" aria-label="Next month">›</button>
+      <button class="btn small" data-act="cal-today">Today</button>
+      <div class="ttl">${first.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}<small>${esc(hTitle)}${calCountry && !hasData ? " · not fetched for this year, showing Umm al-Qura" : ""}</small></div>
+      <select id="cal-country" aria-label="Hijri calendar">
+        <option value="">Hijri: built-in (Umm al-Qura)</option>
+        ${COUNTRIES.map(c => `<option value="${c.code}" ${c.code === calCountry ? "selected" : ""}>Hijri: ${esc(c.name)}</option>`).join("")}</select>
+      <button class="btn ${calRange ? "on" : ""}" data-act="cal-range" title="Tap a second day to extend the selection (or hold Shift and click)">Select range</button>
+      <button class="btn" data-act="cal-fetch">Fetch</button>
+      <button class="btn" data-act="cal-view">List view</button></div>
+    <div class="cal">${WEEKDAYS.map(w => `<div class="dow">${w.slice(0, 3)}</div>`).join("")}`;
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(y, m, 1 - lead + i, 12), iso = isoOf(d), h = hijriOf(d), evs = eventsOn(d, h);
+    const sel = r && iso >= r[0] && iso <= r[1];
+    html += `<button class="cday ${d.getMonth() !== m ? "other" : ""} ${iso === today ? "today" : ""} ${sel ? "sel" : ""}" data-act="cal-day" data-date="${iso}">
+      <span class="g">${d.getDate()}</span><span class="h">${h.d === 1 ? `${h.d} ${HIJRI[h.m - 1]}` : h.d}</span>
+      ${evs.slice(0, 2).map(e => `<span class="ev" title="${esc(nm(e))}">${esc(nm(e))}</span>`).join("")}
+      ${evs.length > 2 ? `<span class="ev">+${evs.length - 2} more</span>` : ""}${evs.length ? `<span class="evn">● ${evs.length}</span>` : ""}</button>`;
+  }
+  html += `</div>`;
+  if (!events.length) html += `<div class="empty" style="margin-top:14px"><p>No events yet.</p><button class="btn primary" data-act="seed-events">Add starter events</button></div>`;
+  if (r) {
+    const a = dateOf(r[0]), z = dateOf(r[1]), n = Math.round((z - a) / 864e5) + 1;
+    const seen = new Map();
+    for (let i = 0; i < n; i++) { const d = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, 12); eventsOn(d, hijriOf(d)).forEach(e => seen.set(e.id, e)); }
+    const fmt = (d, o) => d.toLocaleDateString("en-GB", o);
+    html += `<div class="daypanel"><h3>${n === 1 ? fmt(a, { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + " · " + esc(hLabel(hijriOf(a)))
+        : `${n} days: ${fmt(a, { day: "numeric", month: "short" })} to ${fmt(z, { day: "numeric", month: "short", year: "numeric" })} · ${esc(hLabel(hijriOf(a)))} to ${esc(hLabel(hijriOf(z)))}`}</h3>`;
+    html += seen.size ? [...seen.values()].map(e => `<div class="erow"><span class="name">${esc(nm(e))}</span><span class="chip">${esc(ruleText(e))}</span>
+        <span class="badge ${e.published ? "st-published" : "st-draft"}">${e.published ? "published" : "draft"}</span>
+        <button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button>
+        <button class="btn small danger" data-act="del-event" data-id="${e.id}">Delete</button></div>`).join("")
+      : `<p class="muted" style="margin:0">No events on ${n === 1 ? "this day" : "these days"}.</p>`;
+    const bh = baseHijri(a), cur = shiftsNow()[shiftKey(bh)] || 0;
+    html += `<div class="erow"><span class="name">Hijri month: ${esc(HIJRI[bh.m - 1])} ${bh.y}</span>
+      <span class="muted">${esc(calCountry ? COUNTRIES.find(c => c.code === calCountry)?.name : "Built-in calendar")} · starts ${cur ? `${Math.abs(cur)} day ${cur > 0 ? "later" : "earlier"}` : "as calculated"}</span>
+      <button class="btn small ${cur < 0 ? "on" : ""}" data-act="cal-shift" data-v="-1" title="The Hijri date shown is a day behind">Starts a day earlier</button>
+      <button class="btn small ${cur > 0 ? "on" : ""}" data-act="cal-shift" data-v="1" title="The Hijri date shown is a day ahead">Starts a day later</button>
+      <button class="btn small" data-act="cal-shift" data-v="0" ${cur ? "" : "disabled"}>Reset</button></div>`;
+    html += `<div><button class="btn primary" data-act="cal-add">${n === 1 ? "Add event on this day" : `Add event for these ${n} days`}</button></div></div>`;
+  } else html += `<p class="muted" style="margin:10px 0 0">Click a day to see or add events. Shift-click (or Select range) picks several days.</p>`;
+  $("#tab-events").innerHTML = html;
+}
+
+function addFromSelection() {
+  const r = selRange(); if (!r) return;
+  const a = dateOf(r[0]), z = dateOf(r[1]), n = Math.round((z - a) / 864e5) + 1, h = hijriOf(a), hz = hijriOf(z);
+  if (hz.m !== h.m && n > 1) toast("This range crosses a Hijri month. The event is saved as a length from the first day: check it.", true);
+  openEvent(null, { rule: { type: "hijri", month: h.m, day: h.d, days: Math.min(n, 30) }, remindDaysBefore: 1, notifyTime: "09:00" });
+}
+
+function openFetch() {
+  const y = calMonth.getFullYear();
+  dlg.innerHTML = `<div class="dlg"><h2>Fetch Hijri calendar</h2>
+    <p class="muted" style="margin:0">Downloads the Hijri date of every day in <b>${y}</b> and saves it, so the calendar can show each country's own dates.</p>
+    <label class="chk"><input type="radio" name="f-mode" value="all" checked> All countries (${COUNTRIES.length})</label>
+    <label class="chk"><input type="radio" name="f-mode" value="some"> Specific countries</label>
+    <div class="checklist" id="f-list" hidden>${COUNTRIES.map(c => `<label class="chk"><input type="checkbox" value="${c.code}" ${c.code === calCountry ? "checked" : ""}> ${esc(c.name)} <span class="muted">· ${c.method}</span></label>`).join("")}</div>
+    <p id="f-status" class="muted" style="margin:0"></p>
+    <div class="actions"><button class="btn" id="d-cancel">Close</button><button class="btn primary" id="d-save">Fetch</button></div></div>`;
+  dlg.querySelectorAll("[name=f-mode]").forEach(r => r.onchange = () => ($("#f-list").hidden = dlg.querySelector("[name=f-mode]:checked").value !== "some"));
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const some = dlg.querySelector("[name=f-mode]:checked").value === "some";
+    const picked = some ? [...dlg.querySelectorAll("#f-list input:checked")].map(i => i.value) : COUNTRIES.map(c => c.code);
+    if (!picked.length) return toast("Choose at least one country.", true);
+    $("#d-save").disabled = true;
+    try {
+      for (const [i, code] of picked.entries()) {
+        const c = COUNTRIES.find(x => x.code === code);
+        $("#f-status").textContent = `Fetching ${c.name} (${i + 1}/${picked.length})…`;
+        const months = await Promise.all([...Array(12).keys()].map(async k => {
+          const res = await fetch(`https://api.aladhan.com/v1/gToHCalendar/${k + 1}/${y}?calendarMethod=${c.method}`);
+          if (!res.ok) throw new Error(`${c.name}: the calendar service answered ${res.status}.`);
+          return (await res.json()).data;
+        }));
+        const days = {};
+        months.flat().forEach(x => { const [dd, mm, yy] = x.gregorian.date.split("-"); days[`${yy}-${mm}-${dd}`] = `${+x.hijri.day}-${x.hijri.month.number}-${x.hijri.year}`; });
+        const batch = writeBatch(db);
+        batch.set(doc(db, "hijriCalendars", `${code}_${y}`), { code, year: y, method: c.method, days, fetchedAt: serverTimestamp() });
+        await batch.commit();
+      }
+      dlg.close(); toast(`Fetched ${picked.length} calendar${picked.length === 1 ? "" : "s"} for ${y}.`);
+    } catch (e) { $("#d-save").disabled = false; $("#f-status").textContent = ""; fail(e); }
+  };
+  dlg.showModal();
 }
 
 /* ============================================================
