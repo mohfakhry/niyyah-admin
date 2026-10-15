@@ -105,13 +105,14 @@
   .dlg h2 { font-size: 19px; }
   .dlg label.f { display: grid; gap: 4px; font-weight: 500; }
   .dlg label.f small { font-weight: 400; color: var(--muted); }
-  .dlg input[type=text], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+  .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
   .dlg textarea { min-height: 76px; resize: vertical; }
   .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 21px; font-weight: 600; }
   .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; }
-  .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
+  .checklist, .evlist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
   .grp-h { font-weight: 600; margin-top: 6px; }
   .chk { display: flex; align-items: center; gap: 8px; padding: 2px 0 2px 4px; font-weight: 400; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
   .ltabs { display: flex; flex-wrap: wrap; gap: 8px; }
   .ltab { border: 2px solid transparent; border-radius: var(--radius); padding: 7px 16px; font-weight: 600; }
   .ltab[aria-selected="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
@@ -135,7 +136,8 @@
   .nhead .prev { font-weight: 600; }
   .nhead .prev.rtl { font-size: 20px; line-height: 1.6; }
   .dots { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .lcode { display: inline-block; border: 1px solid transparent; border-radius: 999px; padding: 0 8px; min-width: 30px; text-align: center;
+    font-size: 12px; line-height: 1.6; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
   .nbody { padding: 2px 16px 14px; border-top: 1px solid var(--line); margin-top: 0; }
   .nbody .lrow:first-child { padding-top: 10px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
@@ -181,6 +183,8 @@
     <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
     <button role="tab" data-tab="types" aria-selected="false">Location types</button>
     <button role="tab" data-tab="jobs" aria-selected="false">Job types</button>
+    <button role="tab" data-tab="tips" aria-selected="false">Tips</button>
+    <button role="tab" data-tab="events" aria-selected="false">Events</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
   </nav>
   <main>
@@ -188,6 +192,8 @@
     <section id="tab-niyyahs" hidden></section>
     <section id="tab-types" hidden></section>
     <section id="tab-jobs" hidden></section>
+    <section id="tab-tips" hidden></section>
+    <section id="tab-events" hidden></section>
     <section id="tab-settings" hidden></section>
   </main>
 </div>
@@ -224,7 +230,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [], jobs = [], languages = [];
+let actions = [], niyyahs = [], types = [], jobs = [], languages = [], tips = [], events = [];
 let listening = false;
 const openN = new Set();      // niyyah ids that are expanded
 let shownN = [];              // ids currently listed (after filters)
@@ -391,19 +397,21 @@ function startListening() {
   watch("locationTypes", v => (types = v));
   watch("languages", v => (languages = v));
   watch("jobTypes", v => (jobs = v));
+  watch("tips", v => (tips = v));
+  watch("events", v => (events = v));
 }
 
 /* ---------- tabs ---------- */
 function goTab(name) {
   document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
-  for (const t of ["actions", "niyyahs", "types", "jobs", "settings"]) $("#tab-" + t).hidden = t !== name;
+  for (const t of ["actions", "niyyahs", "types", "jobs", "tips", "events", "settings"]) $("#tab-" + t).hidden = t !== name;
 }
 document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => goTab(b.dataset.tab));
 
 /* ============================================================
    3. RENDERING
    ============================================================ */
-function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderSettings(); }
+function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderTips(); renderEvents(); renderSettings(); }
 
 function renderActions() {
   const tops = childrenOf("");
@@ -492,14 +500,15 @@ function renderNiyyahs() {
     html += `<div class="item nitem ${isOpen ? "open" : ""}" data-nid="${n.id}">
       <button type="button" class="nhead" data-act="toggle-niyyah" data-id="${n.id}" aria-expanded="${isOpen}">
         <span class="main">
-          <span class="dots">${trs.map(({ l, t }) => `<span class="dot st-${t.status}" title="${esc(l.name)}: ${t.status}"></span>`).join("")}</span>
+          <span class="dots">${trs.map(({ l, t }) => `<span class="lcode st-${t.status}" title="${esc(l.name)}: ${t.status}">${esc(l.code)}</span>`).join("")}</span>
           <span class="prev ${pick?.l.rtl ? "rtl" : ""}" ${pick?.l.rtl ? 'dir="rtl"' : ""}>${pick ? esc(pick.t.text) : '<span class="muted">(no text)</span>'}</span>
         </span>
         <span class="chev">▼</span>
       </button>
       <div class="nbody" ${isOpen ? "" : "hidden"}>${rows}
         <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
-          ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}</div>
+          ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}
+          ${(n.eventIds || []).map(id => `<span class="chip">Event: ${esc(eventLabel(id))}</span>`).join("")}</div>
         <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
           <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div></div>`;
   }
@@ -543,7 +552,7 @@ function renderNamed(key) {
   for (const x of list) {
     const m = nameMap(x);
     html += `<div class="item"><div class="head"><h3>${esc(nm(x))}</h3>
-        <span class="dots">${L.map(l => `<span class="dot ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}"></span>`).join("")}</span></div>
+        <span class="dots">${L.map(l => `<span class="lcode ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}">${esc(l.code)}</span>`).join("")}</span></div>
       <div class="chips">${(x.actionIds || []).length
         ? x.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
         : `<span class="muted">No actions linked yet</span>`}</div>
@@ -590,7 +599,14 @@ document.addEventListener("click", e => {
     "del-lang": () => delLanguage(id),
     "lang-up": () => moveLang(id, -1),
     "lang-down": () => moveLang(id, 1),
-    "seed-langs": seedLanguages
+    "seed-langs": seedLanguages,
+    "new-tip": () => openTip(),
+    "edit-tip": () => openTip(id),
+    "del-tip": () => delTip(id),
+    "new-event": () => openEvent(),
+    "edit-event": () => openEvent(id),
+    "del-event": () => delEvent(id),
+    "seed-events": seedEvents
   };
   (map[b.dataset.act] || (() => {}))();
 });
@@ -768,6 +784,8 @@ function openNiyyah(id) {
     <label class="chk"><input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> Fits any action (can be shown anywhere as a fallback)</label>
     <div class="f"><b>Actions this niyyah belongs to</b>
       <div class="checklist">${checklist(n.actionIds || [])}</div></div>
+    <div class="f"><b>Events this niyyah belongs to</b>
+      <div class="evlist">${eventChecklist(n.eventIds || [])}</div></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
       <button class="btn primary" id="d-save">Save niyyah</button></div></div>`;
 
@@ -822,10 +840,10 @@ function openNiyyah(id) {
     });
     const filled = Object.values(translations).filter(t => t.text);
     if (!filled.length) return toast("Write the niyyah in at least one language.", true);
-    const general = $("#n-gen").checked, actionIds = checkedIds();
-    if (filled.some(t => t.status === "published") && !general && !actionIds.length)
-      return toast("A published niyyah needs at least one action, or 'Fits any action'.", true);
-    const data = { translations, general, actionIds, updatedAt: serverTimestamp(), ...mirrorFields(translations) };
+    const general = $("#n-gen").checked, actionIds = checkedIds(), eventIds = [...dlg.querySelectorAll(".evlist input:checked")].map(i => i.value);
+    if (filled.some(t => t.status === "published") && !general && !actionIds.length && !eventIds.length)
+      return toast("A published niyyah needs at least one action or event, or 'Fits any action'.", true);
+    const data = { translations, general, actionIds, eventIds, updatedAt: serverTimestamp(), ...mirrorFields(translations) };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "niyyahs", id), data);
@@ -891,6 +909,181 @@ async function seedNamed(key) {
       { names: { [dl]: name }, name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
     await batch.commit();
     toast("Starter list added. Open each one to link its actions.");
+  } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   7b. TIPS (tip of the day) + EVENTS (common niyyahs)
+   ============================================================ */
+const TIP_CATS = { habit: "Habit anchor", knowledge: "Knowledge", practical: "Practical" };
+const HIJRI = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; // value 1-7, same as Dart's DateTime.weekday
+const lcodes = (L, m) => `<span class="dots">${L.map(l => `<span class="lcode ${m[l.code] ? "st-published" : "st-empty"}" title="${esc(l.name)}: ${m[l.code] ? "filled" : "missing"}">${esc(l.code)}</span>`).join("")}</span>`;
+const needLang = () => { goTab("settings"); toast("Add at least one language in Settings first.", true); };
+const eventLabel = id => { const e = events.find(x => x.id === id); return e ? nm(e) : "(deleted event)"; };
+const eventChecklist = sel => events.length
+  ? [...events].sort(byOrder).map(e => `<label class="chk"><input type="checkbox" value="${e.id}" ${sel.includes(e.id) ? "checked" : ""}> ${esc(nm(e))}</label>`).join("")
+  : `<p class="muted">No events yet. Add them in the Events tab.</p>`;
+
+function renderTips() {
+  const L = langs(), list = [...tips].sort(byOrder), rtl = !!L.find(l => l.code === viewCode())?.rtl;
+  let html = `<div class="bar"><h2>Tips <span class="muted" style="font-weight:400;font-size:14px">${tips.length} total, ${tips.filter(t => t.published).length} published</span></h2>
+    <button class="btn primary" data-act="new-tip">Add tip</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>No tips yet. Add the first tip of the day.</p></div>`;
+  for (const t of list) {
+    const m = t.texts || {};
+    html += `<div class="item"><div class="head"><div class="${rtl ? "rtl" : "en"}" ${rtl ? 'dir="rtl"' : ""}>${esc(m[viewCode()] || firstOf(m))}</div>${lcodes(L, m)}</div>
+      <div class="chips"><span class="chip">${esc(TIP_CATS[t.category] || TIP_CATS.habit)}</span>
+        <span class="badge ${t.published ? "st-published" : "st-draft"}">${t.published ? "published" : "draft"}</span>
+        ${t.source ? `<span class="chip">${esc(t.source)}</span>` : ""}</div>
+      <div class="tools"><button class="btn small" data-act="edit-tip" data-id="${t.id}">Edit</button>
+        <button class="btn small danger" data-act="del-tip" data-id="${t.id}">Delete</button></div></div>`;
+  }
+  $("#tab-tips").innerHTML = html;
+}
+
+function openTip(id) {
+  const L = langs();
+  if (!L.length) return needLang();
+  const t = id ? tips.find(x => x.id === id) : { texts: {}, category: "habit", published: false };
+  const initial = {};
+  L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit" : "Add"} tip</h2>
+    ${langFieldsHtml()}
+    <label class="f">Type<select id="t-cat">${Object.entries(TIP_CATS).map(([k, v]) => `<option value="${k}" ${k === (t.category || "habit") ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    <label class="f">Source<small>Optional: hadith or Quran reference.</small><input type="text" id="t-src" value="${esc(t.source || "")}"></label>
+    <label class="chk"><input type="checkbox" id="t-pub" ${t.published ? "checked" : ""}> Published (only published tips reach users)</label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save tip</button></div></div>`;
+  const lf = langFields(L, [{ key: "text", label: "Tip", ph: "e.g. Pause for a second before you open the door and set your niyyah." }], initial);
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].text.trim(); if (s) out[l.code] = s; });
+    keepUnknown(t.texts || {}, out);
+    if (!Object.keys(out).length) return toast("Write the tip in at least one language.", true);
+    const data = { texts: out, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: $("#t-pub").checked, updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "tips", id), data);
+      else { data.order = tips.length; await addDoc(collection(db, "tips"), data); }
+      dlg.close(); toast("Tip saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  dlg.showModal();
+  $("#lf-text").focus();
+}
+async function delTip(id) {
+  if (!confirm("Delete this tip?")) return;
+  try { await deleteDoc(doc(db, "tips", id)); toast("Tip deleted."); } catch (e) { fail(e); }
+}
+
+const ruleText = e => {
+  const r = e.rule || {};
+  if (r.type === "weekly") return `Every ${WEEKDAYS[(r.weekday || 5) - 1]}`;
+  return `${r.month ? HIJRI[r.month - 1] : "Every Hijri month"} ${r.day || 1}${r.days > 1 ? ` · ${r.days} days` : ""}`;
+};
+
+function renderEvents() {
+  const L = langs(), list = [...events].sort(byOrder);
+  let html = `<div class="bar"><h2>Events <span class="muted" style="font-weight:400;font-size:14px">common niyyahs by date</span></h2>
+    <button class="btn primary" data-act="new-event">Add event</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>No events yet.</p><button class="btn primary" data-act="seed-events">Add starter events</button></div>`;
+  for (const e of list) {
+    const m = nameMap(e), cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
+    html += `<div class="item"><div class="head"><h3>${esc(nm(e))}</h3>${lcodes(L, m)}</div>
+      <div class="chips"><span class="chip">${esc(ruleText(e))}</span>
+        <span class="chip">${e.remindDaysBefore ? `${e.remindDaysBefore} day(s) before, ` : "On the day, "}${esc(e.notifyTime || "09:00")}</span>
+        <span class="chip">${cnt} niyyah${cnt === 1 ? "" : "s"}</span>
+        ${e.disputed ? `<span class="chip">Scholars differ</span>` : ""}
+        <span class="badge ${e.published ? "st-published" : "st-draft"}">${e.published ? "published" : "draft"}</span></div>
+      <div class="tools"><button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button>
+        <button class="btn small danger" data-act="del-event" data-id="${e.id}">Delete</button></div></div>`;
+  }
+  $("#tab-events").innerHTML = html;
+}
+
+function openEvent(id) {
+  const L = langs();
+  if (!L.length) return needLang();
+  const e = id ? events.find(x => x.id === id) : { rule: { type: "hijri", month: 1, day: 1, days: 1 }, remindDaysBefore: 1, notifyTime: "09:00" };
+  const r = e.rule || {}, names = nameMap(e), initial = {};
+  L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
+  const opts = (arr, sel, first = 0) => arr.map((x, i) => `<option value="${i + first}" ${i + first === sel ? "selected" : ""}>${x}</option>`).join("");
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit" : "Add"} event</h2>
+    ${langFieldsHtml()}
+    <label class="f">Repeats<select id="e-type"><option value="hijri" ${r.type !== "weekly" ? "selected" : ""}>On a Hijri date</option>
+      <option value="weekly" ${r.type === "weekly" ? "selected" : ""}>Every week</option></select></label>
+    <div class="grid2" id="e-hijri">
+      <label class="f">Month<select id="e-month"><option value="0" ${!r.month ? "selected" : ""}>Every month</option>${opts(HIJRI, r.month || -1, 1)}</select></label>
+      <label class="f">Day<input type="number" id="e-day" min="1" max="30" value="${r.day || 1}"></label>
+      <label class="f">Length (days)<small>Whole month: day 1, 30 days</small><input type="number" id="e-days" min="1" max="30" value="${r.days || 1}"></label></div>
+    <label class="f" id="e-weekly">Weekday<select id="e-wd">${opts(WEEKDAYS, r.weekday || 5, 1)}</select></label>
+    <div class="grid2">
+      <label class="f">Remind<select id="e-before">${[0, 1, 2, 3].map(d => `<option value="${d}" ${d === (e.remindDaysBefore ?? 1) ? "selected" : ""}>${d ? d + " day(s) before" : "On the day"}</option>`).join("")}</select></label>
+      <label class="f">Notify at (user's local time)<input type="time" id="e-time" value="${esc(e.notifyTime || "09:00")}"></label></div>
+    <label class="chk"><input type="checkbox" id="e-disp" ${e.disputed ? "checked" : ""}> Scholars differ on this event (off by default for users)</label>
+    <label class="chk"><input type="checkbox" id="e-pub" ${e.published ? "checked" : ""}> Published</label>
+    <p class="muted" style="margin:0">Link niyyahs to this event from the Add / Edit niyyah box.</p>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save event</button></div></div>`;
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: "e.g. Day of Arafah" }], initial);
+  const sync = () => { const w = $("#e-type").value === "weekly"; $("#e-hijri").hidden = w; $("#e-weekly").hidden = !w; };
+  $("#e-type").onchange = sync; sync();
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
+    keepUnknown(names, out);
+    if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
+    let rule;
+    if ($("#e-type").value === "weekly") rule = { type: "weekly", weekday: +$("#e-wd").value };
+    else {
+      rule = { type: "hijri", month: +$("#e-month").value, day: +$("#e-day").value, days: +$("#e-days").value };
+      if (!(rule.day >= 1 && rule.day <= 30) || !(rule.days >= 1 && rule.days <= 30)) return toast("Day and length must be between 1 and 30.", true);
+    }
+    const data = { names: out, name: pickName(out), rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
+      disputed: $("#e-disp").checked, published: $("#e-pub").checked, updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "events", id), data);
+      else { data.order = events.length; await addDoc(collection(db, "events"), data); }
+      dlg.close(); toast("Event saved.");
+    } catch (err) { $("#d-save").disabled = false; fail(err); }
+  };
+  dlg.showModal();
+  $("#lf-name").focus();
+}
+
+async function delEvent(id) {
+  if (!confirm(`Delete the event "${eventLabel(id)}"? It is also removed from niyyahs linked to it.`)) return;
+  try {
+    const batch = writeBatch(db);
+    niyyahs.filter(n => (n.eventIds || []).includes(id)).forEach(n => batch.update(doc(db, "niyyahs", n.id), { eventIds: arrayRemove(id) }));
+    batch.delete(doc(db, "events", id));
+    await batch.commit();
+    toast("Event deleted.");
+  } catch (e) { fail(e); }
+}
+
+async function seedEvents() {
+  const H = (name, month, day, days = 1, disputed = false) => ({ name, rule: { type: "hijri", month, day, days }, disputed });
+  const starter = [
+    H("Ramadan", 9, 1, 30), H("Last 10 nights of Ramadan", 9, 21, 10), H("Eid al-Fitr", 10, 1),
+    H("First 10 days of Dhul Hijjah", 12, 1, 10), H("Day of Arafah", 12, 9), H("Eid al-Adha", 12, 10),
+    H("Islamic New Year", 1, 1), H("Tasu'a and Ashura", 1, 9, 2), H("White days", 0, 13, 3),
+    { name: "Friday (Jumu'ah)", rule: { type: "weekly", weekday: 5 }, disputed: false },
+    H("Mawlid", 3, 12, 1, true), H("Isra and Mi'raj", 7, 27, 1, true), H("Middle of Shaban", 8, 15, 1, true)
+  ];
+  const dl = defLang();
+  try {
+    const batch = writeBatch(db);
+    starter.forEach((x, i) => batch.set(doc(collection(db, "events")), { names: { [dl]: x.name }, name: x.name, rule: x.rule,
+      remindDaysBefore: 1, notifyTime: "09:00", disputed: x.disputed, published: false, order: i, updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Starter events added as drafts. Add names in other languages and link niyyahs.");
   } catch (e) { fail(e); }
 }
 
