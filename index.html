@@ -101,8 +101,8 @@
   /* Dialog */
   dialog { border: 0; border-radius: 12px; padding: 0; width: min(640px, 94vw); max-height: 92vh; box-shadow: 0 20px 60px rgba(0,0,0,.28); }
   dialog::backdrop { background: rgba(20, 35, 33, .5); }
-  .dlg { padding: 22px; display: grid; gap: 14px; }
-  .dlg h2 { font-size: 19px; }
+  .dlg { padding: 22px; display: grid; gap: 14px; position: relative; }
+  .dlg h2 { font-size: 19px; padding-right: 40px; }
   .dlg label.f { display: grid; gap: 4px; font-weight: 500; }
   .dlg label.f small { font-weight: 400; color: var(--muted); }
   .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
@@ -148,6 +148,22 @@
   header.top select option { color: var(--ink); }
   .dlg input[type=text].rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
 
+  /* Dialog close button, discard warning, language warnings, names picker */
+  .dlg-x { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; padding: 0; }
+  .dlg-x:hover { background: var(--sand); color: var(--ink); }
+  #dlg-discard { width: min(440px, 94vw); }
+  #dlg-discard .dlg h2 { padding-right: 0; }
+  .btn.discard { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn.discard:hover { background: #8a3623; border-color: #8a3623; }
+  .dlg label.f small.lwarn { color: var(--danger); font-weight: 600; }
+  .langpick { position: relative; }
+  .langpick .cur { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius); padding: 3px 10px; font-size: 14px; }
+  .langpick .menu { position: absolute; right: 0; top: 100%; padding-top: 6px; display: none; z-index: 30; min-width: 100%; }
+  .langpick:hover .menu, .langpick:focus-within .menu { display: block; }
+  .langpick .menu-in { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,.2); overflow: hidden; display: grid; }
+  .langpick .menu button { border: 0; background: transparent; color: var(--ink); text-align: start; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+  .langpick .menu button:hover { background: var(--green-soft); }
+  .langpick .menu button.is-cur { background: var(--green-soft); font-weight: 700; box-shadow: inset 3px 0 0 var(--green); }
   #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--radius); max-width: 90vw; z-index: 50; }
   #toast.err { background: var(--danger); }
   @media (max-width: 560px) { main, header.top, nav.tabs { padding-left: 14px; padding-right: 14px; } .row { flex-wrap: wrap; } }
@@ -184,7 +200,7 @@
 
 <div id="login" class="center" hidden>
   <h1>Niyyah Admin</h1>
-  <p>Sign in with the Google account that is on the admin list to manage actions, niyyahs, and location types.</p>
+  <p>Sign in with the Google account that is on the admin list to manage actions, niyyahs, and locations.</p>
   <div><button class="btn primary" id="btn-login">Sign in with Google</button></div>
   <p id="login-error" style="color:var(--danger)"></p>
 </div>
@@ -199,13 +215,13 @@
 <div id="app" hidden>
   <header class="top">
     <h1>Niyyah Admin</h1>
-    <div class="who"><select id="view-lang" aria-label="Show names in" title="Show names in" hidden></select><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
+    <div class="who"><div class="langpick" id="view-lang" hidden></div><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
   </header>
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="actions" aria-selected="true">Actions</button>
     <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
-    <button role="tab" data-tab="types" aria-selected="false">Location types</button>
-    <button role="tab" data-tab="jobs" aria-selected="false">Job types</button>
+    <button role="tab" data-tab="types" aria-selected="false">Locations</button>
+    <button role="tab" data-tab="jobs" aria-selected="false">Jobs</button>
     <button role="tab" data-tab="tips" aria-selected="false">Tips</button>
     <button role="tab" data-tab="events" aria-selected="false">Events</button>
     <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
@@ -223,6 +239,7 @@
 
 <input type="file" id="import-file" accept=".json,application/json" hidden>
 <dialog id="dlg"></dialog>
+<dialog id="dlg-discard"></dialog>
 <div id="toast" hidden></div>
 
 <script type="module">
@@ -268,6 +285,41 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).localeCompare(String(b.name));
 const dlg = $("#dlg");
+const dlgDiscard = $("#dlg-discard");
+let dlgDirty = false, dlgGuard = true, activeLf = null;
+dlg.addEventListener("input", () => (dlgDirty = true));
+dlg.addEventListener("change", () => (dlgDirty = true));
+dlg.addEventListener("close", () => { dlgDirty = false; activeLf = null; });
+dlg.addEventListener("cancel", e => { e.preventDefault(); requestClose(); });   // Escape key
+dlg.addEventListener("click", e => {
+  if (e.target.closest("[data-rm]")) dlgDirty = true;
+  // Save is blocked while a field is not in its language (runs before the dialog's own Save handler)
+  if (e.target.closest("#d-save") && activeLf && !activeLf.check()) e.stopImmediatePropagation();
+}, true);
+function showDlg() {
+  dlgDirty = false;
+  dlgGuard = !dlg.querySelector("[data-noguard]");
+  const box = dlg.querySelector(".dlg");
+  if (box) {
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "dlg-x"; x.title = "Close"; x.setAttribute("aria-label", "Close"); x.textContent = "×";
+    x.onclick = requestClose;
+    box.append(x);
+    const c = $("#d-cancel", dlg); if (c) c.onclick = requestClose;
+  }
+  dlg.showModal();
+}
+function requestClose() {
+  if (!dlg.open) return;
+  if (!dlgGuard || !dlgDirty) return dlg.close();
+  dlgDiscard.innerHTML = `<div class="dlg"><h2>Discard changes?</h2>
+    <p class="muted" style="margin:0">You have changes that are not saved. If you close now they will be lost.</p>
+    <div class="actions"><button class="btn discard" id="dd-discard">Discard changes</button>
+      <button class="btn primary" id="dd-keep" autofocus>Continue editing</button></div></div>`;
+  $("#dd-discard").onclick = () => { dlgDiscard.close(); dlg.close(); };
+  $("#dd-keep").onclick = () => dlgDiscard.close();
+  dlgDiscard.showModal();
+}
 
 function toast(msg, isErr = false) {
   const t = $("#toast");
@@ -294,6 +346,59 @@ const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).
 
 /* ---------- languages + per-language niyyah text ---------- */
 const STATUSES = ["draft", "reviewed", "published"];
+// True language check: a filled field only counts when its letters are written in the script of its language.
+// Languages not listed here (or with a script not listed) are not checked.
+const LANG_RE = (() => {
+  const map = {}, set = (codes, re) => codes.split(" ").forEach(c => (map[c] = re));
+  set("ar ur fa ps ckb ug sd", /\p{Script=Arabic}/u);
+  set("en fr es de it pt nl tr id ms sw ha so vi pl ro sv no nb da fi cs sk hu sq hr sl lt lv et az uz tl fil ca eu af", /\p{Script=Latin}/u);
+  set("ru uk bg be mk kk ky tg mn", /\p{Script=Cyrillic}/u);
+  set("he yi", /\p{Script=Hebrew}/u);
+  set("hi mr ne sa", /\p{Script=Devanagari}/u);
+  set("bn as", /\p{Script=Bengali}/u);
+  set("ta", /\p{Script=Tamil}/u); set("te", /\p{Script=Telugu}/u);
+  set("th", /\p{Script=Thai}/u); set("ko", /\p{Script=Hangul}/u); set("el", /\p{Script=Greek}/u);
+  set("am", /\p{Script=Ethiopic}/u); set("ka", /\p{Script=Georgian}/u); set("hy", /\p{Script=Armenian}/u);
+  set("zh", /\p{Script=Han}/u); set("ja", /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u);
+  return map;
+})();
+// Latin script is shared by many languages, so the script test cannot tell French from English.
+// For those, count very common words of each language. A text is flagged only when another language
+// clearly wins. Short texts (under 4 words) and languages without a list are never flagged.
+const STOP_WORDS = (() => {
+  const w = s => new Set(s.split(" "));
+  return {
+    en: w("the and of that with for are this not you your have has from will their which who his her they would been when what all is"),
+    fr: w("le la les des du un une et est que qui dans pour pas sur avec au aux ce cette ses sont nous vous il elle ne se par plus mais comme être ou où"),
+    es: w("el los las del una y que por para con se su sus al lo como pero más este esta son está es un en"),
+    de: w("der die das und ist nicht mit von zu den dem ein eine auf für sich auch im dass wird sind bei als wie"),
+    it: w("il lo gli le di del della e è che non per con una sono come più anche nel nella dei delle questo suo"),
+    pt: w("o os as um uma do da dos das é que não para com por em no na mais como seu sua são"),
+    nl: w("de het een en van dat niet te met voor op zijn ook maar als aan er dan"),
+    tr: w("ve bir bu için ile çok daha gibi olarak ama var değil kadar"),
+    id: w("yang dan di ke dari untuk dengan ini itu pada adalah tidak akan atau juga saya kita mereka")
+  };
+})();
+const LANG_NAMES = { en: "English", fr: "French", es: "Spanish", de: "German", it: "Italian", pt: "Portuguese", nl: "Dutch", tr: "Turkish", id: "Indonesian" };
+const stopGroup = c => { c = String(c).toLowerCase().split("-")[0]; return c === "ms" ? "id" : c; };
+function guessOther(code, text) {   // returns the code of a different language that clearly fits better, or null
+  const exp = stopGroup(code);
+  if (!STOP_WORDS[exp]) return null;
+  const words = String(text || "").replace(/\{[a-z]+\}/gi, " ").toLowerCase().match(/\p{L}+/gu) || [];
+  if (words.length < 4) return null;
+  const hits = Object.fromEntries(Object.keys(STOP_WORDS).map(k => [k, words.filter(x => STOP_WORDS[k].has(x)).length]));
+  const best = Object.keys(hits).filter(k => k !== exp).sort((a, b) => hits[b] - hits[a])[0];
+  return hits[best] >= 2 && hits[best] >= 2 * hits[exp] + 1 ? best : null;
+}
+const guessNote = (code, text) => { const g = guessOther(code, text); return g ? ` It looks like ${LANG_NAMES[g]}.` : ""; };
+function langOk(code, text) {
+  const re = LANG_RE[String(code).toLowerCase().split("-")[0]];
+  const s = String(text || "").replace(/\{[a-z]+\}/gi, "");   // ignore {action} / {niyyah}
+  if (!re || !s.trim()) return true;
+  const letters = [...s].filter(ch => /\p{L}/u.test(ch));
+  if (!letters.length) return false;
+  return letters.filter(ch => re.test(ch)).length / letters.length >= 0.7 && !guessOther(code, s);
+}
 const langs = () => [...languages].sort(byOrder);
 // Niyyahs saved before languages existed only have textAr / textEn / source / status.
 // Treat those as the "ar" and "en" translations so nothing is lost.
@@ -311,7 +416,8 @@ function trOf(n, code) {
   return {
     text,
     sources: (t.sources || []).map(x => String(x).trim()).filter(Boolean),
-    status: text ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
+    wrong: !!text && !langOk(code, text),
+    status: text && langOk(code, text) ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
   };
 }
 // Old single-language fields, kept in sync so anything still reading them keeps working.
@@ -330,7 +436,7 @@ const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 // Stored as  statuses: {ar: "reviewed", en: "published"}  next to the text map.
 // Older records have no statuses: tips and events fall back to their old published flag, everything else to draft.
 const langSt = (x, code, text) => {
-  if (!String(text || "").trim()) return "empty";
+  if (!String(text || "").trim() || !langOk(code, text)) return "empty";
   const s = (x.statuses || {})[code];
   return STATUSES.includes(s) ? s : (x.published ? "published" : "draft");
 };
@@ -366,15 +472,18 @@ function keepUnknown(old, out) {
   return out;
 }
 function renderViewLang() {
-  const sel = $("#view-lang"), L = langs();
-  sel.hidden = L.length < 2;
-  sel.innerHTML = L.map(l => `<option value="${esc(l.code)}" ${l.code === viewCode() ? "selected" : ""}>Names: ${esc(l.name)}</option>`).join("");
+  const box = $("#view-lang"), L = langs(), cur = L.find(l => l.code === viewCode());
+  box.hidden = L.length < 2;
+  if (L.length < 2) return;
+  box.innerHTML = `<button type="button" class="cur" aria-haspopup="true" title="Show names in">Names: ${esc(cur.name)}</button>
+    <div class="menu"><div class="menu-in">${L.map(l =>
+      `<button type="button" class="${l === cur ? "is-cur" : ""}" ${l === cur ? 'aria-current="true"' : ""} data-act="view-lang" data-id="${esc(l.code)}">${l === cur ? "✓ " : ""}${esc(l.name)}</button>`).join("")}</div></div>`;
 }
-$("#view-lang").onchange = e => {
-  viewLang = e.target.value;
+function setViewLang(code) {
+  viewLang = code;
   try { localStorage.setItem("viewLang", viewLang); } catch (err) {}
   renderAll();
-};
+}
 
 // Language tabs for a dialog. The tab is red while the first field is empty, green once it is filled.
 // The caller writes <div id="lf-tabs">, <div id="lf-panel"> (see langFieldsHtml) before calling this.
@@ -387,7 +496,18 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
   L.forEach(l => (status[l.code] = STATUSES.includes(initialStatus[l.code]) ? initialStatus[l.code] : "draft"));
   L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
   let cur = L[0].code;
-  const stateOf = c => (String(draft[c][fields[0].key]).trim() ? status[c] : "empty");
+  const fieldBad = (c, f) => { const v = String(draft[c][f.key] || ""); return !!v.trim() && !langOk(c, v); };
+  const anyBad = c => fields.some(f => fieldBad(c, f));
+  const stateOf = c => (String(draft[c][fields[0].key]).trim() && !anyBad(c) ? status[c] : "empty");
+  const paintWarn = () => {
+    const l = L.find(x => x.code === cur);
+    fields.forEach(f => {
+      const w = $("#lw-" + f.key); if (!w) return;
+      const bad = fieldBad(cur, f);
+      w.hidden = !bad;
+      w.textContent = bad ? `This does not look like ${l.name} text.${guessNote(cur, draft[cur][f.key])} Please write it in ${l.name}.` : "";
+    });
+  };
   const capture = () => {
     fields.forEach(f => { const el = $("#lf-" + f.key); if (el) draft[cur][f.key] = el.value; });
     const st = $("#lf-status"); if (st) status[cur] = st.value;
@@ -400,10 +520,11 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     const l = L.find(x => x.code === cur), d = draft[cur];
     $("#lf-panel").innerHTML = fields.map(f => `<label class="f">${esc(f.label)} (${esc(l.name)})${f.hint ? `<small>${esc(f.hint)}</small>` : ""}
       <input type="text" id="lf-${f.key}" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""} value="${esc(d[f.key])}"
-        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"></label>`).join("") +
+        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"><small class="lwarn" id="lw-${f.key}" hidden></small></label>`).join("") +
       `<label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
         <select id="lf-status">${STATUSES.map(x => `<option ${x === status[cur] ? "selected" : ""}>${x}</option>`).join("")}</select></label>`;
-    fields.forEach(f => { $("#lf-" + f.key).oninput = () => { capture(); paintTabs(); onChange(); }; });
+    fields.forEach(f => { $("#lf-" + f.key).oninput = () => { capture(); paintTabs(); paintWarn(); onChange(); }; });
+    paintWarn();
     $("#lf-status").onchange = () => { capture(); paintTabs(); onChange(); };
   };
   $("#lf-tabs").onclick = e => {
@@ -412,11 +533,24 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     capture(); cur = b.dataset.lang; paintTabs(); paintPanel(); onChange();
   };
   paintTabs(); paintPanel();
-  return {
+  const api = {
     values: () => { capture(); return draft; },
     statuses: () => { capture(); const o = {}; L.forEach(l => (o[l.code] = stateOf(l.code))); return o; },
-    current: () => cur
+    current: () => cur,
+    // false (and jumps to the offending tab) when a filled field is not written in its language
+    check: () => {
+      capture();
+      for (const l of L) for (const f of fields) if (fieldBad(l.code, f)) {
+        cur = l.code; paintTabs(); paintPanel();
+        $("#lf-" + f.key)?.focus();
+        toast(`The ${f.label.toLowerCase()} in ${l.name} does not look like ${l.name}.${guessNote(l.code, draft[l.code][f.key])} Please write it in ${l.name}.`, true);
+        return false;
+      }
+      return true;
+    }
   };
+  activeLf = api;
+  return api;
 }
 
 /* ============================================================
@@ -557,7 +691,7 @@ function renderNiyyahs() {
     // collapsed preview: Arabic only (falls back to the first language that has text)
     const pick = trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text);
     const isOpen = openN.has(n.id);
-    const rows = trs.map(({ l, t }) => `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.status}</span>
+    const rows = trs.map(({ l, t }) => `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.wrong ? "wrong language" : t.status}</span>
         ${t.text ? `<div class="ltext ${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(t.text)}</div>` : ""}
         ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`).join("");
     html += `<div class="item nitem ${isOpen ? "open" : ""}" data-nid="${n.id}">
@@ -594,13 +728,13 @@ function toggleN(id) {
 }
 
 const KINDS = {
-  types: { coll: "locationTypes", tab: "#tab-types", one: "location type", many: "Location types", ph: "e.g. Gym",
+  types: { coll: "locationTypes", tab: "#tab-types", one: "location", many: "Locations", ph: "e.g. Gym",
     hint: "Actions that usually happen here", add: "new-type", edit: "edit-type", del: "del-type", seed: "seed-types",
-    list: () => types, empty: "No location types yet.", seedLabel: "Add starter types",
+    list: () => types, empty: "No locations yet.", seedLabel: "Add starter locations",
     starter: ["Home", "Work", "Friend's house", "Gym", "Place with a memory"] },
-  jobs: { coll: "jobTypes", tab: "#tab-jobs", one: "job type", many: "Job types", ph: "e.g. Teacher",
+  jobs: { coll: "jobTypes", tab: "#tab-jobs", one: "job", many: "Jobs", ph: "e.g. Teacher",
     hint: "Actions that belong to this job", add: "new-job", edit: "edit-job", del: "del-job", seed: "seed-jobs",
-    list: () => jobs, empty: "No job types yet.", seedLabel: "Add starter jobs",
+    list: () => jobs, empty: "No jobs yet.", seedLabel: "Add starter jobs",
     starter: ["Teacher", "Doctor or nurse", "Engineer or IT", "Driver", "Shop owner or trader", "Farmer", "Craftsman or laborer",
               "Office employee", "Business owner", "Freelancer", "Student", "Homemaker", "Caregiver", "Job seeker", "Retired"] }
 };
@@ -652,6 +786,7 @@ document.addEventListener("click", e => {
     "del-job": () => delNamed("jobs", id),
     "seed-jobs": () => seedNamed("jobs"),
     "convert-names": openConvertNames,
+    "view-lang": () => setViewLang(id),
     "go-settings": () => goTab("settings"),
     "import-json": () => $("#import-file").click(),
     "toggle-niyyah": () => toggleN(id),
@@ -754,7 +889,7 @@ function openAction(id, presetParent = "") {
       dlg.close(); toast("Action saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
   $("#lf-name").focus();
 }
 
@@ -846,7 +981,13 @@ function openNiyyah(id) {
     draft[l.code] = { text: t.text, sources: t.sources.length ? [...t.sources] : [""], status: t.status === "empty" ? "draft" : t.status };
   });
   let cur = L[0].code;
-  const stOf = c => (draft[c].text.trim() ? draft[c].status : "empty");
+  const stOf = c => (draft[c].text.trim() && langOk(c, draft[c].text) ? draft[c].status : "empty");
+  const paintWarn = () => {
+    const w = $("#l-warn"); if (!w) return;
+    const l = L.find(x => x.code === cur), bad = draft[cur].text.trim() && !langOk(cur, draft[cur].text);
+    w.hidden = !bad;
+    w.textContent = bad ? `This does not look like ${l.name} text.${guessNote(cur, draft[cur].text)} Please write it in ${l.name}.` : "";
+  };
 
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
     <h2>${id ? "Edit niyyah" : "Add niyyah"}</h2>
@@ -876,15 +1017,16 @@ function openNiyyah(id) {
   const paintPanel = () => {
     const l = L.find(x => x.code === cur), d = draft[cur];
     $("#l-panel").innerHTML = `
-      <label class="f">${esc(l.name)} text<textarea id="l-text" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(d.text)}</textarea></label>
+      <label class="f">${esc(l.name)} text<textarea id="l-text" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(d.text)}</textarea><small class="lwarn" id="l-warn" hidden></small></label>
       <div class="f"><b>Sources</b><small>Hadith or Quran reference. Add as many as you need.</small>
         ${d.sources.map((s, i) => `<div class="src-row"><input type="text" class="src-in" value="${esc(s)}">
           <button type="button" class="btn small danger" data-rm="${i}" title="Remove source">Remove</button></div>`).join("")}
         <div><button type="button" class="btn small" id="l-addsrc">Add source</button></div></div>
       <label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
         <select id="l-status">${STATUSES.map(s => `<option ${s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>`;
-    $("#l-text").oninput = () => { draft[cur].text = $("#l-text").value; paintTabs(); };
+    $("#l-text").oninput = () => { draft[cur].text = $("#l-text").value; paintTabs(); paintWarn(); };
     $("#l-status").onchange = () => { draft[cur].status = $("#l-status").value; paintTabs(); };
+    paintWarn();
     $("#l-addsrc").onclick = () => {
       capture(); draft[cur].sources.push(""); paintPanel();
       [...dlg.querySelectorAll(".src-in")].pop().focus();
@@ -905,6 +1047,10 @@ function openNiyyah(id) {
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
     capture();
+    for (const l of L) if (draft[l.code].text.trim() && !langOk(l.code, draft[l.code].text)) {
+      cur = l.code; paintTabs(); paintPanel();
+      return toast(`The ${l.name} text does not look like ${l.name}.${guessNote(l.code, draft[l.code].text)} Please write it in ${l.name}.`, true);
+    }
     // keep texts for languages that are not configured any more, then overwrite the configured ones
     const translations = { ...(id ? allTr(n) : {}) };
     L.forEach(l => {
@@ -924,7 +1070,7 @@ function openNiyyah(id) {
       dlg.close(); toast("Niyyah saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
 }
 
 async function delNiyyah(id) {
@@ -964,7 +1110,7 @@ function openNamed(key, id) {
       dlg.close(); toast("Saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
   $("#lf-name").focus();
 }
 
@@ -1044,7 +1190,7 @@ function openTip(id) {
       dlg.close(); toast("Tip saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
   $("#lf-text").focus();
 }
 async function delTip(id) {
@@ -1126,7 +1272,7 @@ function openEvent(id, preset) {
       dlg.close(); toast("Event saved.");
     } catch (err) { $("#d-save").disabled = false; fail(err); }
   };
-  dlg.showModal();
+  showDlg();
   $("#lf-name").focus();
 }
 
@@ -1287,7 +1433,7 @@ function addFromSelection() {
 
 function openFetch() {
   const y = calMonth.getFullYear();
-  dlg.innerHTML = `<div class="dlg"><h2>Fetch Hijri calendar</h2>
+  dlg.innerHTML = `<div class="dlg"><h2 data-noguard>Fetch Hijri calendar</h2>
     <p class="muted" style="margin:0">Downloads the Hijri date of every day in <b>${y}</b> and saves it, so the calendar can show each country's own dates.</p>
     <label class="chk"><input type="radio" name="f-mode" value="all" checked> All countries (${COUNTRIES.length})</label>
     <label class="chk"><input type="radio" name="f-mode" value="some"> Specific countries</label>
@@ -1319,7 +1465,7 @@ function openFetch() {
       dlg.close(); toast(`Fetched ${picked.length} calendar${picked.length === 1 ? "" : "s"} for ${y}.`);
     } catch (e) { $("#d-save").disabled = false; $("#f-status").textContent = ""; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
 }
 
 /* ============================================================
@@ -1344,7 +1490,7 @@ function renderSettings() {
       </span></div>`).join("") + `</div></div>`;
   const legacyN = [...actions, ...types].filter(isLegacyDoc).length;
   if (L.length && legacyN) html += `<div class="bar" style="margin-top:24px"><h3>Names in several languages</h3></div>
-    <p class="muted" style="margin-top:0">${legacyN} action / location type name(s) were saved before names could have languages. They still display correctly.
+    <p class="muted" style="margin-top:0">${legacyN} action / location name(s) were saved before names could have languages. They still display correctly.
       Convert them so each language can have its own name and notification wording.</p>
     <button class="btn primary" data-act="convert-names">Convert names</button>`;
   $("#tab-settings").innerHTML = html;
@@ -1375,7 +1521,7 @@ function openLanguage(id) {
       dlg.close(); toast("Language saved.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
   $("#l-name").focus();
 }
 
@@ -1410,7 +1556,7 @@ function openConvertNames() {
   const todo = [...actions.filter(isLegacyDoc).map(x => ["actions", x]), ...types.filter(isLegacyDoc).map(x => ["locationTypes", x])];
   if (!L.length || !todo.length) return;
   dlg.innerHTML = `<div class="dlg">
-    <h2>Convert names</h2>
+    <h2 data-noguard>Convert names</h2>
     <p style="margin:0">${todo.length} name(s) will be moved into the new per-language format. Nothing is deleted.</p>
     <label class="f">The existing names are written in
       <select id="c-lang">${L.map(l => `<option value="${esc(l.code)}" ${l.code === defLang() ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select></label>
@@ -1436,7 +1582,7 @@ function openConvertNames() {
       dlg.close(); toast("Names converted.");
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
 }
 
 /* ============================================================
@@ -1469,7 +1615,7 @@ function buildImportPlan(json) {
       const translations = {};
       for (const [c, v] of langEntries) {
         const text = String(asArray(v.niyyah)[i] ?? "").trim();
-        translations[c] = { text, sources: [...sources[c]], status: text ? "draft" : "empty" };
+        translations[c] = { text, sources: [...sources[c]], status: text && langOk(c, text) ? "draft" : "empty" };
       }
       items.push({ importId: id, importIndex: i, translations,
         skip: niyyahs.some(n => n.importId === id && n.importIndex === i) });
@@ -1483,7 +1629,7 @@ function openImport(plan, fileName) {
   const missing = plan.codes.filter(c => !languages.some(l => l.code === c));
   const snip = it => { const t = it.translations; const c = ["en", "ar", ...Object.keys(t)].find(k => t[k]?.text); return c ? t[c].text : ""; };
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
-    <h2>Import niyyahs</h2>
+    <h2 data-noguard>Import niyyahs</h2>
     <p style="margin:0"><b>${esc(fileName)}</b>: ${fresh.length} niyyah${fresh.length === 1 ? "" : "s"} to add${skipped ? `, ${skipped} already imported (skipped)` : ""}.
       Languages in the file: ${plan.codes.map(esc).join(", ") || "none"}.</p>
     <p class="muted" style="margin:0">All texts are added as draft, with no actions yet. Situations in the file are ignored. A language with no text for a niyyah shows red.</p>
@@ -1509,7 +1655,7 @@ function openImport(plan, fileName) {
       dlg.close(); toast(`${fresh.length} niyyahs imported.`);
     } catch (e) { $("#d-save").disabled = false; fail(e); }
   };
-  dlg.showModal();
+  showDlg();
 }
 
 $("#import-file").onchange = async e => {
