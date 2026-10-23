@@ -71,7 +71,7 @@
   /* Actions tree */
   .cat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; }
   .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
-  .row .name { flex: 1; min-width: 0; }
+  .row .name { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
   .row .count { color: var(--muted); font-size: 13px; }
   .row .tools { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
   .cat > .row { background: var(--green-soft); border-radius: var(--radius) var(--radius) 0 0; font-weight: 600; }
@@ -191,6 +191,13 @@
   .daypanel .erow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 8px; }
   .daypanel .erow .name { flex: 1 1 160px; font-weight: 600; }
   @media (max-width: 640px) { .cday { min-height: 56px; } .cday .ev { display: none; } .cday .evn { display: block; } main { padding: 14px; } }
+
+  /* Catalog check panel */
+  .check-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; }
+  .check-card h4 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+  .check-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .check-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid var(--line); }
+  .check-list li:first-child { border-top: 0; }
 </style>
 </head>
 <body>
@@ -254,7 +261,6 @@ import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, on
    1. PASTE YOUR FIREBASE WEB CONFIG HERE
       Firebase console > Project settings > General > Your apps > Web app
    ============================================================ */
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAG8k5ytThM9Eq8emC0E7ulcfSuq_ciTQc",
   authDomain: "niyyah-4618a.firebaseapp.com",
@@ -274,9 +280,9 @@ let actions = [], niyyahs = [], types = [], jobs = [], languages = [], tips = []
 let listening = false;
 let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let calView = "cal", calSel = null, calRange = false, calCountry = "";
-let hijriDocs = {};           // "SA_2026" -> { days: { "2026-10-15": "3-4-1448" } }
-const openN = new Set();      // niyyah ids that are expanded
-let shownN = [];              // ids currently listed (after filters)
+let hijriDocs = {};
+const openN = new Set();
+let shownN = [];
 const DEF_TITLE = "Set your niyyah: {action}";
 const DEF_BODY = "{niyyah}";
 
@@ -290,10 +296,9 @@ let dlgDirty = false, dlgGuard = true, activeLf = null;
 dlg.addEventListener("input", () => (dlgDirty = true));
 dlg.addEventListener("change", () => (dlgDirty = true));
 dlg.addEventListener("close", () => { dlgDirty = false; activeLf = null; });
-dlg.addEventListener("cancel", e => { e.preventDefault(); requestClose(); });   // Escape key
+dlg.addEventListener("cancel", e => { e.preventDefault(); requestClose(); });
 dlg.addEventListener("click", e => {
   if (e.target.closest("[data-rm]")) dlgDirty = true;
-  // Save is blocked while a field is not in its language (runs before the dialog's own Save handler)
   if (e.target.closest("#d-save") && activeLf && !activeLf.check()) e.stopImmediatePropagation();
 }, true);
 function showDlg() {
@@ -344,10 +349,22 @@ function actionLabel(id) {
 }
 const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).length;
 
+/* ---------- chips for actions (visible / restricted) ---------- */
+function actionChips(a) {
+  let h = "";
+  if (a.visible === false) {
+    h += `<span class="chip" style="background:#fce8e6;color:var(--danger)">Hidden</span>`;
+  } else {
+    h += `<span class="chip">In app</span>`;
+  }
+  if (a.restricted) {
+    h += `<span class="chip" style="background:#e3efec;color:var(--green)">Job-only</span>`;
+  }
+  return h;
+}
+
 /* ---------- languages + per-language niyyah text ---------- */
 const STATUSES = ["draft", "reviewed", "published"];
-// True language check: a filled field only counts when its letters are written in the script of its language.
-// Languages not listed here (or with a script not listed) are not checked.
 const LANG_RE = (() => {
   const map = {}, set = (codes, re) => codes.split(" ").forEach(c => (map[c] = re));
   set("ar ur fa ps ckb ug sd", /\p{Script=Arabic}/u);
@@ -362,9 +379,6 @@ const LANG_RE = (() => {
   set("zh", /\p{Script=Han}/u); set("ja", /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u);
   return map;
 })();
-// Latin script is shared by many languages, so the script test cannot tell French from English.
-// For those, count very common words of each language. A text is flagged only when another language
-// clearly wins. Short texts (under 4 words) and languages without a list are never flagged.
 const STOP_WORDS = (() => {
   const w = s => new Set(s.split(" "));
   return {
@@ -381,7 +395,7 @@ const STOP_WORDS = (() => {
 })();
 const LANG_NAMES = { en: "English", fr: "French", es: "Spanish", de: "German", it: "Italian", pt: "Portuguese", nl: "Dutch", tr: "Turkish", id: "Indonesian" };
 const stopGroup = c => { c = String(c).toLowerCase().split("-")[0]; return c === "ms" ? "id" : c; };
-function guessOther(code, text) {   // returns the code of a different language that clearly fits better, or null
+function guessOther(code, text) {
   const exp = stopGroup(code);
   if (!STOP_WORDS[exp]) return null;
   const words = String(text || "").replace(/\{[a-z]+\}/gi, " ").toLowerCase().match(/\p{L}+/gu) || [];
@@ -393,15 +407,14 @@ function guessOther(code, text) {   // returns the code of a different language 
 const guessNote = (code, text) => { const g = guessOther(code, text); return g ? ` It looks like ${LANG_NAMES[g]}.` : ""; };
 function langOk(code, text) {
   const re = LANG_RE[String(code).toLowerCase().split("-")[0]];
-  const s = String(text || "").replace(/\{[a-z]+\}/gi, "");   // ignore {action} / {niyyah}
+  const s = String(text || "").replace(/\{[a-z]+\}/gi, "");
   if (!re || !s.trim()) return true;
   const letters = [...s].filter(ch => /\p{L}/u.test(ch));
   if (!letters.length) return false;
   return letters.filter(ch => re.test(ch)).length / letters.length >= 0.7 && !guessOther(code, s);
 }
 const langs = () => [...languages].sort(byOrder);
-// Niyyahs saved before languages existed only have textAr / textEn / source / status.
-// Treat those as the "ar" and "en" translations so nothing is lost.
+
 function allTr(n) {
   if (n.translations) return n.translations;
   const src = n.source ? [n.source] : [];
@@ -420,7 +433,6 @@ function trOf(n, code) {
     status: text && langOk(code, text) ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
   };
 }
-// Old single-language fields, kept in sync so anything still reading them keeps working.
 function mirrorFields(translations) {
   const filled = Object.values(translations).filter(t => t.text);
   const joined = c => (translations[c]?.sources || []).join("; ");
@@ -432,16 +444,12 @@ function mirrorFields(translations) {
 }
 const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
-// Per-language status for records that keep their text in a map (names, tip texts).
-// Stored as  statuses: {ar: "reviewed", en: "published"}  next to the text map.
-// Older records have no statuses: tips and events fall back to their old published flag, everything else to draft.
 const langSt = (x, code, text) => {
   if (!String(text || "").trim() || !langOk(code, text)) return "empty";
   const s = (x.statuses || {})[code];
   return STATUSES.includes(s) ? s : (x.published ? "published" : "draft");
 };
 const statusInit = (x, L, m) => { const o = {}; L.forEach(l => (o[l.code] = langSt(x, l.code, m[l.code]))); return o; };
-// statuses to save: only languages that have text, plus statuses of languages removed from Settings
 const statusOut = (x, L, out, lf) => {
   const all = lf.statuses(), st = {};
   L.forEach(l => { if (out[l.code]) st[l.code] = all[l.code]; });
@@ -451,10 +459,6 @@ const anyPublished = st => Object.values(st).includes("published");
 const lcodes = (L, m, x = {}) => `<span class="dots">${L.map(l => { const s = langSt(x, l.code, m[l.code]);
   return `<span class="lcode st-${s}" title="${esc(l.name)}: ${s}">${esc(l.code)}</span>`; }).join("")}</span>`;
 
-/* ---------- names + notification templates in several languages ----------
-   New format:  names: {ar: "...", en: "..."}   titleTemplates: {...}   bodyTemplates: {...}
-   Older documents only have name / titleTemplate / bodyTemplate: those are treated as the default language.
-   name / titleTemplate / bodyTemplate are still written too, so anything reading them keeps working. */
 let viewLang = "";
 try { viewLang = localStorage.getItem("viewLang") || ""; } catch (e) {}
 const defLang = () => (langs().find(l => l.code === "en") || langs()[0])?.code || "en";
@@ -465,7 +469,6 @@ const firstOf = map => langs().map(l => map[l.code]).find(Boolean) || Object.val
 const pickName = map => map[defLang()] || firstOf(map);
 const nm = x => { const m = nameMap(x); return m[viewCode()] || firstOf(m) || "(no name)"; };
 const isLegacyDoc = x => !x.names && !!x.name;
-// keep texts of languages that were removed from Settings
 function keepUnknown(old, out) {
   const L = langs();
   for (const c of Object.keys(old)) if (!L.some(l => l.code === c) && !(c in out)) out[c] = old[c];
@@ -485,8 +488,6 @@ function setViewLang(code) {
   renderAll();
 }
 
-// Language tabs for a dialog. The tab is red while the first field is empty, green once it is filled.
-// The caller writes <div id="lf-tabs">, <div id="lf-panel"> (see langFieldsHtml) before calling this.
 const langFieldsHtml = () => `<div class="ltabs" id="lf-tabs" role="tablist"></div>
   <div class="legend"><span class="badge st-empty">empty</span><span class="badge st-draft">draft</span>
     <span class="badge st-reviewed">reviewed</span><span class="badge st-published">published</span></div>
@@ -537,7 +538,6 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     values: () => { capture(); return draft; },
     statuses: () => { capture(); const o = {}; L.forEach(l => (o[l.code] = stateOf(l.code))); return o; },
     current: () => cur,
-    // false (and jumps to the offending tab) when a filled field is not written in its language
     check: () => {
       capture();
       for (const l of L) for (const f of fields) if (fieldBad(l.code, f)) {
@@ -590,7 +590,6 @@ function startListening() {
   watch("jobTypes", v => (jobs = v));
   watch("tips", v => (tips = v));
   watch("events", v => (events = v));
-  // Fetched calendars: failures here (e.g. security rules) must not break the rest of the app.
   onSnapshot(collection(db, "hijriCalendars"),
     snap => { hijriDocs = Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); renderEvents(); },
     err => console.warn("hijriCalendars not readable", err));
@@ -619,7 +618,7 @@ function renderActions() {
   for (const c of tops) {
     const kids = childrenOf(c.id);
     html += `<div class="cat"><div class="row">
-        <span class="name">${esc(nm(c))}</span>
+        <span class="name">${esc(nm(c))} ${actionChips(c)}</span>
         ${lcodes(L, nameMap(c), c)}
         <span class="count">${niyyahCount(c.id) ? niyyahCount(c.id) + " niyyahs" : ""}</span>
         <span class="tools">
@@ -631,7 +630,7 @@ function renderActions() {
         </span></div>`;
     if (kids.length) {
       html += `<div class="kids">` + kids.map(k => `<div class="row">
-          <span class="name">${esc(nm(k))}</span>
+          <span class="name">${esc(nm(k))} ${actionChips(k)}</span>
           ${lcodes(L, nameMap(k), k)}
           <span class="count">${niyyahCount(k.id)} niyyahs</span>
           <span class="tools">
@@ -648,7 +647,6 @@ function renderActions() {
 
 function renderNiyyahs() {
   const root = $("#tab-niyyahs");
-  // keep filter values across re-renders
   const q = ($("#f-q", root)?.value || "").toLowerCase();
   const st = $("#f-status", root)?.value || "";
   const ac = $("#f-action", root)?.value || "";
@@ -688,7 +686,6 @@ function renderNiyyahs() {
   shownN = L.length ? list.map(n => n.id) : [];
   if (L.length) for (const n of list) {
     const trs = L.map(l => ({ l, t: trOf(n, l.code) }));
-    // collapsed preview: Arabic only (falls back to the first language that has text)
     const pick = trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text);
     const isOpen = openN.has(n.id);
     const rows = trs.map(({ l, t }) => `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.wrong ? "wrong language" : t.status}</span>
@@ -705,6 +702,7 @@ function renderNiyyahs() {
       <div class="nbody" ${isOpen ? "" : "hidden"}>${rows}
         <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
           ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}
+          ${(n.afterActionIds || []).map(id => `<span class="chip" style="background:#e3efec">After: ${esc(actionLabel(id))}</span>`).join("")}
           ${(n.eventIds || []).map(id => `<span class="chip">Event: ${esc(eventLabel(id))}</span>`).join("")}</div>
         <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
           <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div></div>`;
@@ -786,6 +784,7 @@ document.addEventListener("click", e => {
     "del-job": () => delNamed("jobs", id),
     "seed-jobs": () => seedNamed("jobs"),
     "convert-names": openConvertNames,
+    "publish-all-names": openPublishAllNames,
     "view-lang": () => setViewLang(id),
     "go-settings": () => goTab("settings"),
     "import-json": () => $("#import-file").click(),
@@ -825,7 +824,7 @@ document.addEventListener("change", e => { if (e.target.id === "cal-country") { 
 function openAction(id, presetParent = "") {
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const a = id ? actionById(id) : { parentId: presetParent };
+  const a = id ? actionById(id) : { parentId: presetParent, visible: true, restricted: false };
   const hasKids = id && childrenOf(id).length > 0;
   const tops = childrenOf("").filter(x => x.id !== id);
   const names = nameMap(a), titles = tplMap(a, "title"), bodies = tplMap(a, "body");
@@ -844,6 +843,10 @@ function openAction(id, presetParent = "") {
       </select>
       ${hasKids ? "<small>This category has actions inside it, so it stays a main category.</small>" : ""}
     </label>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin:2px 0 6px">
+      <label class="chk"><input type="checkbox" id="a-visible" ${a.visible !== false ? "checked" : ""}> Show in the app</label>
+      <label class="chk"><input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> Only for jobs that list it</label>
+    </div>
     ${langFieldsHtml()}
     <div class="preview" aria-live="polite"><small>Preview (language of the open tab)</small><b id="p-title"></b><span id="p-body"></span></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
@@ -874,10 +877,19 @@ function openAction(id, presetParent = "") {
     keepUnknown(nameMap(a), nmOut); keepUnknown(tplMap(a, "title"), tOut); keepUnknown(tplMap(a, "body"), bOut);
     if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
     const parentId = hasKids ? "" : $("#a-parent").value;
-    const data = { names: nmOut, name: pickName(nmOut), parentId,
-      statuses: statusOut(a, L, nmOut, lf), titleTemplates: tOut, bodyTemplates: bOut,
-      titleTemplate: pickName(tOut) || DEF_TITLE, bodyTemplate: pickName(bOut) || DEF_BODY,
-      updatedAt: serverTimestamp() };
+    const data = {
+      names: nmOut,
+      name: pickName(nmOut),
+      parentId,
+      visible: $("#a-visible").checked,
+      restricted: $("#a-restricted").checked,
+      statuses: statusOut(a, L, nmOut, lf),
+      titleTemplates: tOut,
+      bodyTemplates: bOut,
+      titleTemplate: pickName(tOut) || DEF_TITLE,
+      bodyTemplate: pickName(bOut) || DEF_BODY,
+      updatedAt: serverTimestamp()
+    };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "actions", id), data);
@@ -914,8 +926,13 @@ async function delAction(id) {
   try {
     const batch = writeBatch(db);
     batch.delete(doc(db, "actions", id));
-    niyyahs.filter(x => (x.actionIds || []).includes(id))
-      .forEach(x => batch.update(doc(db, "niyyahs", x.id), { actionIds: arrayRemove(id) }));
+    niyyahs.filter(x => (x.actionIds || []).includes(id) || (x.afterActionIds || []).includes(id))
+      .forEach(x => {
+        const upd = {};
+        if ((x.actionIds || []).includes(id)) upd.actionIds = arrayRemove(id);
+        if ((x.afterActionIds || []).includes(id)) upd.afterActionIds = arrayRemove(id);
+        batch.update(doc(db, "niyyahs", x.id), upd);
+      });
     types.filter(x => (x.actionIds || []).includes(id))
       .forEach(x => batch.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) }));
     jobs.filter(x => (x.actionIds || []).includes(id))
@@ -927,7 +944,7 @@ async function delAction(id) {
 
 function seedFields(name, parentId, order) {
   const dl = defLang();
-  return { names: { [dl]: name }, name, parentId, order,
+  return { names: { [dl]: name }, name, parentId, order, visible: true, restricted: false,
     titleTemplates: dl === "en" ? { en: DEF_TITLE } : {}, bodyTemplates: { [dl]: DEF_BODY },
     titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() };
 }
@@ -967,14 +984,13 @@ function checklist(selected) {
     return kids.length ? `<div><div class="grp-h">${esc(nm(t))}</div>${kids.map(box).join("")}</div>` : box(t);
   }).join("");
 }
-const checkedIds = () => [...dlg.querySelectorAll(".checklist input:checked")].map(i => i.value);
+const checkedIdsIn = sel => [...dlg.querySelectorAll(`${sel} input:checked`)].map(i => i.value);
 
 function openNiyyah(id) {
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const n = id ? niyyahs.find(x => x.id === id) : { general: false, actionIds: [] };
+  const n = id ? niyyahs.find(x => x.id === id) : { general: false, actionIds: [], afterActionIds: [] };
 
-  // one working copy per language, edited while the dialog is open
   const draft = {};
   L.forEach(l => {
     const t = id ? trOf(n, l.code) : { text: "", sources: [], status: "draft" };
@@ -997,7 +1013,9 @@ function openNiyyah(id) {
     <div class="lpanel" id="l-panel"></div>
     <label class="chk"><input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> Fits any action (can be shown anywhere as a fallback)</label>
     <div class="f"><b>Actions this niyyah belongs to</b>
-      <div class="checklist">${checklist(n.actionIds || [])}</div></div>
+      <div class="checklist" id="n-actions">${checklist(n.actionIds || [])}</div></div>
+    <div class="f"><b>Comes after these actions</b><small>Optional priority hint for chained niyyahs</small>
+      <div class="checklist" id="n-after-actions">${checklist(n.afterActionIds || [])}</div></div>
     <div class="f"><b>Events this niyyah belongs to</b>
       <div class="evlist">${eventChecklist(n.eventIds || [])}</div></div>
     <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
@@ -1007,7 +1025,6 @@ function openNiyyah(id) {
     $("#l-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stOf(l.code)}"
       data-lang="${esc(l.code)}" aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stOf(l.code)}">${esc(l.name)}</button>`).join("");
   };
-  // copy what is typed in the visible panel into the working copy
   const capture = () => {
     if (!$("#l-text")) return;
     draft[cur].text = $("#l-text").value;
@@ -1051,7 +1068,6 @@ function openNiyyah(id) {
       cur = l.code; paintTabs(); paintPanel();
       return toast(`The ${l.name} text does not look like ${l.name}.${guessNote(l.code, draft[l.code].text)} Please write it in ${l.name}.`, true);
     }
-    // keep texts for languages that are not configured any more, then overwrite the configured ones
     const translations = { ...(id ? allTr(n) : {}) };
     L.forEach(l => {
       const d = draft[l.code], text = d.text.trim();
@@ -1059,10 +1075,21 @@ function openNiyyah(id) {
     });
     const filled = Object.values(translations).filter(t => t.text);
     if (!filled.length) return toast("Write the niyyah in at least one language.", true);
-    const general = $("#n-gen").checked, actionIds = checkedIds(), eventIds = [...dlg.querySelectorAll(".evlist input:checked")].map(i => i.value);
+    const general = $("#n-gen").checked;
+    const actionIds = checkedIdsIn("#n-actions");
+    const afterActionIds = checkedIdsIn("#n-after-actions");
+    const eventIds = [...dlg.querySelectorAll(".evlist input:checked")].map(i => i.value);
     if (filled.some(t => t.status === "published") && !general && !actionIds.length && !eventIds.length)
       return toast("A published niyyah needs at least one action or event, or 'Fits any action'.", true);
-    const data = { translations, general, actionIds, eventIds, updatedAt: serverTimestamp(), ...mirrorFields(translations) };
+    const data = {
+      translations,
+      general,
+      actionIds,
+      afterActionIds,
+      eventIds,
+      updatedAt: serverTimestamp(),
+      ...mirrorFields(translations)
+    };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, "niyyahs", id), data);
@@ -1102,7 +1129,7 @@ function openNamed(key, id) {
     L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
     keepUnknown(names, out);
     if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
-    const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: checkedIdsIn(".checklist"), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
       if (id) await updateDoc(doc(db, K.coll, id), data);
@@ -1132,11 +1159,11 @@ async function seedNamed(key) {
 }
 
 /* ============================================================
-   7b. TIPS (tip of the day) + EVENTS (common niyyahs)
+   7b. TIPS + EVENTS
    ============================================================ */
 const TIP_CATS = { habit: "Habit anchor", knowledge: "Knowledge", practical: "Practical" };
 const HIJRI = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"];
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; // value 1-7, same as Dart's DateTime.weekday
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const needLang = () => { goTab("settings"); toast("Add at least one language in Settings first.", true); };
 const eventLabel = id => { const e = events.find(x => x.id === id); return e ? nm(e) : "(deleted event)"; };
 const eventChecklist = sel => events.length
@@ -1181,7 +1208,6 @@ function openTip(id) {
     keepUnknown(t.texts || {}, out);
     if (!Object.keys(out).length) return toast("Write the tip in at least one language.", true);
     const statuses = statusOut(t, L, out, lf);
-    // "published" is kept as a summary flag: true when at least one language is published
     const data = { texts: out, statuses, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: anyPublished(statuses), updatedAt: serverTimestamp() };
     $("#d-save").disabled = true;
     try {
@@ -1229,7 +1255,7 @@ function openEvent(id, preset) {
   const e = id ? events.find(x => x.id === id) : (preset || { rule: { type: "hijri", month: 1, day: 1, days: 1 }, remindDaysBefore: 1, notifyTime: "09:00" });
   const r = e.rule || {}, names = nameMap(e), initial = {};
   L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
-  const opts = (arr, sel, first = 0) => arr.map((x, i) => `<option value="${i + first}" ${i + first === sel ? "selected" : ""}>${x}</option>`).join("");
+  const opts = (arr, sel, first = 0) => arr.map((x, i) => `<option value="${i + first}" ${i + first === sel ? "selected" : ""}>${x}</option>`).join("") ;
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
     <h2>${id ? "Edit" : "Add"} event</h2>
     ${langFieldsHtml()}
@@ -1306,12 +1332,9 @@ async function seedEvents() {
   } catch (e) { fail(e); }
 }
 
-
 /* ============================================================
-   7c. EVENTS CALENDAR (Gregorian days, small Hijri date) + FETCH
+   7c. EVENTS CALENDAR + FETCH
    ============================================================ */
-// Each country picks the Hijri calendar method that AlAdhan offers (UAQ, DIYANET, MATHEMATICAL).
-// Countries that follow local moon sighting have no exact method: edit this table when you pick a source for them.
 const COUNTRIES = [
   { code: "SA", name: "Saudi Arabia", method: "UAQ" },
   { code: "TR", name: "Türkiye", method: "DIYANET" },
@@ -1331,16 +1354,15 @@ function baseHijri(d) {
   const p = Object.fromEntries(_hf.formatToParts(d).map(x => [x.type, x.value]));
   return { d: +p.day, m: +p.month, y: parseInt(p.year, 10) };
 }
-// Month-start corrections: shifts["1448-4"] = +1 means that Hijri month starts a day later in this calendar, -1 a day earlier.
 const shiftKey = h => `${h.y}-${h.m}`;
 const shiftsNow = () => hijriDocs[`${calCountry || "DEFAULT"}_shifts`]?.shifts || {};
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
 function hijriOf(d) {
   const b = baseHijri(d), sh = shiftsNow();
   if (!Object.values(sh).some(v => v)) return b;
-  const bs = addDays(d, -(b.d - 1));                              // base start of this month
-  const pb = baseHijri(addDays(bs, -1)), ps = addDays(bs, -pb.d); // previous month
-  const ns = addDays(bs, baseHijri(addDays(bs, 29)).m === b.m ? 30 : 29), nb = baseHijri(ns); // next month
+  const bs = addDays(d, -(b.d - 1));
+  const pb = baseHijri(addDays(bs, -1)), ps = addDays(bs, -pb.d);
+  const ns = addDays(bs, baseHijri(addDays(bs, 29)).m === b.m ? 30 : 29), nb = baseHijri(ns);
   const months = [[pb, ps], [b, bs], [nb, ns]].map(([h, st]) => ({ h, start: addDays(st, sh[shiftKey(h)] || 0) }));
   const cur = months.filter(x => x.start <= d).pop() || months[0];
   return { d: Math.round((d - cur.start) / 864e5) + 1, m: cur.h.m, y: cur.h.y };
@@ -1469,7 +1491,7 @@ function openFetch() {
 }
 
 /* ============================================================
-   8. SETTINGS: LANGUAGES
+   8. SETTINGS: LANGUAGES, PUBLISH ALL NAMES & CATALOG CHECK
    ============================================================ */
 function renderSettings() {
   const L = langs();
@@ -1488,12 +1510,137 @@ function renderSettings() {
         <button class="btn small" data-act="edit-lang" data-id="${l.id}">Edit</button>
         <button class="btn small danger" data-act="del-lang" data-id="${l.id}">Delete</button>
       </span></div>`).join("") + `</div></div>`;
+
+  // Publish all names button
+  html += `<div class="bar" style="margin-top:24px"><h3>Names & Publishing</h3>
+    <button class="btn primary" data-act="publish-all-names">Publish all names</button></div>
+    <p class="muted" style="margin-top:0">Sets status = "published" for all actions, jobs, and locations that have a name but no language status yet.</p>`;
+
   const legacyN = [...actions, ...types].filter(isLegacyDoc).length;
-  if (L.length && legacyN) html += `<div class="bar" style="margin-top:24px"><h3>Names in several languages</h3></div>
-    <p class="muted" style="margin-top:0">${legacyN} action / location name(s) were saved before names could have languages. They still display correctly.
-      Convert them so each language can have its own name and notification wording.</p>
-    <button class="btn primary" data-act="convert-names">Convert names</button>`;
+  if (L.length && legacyN) html += `<div class="bar" style="margin-top:16px"><h3>Convert legacy names</h3>
+    <button class="btn" data-act="convert-names">Convert names (${legacyN})</button></div>
+    <p class="muted" style="margin-top:0">${legacyN} record(s) were saved before names had per-language fields.</p>`;
+
+  // Catalog check panel
+  html += renderCatalogCheck();
+
   $("#tab-settings").innerHTML = html;
+}
+
+function renderCatalogCheck() {
+  const publishedNiyyah = n => hasStatus(n, "published") || n.status === "published";
+
+  // 1. Published niyyahs with no actions and not general
+  const orphanNiyyahs = niyyahs.filter(n => publishedNiyyah(n) && !n.general && (!n.actionIds || !n.actionIds.length));
+
+  // 2. Actions with no published niyyah (actionable leaves or standalone)
+  const isLeaf = a => childrenOf(a.id).length === 0;
+  const actionsNoPub = actions.filter(a => isLeaf(a) && !niyyahs.some(n => publishedNiyyah(n) && (n.actionIds || []).includes(a.id)));
+
+  // 3. Restricted actions that no job lists
+  const jobActionIds = new Set(jobs.flatMap(j => j.actionIds || []));
+  const unlistedRestricted = actions.filter(a => a.restricted && !jobActionIds.has(a.id));
+
+  // 4. Events with no niyyahs
+  const eventsNoNiyyah = events.filter(e => !niyyahs.some(n => (n.eventIds || []).includes(e.id)));
+
+  const totalIssues = orphanNiyyahs.length + actionsNoPub.length + unlistedRestricted.length + eventsNoNiyyah.length;
+
+  let h = `<div class="bar" style="margin-top:28px"><h3>Catalog check</h3></div>
+    <p class="muted" style="margin-top:0">Identifies gaps, unlinked content, and configuration oversights before publishing.</p>`;
+
+  if (totalIssues === 0) {
+    h += `<div class="empty" style="border-style:solid;border-color:var(--green);background:var(--green-soft)">
+      <p style="color:var(--green);font-weight:600;margin:0">✓ All published niyyahs, actions, restricted actions, and events are healthy.</p></div>`;
+    return h;
+  }
+
+  const snipN = n => {
+    const t = allTr(n);
+    return t.ar?.text || t.en?.text || Object.values(t).find(x => x.text)?.text || "(no text)";
+  };
+
+  // Section 1: Orphan niyyahs
+  if (orphanNiyyahs.length) {
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Published niyyahs with no actions and not general</span> <span class="badge st-empty">${orphanNiyyahs.length}</span></h4>
+      <ul class="check-list">${orphanNiyyahs.map(n => `<li><span>${esc(snipN(n))}</span>
+        <button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button></li>`).join("")}</ul></div>`;
+  }
+
+  // Section 2: Actions without published niyyah
+  if (actionsNoPub.length) {
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Actions with no published niyyah</span> <span class="badge st-empty">${actionsNoPub.length}</span></h4>
+      <ul class="check-list">${actionsNoPub.map(a => `<li><span>${esc(actionLabel(a.id))}</span>
+        <button class="btn small" data-act="edit-action" data-id="${a.id}">Edit</button></li>`).join("")}</ul></div>`;
+  }
+
+  // Section 3: Restricted actions with no job
+  if (unlistedRestricted.length) {
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Restricted actions that no job lists</span> <span class="badge st-empty">${unlistedRestricted.length}</span></h4>
+      <p class="muted" style="margin:0 0 6px;font-size:13px">Users will never see these actions until a job type adds them.</p>
+      <ul class="check-list">${unlistedRestricted.map(a => `<li><span>${esc(actionLabel(a.id))}</span>
+        <button class="btn small" data-act="edit-action" data-id="${a.id}">Edit</button></li>`).join("")}</ul></div>`;
+  }
+
+  // Section 4: Events with no niyyahs
+  if (eventsNoNiyyah.length) {
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Events with no niyyahs</span> <span class="badge st-empty">${eventsNoNiyyah.length}</span></h4>
+      <ul class="check-list">${eventsNoNiyyah.map(e => `<li><span>${esc(nm(e))}</span>
+        <button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button></li>`).join("")}</ul></div>`;
+  }
+
+  return h;
+}
+
+function openPublishAllNames() {
+  const needs = list => list.filter(x => (!x.statuses || !Object.keys(x.statuses).length) && Object.keys(nameMap(x)).length > 0);
+  const aDocs = needs(actions).map(x => ({ coll: "actions", doc: x }));
+  const jDocs = needs(jobs).map(x => ({ coll: "jobTypes", doc: x }));
+  const tDocs = needs(types).map(x => ({ coll: "locationTypes", doc: x }));
+  const targets = [...aDocs, ...jDocs, ...tDocs];
+
+  if (!targets.length) {
+    return toast("All actions, jobs, and locations already have language statuses.");
+  }
+
+  dlg.innerHTML = `<div class="dlg">
+    <h2 data-noguard>Publish all names</h2>
+    <p style="margin:0">Found <b>${targets.length} document(s)</b> without language statuses:</p>
+    <ul style="margin:0;padding-left:20px;font-size:14px" class="muted">
+      <li>${aDocs.length} action(s)</li>
+      <li>${jDocs.length} job(s)</li>
+      <li>${tDocs.length} location(s)</li>
+    </ul>
+    <p style="margin:0" class="muted">For each document, every language that has a name will be set to status = "published".</p>
+    <div class="actions">
+      <button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Publish ${targets.length} names</button>
+    </div></div>`;
+
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    $("#d-save").disabled = true;
+    try {
+      for (let i = 0; i < targets.length; i += 400) {
+        const batch = writeBatch(db);
+        targets.slice(i, i + 400).forEach(({ coll, doc: x }) => {
+          const m = nameMap(x);
+          const st = {};
+          for (const [lang, name] of Object.entries(m)) {
+            if (name && String(name).trim()) st[lang] = "published";
+          }
+          batch.update(doc(db, coll, x.id), { statuses: st, updatedAt: serverTimestamp() });
+        });
+        await batch.commit();
+      }
+      dlg.close();
+      toast(`Published names for ${targets.length} document(s).`);
+    } catch (e) {
+      $("#d-save").disabled = false;
+      fail(e);
+    }
+  };
+  showDlg();
 }
 
 function openLanguage(id) {
@@ -1587,14 +1734,9 @@ function openConvertNames() {
 
 /* ============================================================
    9. IMPORT NIYYAHS FROM JSON
-   Shape: { "<id>": { "<lang>": { situation, niyyah: [..], sources: [..] } } }
-   Each entry of "niyyah" becomes its own niyyah. All niyyahs of one id share that id's sources.
-   The same position in each language is the same niyyah. "situation" is ignored.
    ============================================================ */
 const asArray = v => Array.isArray(v) ? v : (v ? [v] : []);
 
-// The export split every source text at its commas. Put the pieces back together,
-// then start a new source after each closing citation like [Al-Bukhari].
 function rebuildSources(raw, code) {
   const parts = asArray(raw).map(x => String(x).trim()).filter(Boolean);
   if (parts.length <= 1) return parts;
