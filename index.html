@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14584d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Niyyah Admin</title>
 <style>
   :root {
@@ -159,7 +163,8 @@
   .langpick { position: relative; }
   .langpick .cur { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius); padding: 3px 10px; font-size: 14px; }
   .langpick .menu { position: absolute; right: 0; top: 100%; padding-top: 6px; display: none; z-index: 30; min-width: 100%; }
-  .langpick:hover .menu, .langpick:focus-within .menu { display: block; }
+  .langpick.open .menu { display: block; }
+  @media (hover: hover) { .langpick:hover .menu { display: block; } }
   .langpick .menu-in { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,.2); overflow: hidden; display: grid; }
   .langpick .menu button { border: 0; background: transparent; color: var(--ink); text-align: start; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
   .langpick .menu button:hover { background: var(--green-soft); }
@@ -198,6 +203,81 @@
   .check-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
   .check-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; padding: 4px 0; border-top: 1px solid var(--line); }
   .check-list li:first-child { border-top: 0; }
+
+  /* ===== Responsive layer: phone-first, polished on desktop ===== */
+  html { -webkit-text-size-adjust: 100%; }
+  body { -webkit-tap-highlight-color: transparent; }
+  button, .btn, nav.tabs button, .cday, .nhead { touch-action: manipulation; }
+  .center { min-height: 100dvh; }
+  .btn:active { transform: scale(.97); }
+  dialog { overscroll-behavior: contain; }
+
+  /* Desktop / large screens */
+  @media (min-width: 721px) {
+    header.top { position: sticky; top: 0; z-index: 20; padding: 12px max(24px, calc((100vw - 1120px) / 2)); box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+    nav.tabs { position: sticky; top: 52px; z-index: 19; padding: 0 max(24px, calc((100vw - 1120px) / 2)); }
+    main { max-width: 1120px; padding: 28px 24px 56px; }
+    .bar h2 { font-size: 22px; }
+    .item, .cat { transition: box-shadow .15s, border-color .15s; }
+    .item:hover, .cat:hover { border-color: #c5cfcb; box-shadow: 0 2px 10px rgba(20,40,35,.07); }
+    dialog { width: min(720px, 92vw); }
+    #dlg-discard { width: min(460px, 92vw); }
+    .dlg { padding: 26px 28px; }
+    .checklist, .evlist { max-height: 280px; }
+  }
+  @media (min-width: 1100px) {
+    .cday { min-height: 104px; }
+  }
+
+  /* Touch devices: bigger targets, no iOS focus-zoom */
+  @media (pointer: coarse) {
+    .btn { min-height: 44px; padding: 9px 16px; }
+    .btn.small { min-height: 40px; padding: 6px 13px; font-size: 15px; }
+    .row .tools, .item .tools { gap: 8px; }
+    input, select, textarea { font-size: 16px !important; }
+    .filters input, .filters select, .calbar select, .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select { min-height: 44px; }
+    header.top select, .langpick .cur { min-height: 36px; }
+    .ltab { padding: 10px 16px; }
+    .chk { padding: 8px 0 8px 4px; }
+    .langpick .menu button { padding: 12px 16px; }
+    .dlg-x { width: 44px; height: 44px; top: 8px; right: 8px; }
+    .nhead { padding: 14px 16px; }
+  }
+
+  /* Phones: bottom tab bar, full-width sheets */
+  @media (max-width: 720px) {
+    header.top { padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+    header.top .who #who { display: none; }
+    nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; gap: 0; padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); border-top: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -2px 12px rgba(0,0,0,.06); overflow: hidden; }
+    nav.tabs button { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 7px; font-size: 10.5px; border-bottom: 0; border-top: 3px solid transparent; overflow: hidden; text-overflow: ellipsis; }
+    nav.tabs button::before { font-size: 19px; line-height: 1.1; }
+    nav.tabs button[aria-selected="true"] { border-top-color: var(--green); background: rgba(255,255,255,.55); color: var(--green); }
+    nav.tabs [data-tab="actions"]::before { content: "🌿"; }
+    nav.tabs [data-tab="niyyahs"]::before { content: "🤲"; }
+    nav.tabs [data-tab="types"]::before { content: "📍"; }
+    nav.tabs [data-tab="jobs"]::before { content: "💼"; }
+    nav.tabs [data-tab="tips"]::before { content: "💡"; }
+    nav.tabs [data-tab="events"]::before { content: "📅"; }
+    nav.tabs [data-tab="settings"]::before { content: "⚙️"; }
+    main { padding: 14px 14px calc(88px + env(safe-area-inset-bottom, 0px)); }
+    #toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+    .bar h2 { font-size: 19px; }
+    .row .tools { flex: 1 1 100%; justify-content: flex-start; }
+    .cat .kids { padding-left: 8px; }
+    .item { padding: 12px 14px; }
+    .item .head { flex-direction: column; gap: 6px; }
+
+    /* Dialogs become bottom sheets with a sticky action bar */
+    dialog { width: 100%; max-width: 100%; margin: auto 0 0; max-height: 94dvh; border-radius: 16px 16px 0 0; overflow-y: auto; }
+    dialog:not(#dlg-discard) { height: 94dvh; }
+    #dlg-discard { width: 100%; }
+    .dlg { padding: 20px 16px 0; scroll-padding-bottom: 96px; }
+    .dlg .actions { position: sticky; bottom: 0; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid var(--line); z-index: 2; }
+    .dlg .actions .btn { flex: 1; }
+    .checklist, .evlist, .imp-list { max-height: 38dvh; }
+    .grid2 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 380px) { .grid2 { grid-template-columns: 1fr; } header.top h1 { font-size: 16px; } }
 </style>
 </head>
 <body>
@@ -251,7 +331,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
          serverTimestamp, writeBatch, arrayRemove }
@@ -482,6 +562,11 @@ function renderViewLang() {
     <div class="menu"><div class="menu-in">${L.map(l =>
       `<button type="button" class="${l === cur ? "is-cur" : ""}" ${l === cur ? 'aria-current="true"' : ""} data-act="view-lang" data-id="${esc(l.code)}">${l === cur ? "✓ " : ""}${esc(l.name)}</button>`).join("")}</div></div>`;
 }
+document.addEventListener("click", ev => {
+  const box = $("#view-lang"); if (!box) return;
+  if (ev.target.closest("#view-lang .cur")) box.classList.toggle("open");
+  else box.classList.remove("open");
+});
 function setViewLang(code) {
   viewLang = code;
   try { localStorage.setItem("viewLang", viewLang); } catch (err) {}
@@ -558,11 +643,17 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
    ============================================================ */
 $("#btn-login").onclick = async () => {
   $("#login-error").textContent = "";
-  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  const provider = new GoogleAuthProvider();
+  try {
+    if (matchMedia("(pointer: coarse)").matches) { await signInWithRedirect(auth, provider); return; }
+    try { await signInWithPopup(auth, provider); }
+    catch (pe) { if (pe.code === "auth/popup-blocked") { await signInWithRedirect(auth, provider); return; } throw pe; }
+  }
   catch (e) { $("#login-error").textContent = e.code === "auth/unauthorized-domain"
       ? "This domain is not authorized. Add it in Firebase > Authentication > Settings > Authorized domains."
       : (e.message || e.code); }
 };
+getRedirectResult(auth).catch(e => { $("#login-error").textContent = e.message || e.code; });
 const doSignOut = () => signOut(auth).then(() => location.reload());
 $("#btn-out").onclick = doSignOut;
 $("#btn-denied-out").onclick = doSignOut;
