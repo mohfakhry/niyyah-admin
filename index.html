@@ -15,7 +15,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
        - aside.sidebar: Desktop left sidebar with all 7 tabs, user email, shortcuts help, sign out.
        - .app-wrap: Main wrapper with sticky slim header (page title, search, language switcher).
        - main: Centered content (sync banner + tab sections).
-       - nav.phone-tabs: Phone bottom 5-item tab bar (Actions, Niyyahs, Locations, Events, More).
+       - nav.phone-tabs: Phone bottom 6-item tab bar (Actions, Niyyahs, Locations, Jobs, Events, More).
    - Main Tab Sections:
      * #tab-actions: Categories & hierarchical actions management.
      * #tab-niyyahs: Multilingual niyyah catalog with search, filters & language status dots.
@@ -51,7 +51,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
    - Phone Back Button:         Popstate handler closes open sheet first; if no sheet is open,
                                 navigates to the previous tab in history.
    - Sheet Helpers:             openSheet(content), closeSheet(), confirmSheet(options), toast(msg, {undo}).
-   - Specialized Sheets:        openMoreSheet()      — large mobile menu for Jobs, Tips, Settings, Sign out.
+   - Specialized Sheets:        openMoreSheet()      — mobile menu for Tips, Settings, Sign out.
                                 openLanguageSheet()  — phone bottom sheet to choose display language.
                                 openShortcutsSheet() — keyboard shortcuts reference dialog.
    - Entity Dialogs:            openAction(), openNiyyah(), openNamed(), openTip(), openEvent(),
@@ -81,7 +81,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 6. CSS LAYERS:
    - Design Tokens: :root tokens (spacing, radius, typography in rem, touch targets, z-index, shadows, status colors).
    - Layout:        Desktop left sidebar navigation (250px sticky) + centered main (max 1120px);
-                    Phone slim sticky header + bottom 5-item tab bar (env(safe-area-inset-*)).
+                    Phone slim sticky header + bottom 6-item tab bar (env(safe-area-inset-*)).
    - Components:    Buttons (.btn, .primary, .danger, .small), sync banner (.sync-bar), cards, badges.
    - Dialogs:       <dialog> styled as responsive bottom sheets on mobile with sticky action footer.
    - Calendar:      .calbar, .cal grid (7-col), .cday, .dow, .daypanel.
@@ -1313,7 +1313,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     grid-template-columns: 1fr;
     gap: var(--space-md);
     margin-bottom: var(--space-lg);
-    padding-top: 8px;
+    padding-top: 0;
   }
   @media (min-width: 721px) {
     .cards-grid {
@@ -1721,12 +1721,14 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     touch-action: manipulation;
     box-sizing: border-box;
   }
-  /* Actions tab spacing: tight gap under filter row */
-  #tab-actions .tab-top-row,
-  #tab-actions .search-filter-section {
+  /* Spacing: tight 6px gap under filter row across all tabs */
+  .tab-top-row,
+  .search-filter-section {
     margin-bottom: 6px;
   }
-  #tab-actions .sticky-group:first-of-type .sticky-group-head {
+  .cards-grid > .card:first-child,
+  .cards-grid > .item:first-child,
+  .sticky-group:first-of-type .sticky-group-head {
     margin-top: 0;
   }
   .sticky-group-head:hover {
@@ -4080,7 +4082,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-bottom: var(--space-xs);
+    margin-bottom: 6px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -4184,7 +4186,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       align-items: center;
       justify-content: space-between;
       gap: var(--space-sm);
-      margin-bottom: var(--space-xs);
+      margin-bottom: 6px;
     }
     .tab-top-row .tab-top-bar {
       order: 2;
@@ -4533,7 +4535,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       display: none !important;
     }
 
-    /* Phone 5-item bottom tab bar */
+    /* Phone 6-item bottom tab bar */
     nav.phone-tabs {
       display: flex;
       position: fixed;
@@ -4559,12 +4561,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       align-items: center;
       justify-content: center;
       gap: 2px;
-      padding: 6px 0;
+      padding: 6px 2px;
       border: 0;
       border-top: 3px solid transparent;
       background: transparent;
       color: var(--ink);
-      font-size: 11px;
+      font-size: 10px;
       cursor: pointer;
       overflow: hidden;
       white-space: nowrap;
@@ -4577,7 +4579,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       display: block;
     }
     nav.phone-tabs button .tab-label {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 500;
       line-height: 1.1;
       overflow: hidden;
@@ -5108,7 +5110,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     </main>
   </div>
 
-  <!-- Phone 5-item Bottom Navigation -->
+  <!-- Phone 6-item Bottom Navigation -->
   <nav class="phone-tabs" aria-label="Bottom Navigation">
     <button type="button" data-tab="actions" aria-current="page">
       <span class="tab-icon" aria-hidden="true">🌿</span>
@@ -5121,6 +5123,10 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     <button type="button" data-tab="types">
       <span class="tab-icon" aria-hidden="true">📍</span>
       <span class="tab-label">Locations</span>
+    </button>
+    <button type="button" data-tab="jobs">
+      <span class="tab-icon" aria-hidden="true">💼</span>
+      <span class="tab-label">Jobs</span>
     </button>
     <button type="button" data-tab="events">
       <span class="tab-icon" aria-hidden="true">📅</span>
@@ -5525,8 +5531,8 @@ const TAB_TITLES = {
   settings: "Settings"
 };
 const ALL_TABS = Object.keys(TAB_TITLES);
-const PRIMARY_PHONE_TABS = ["actions", "niyyahs", "types", "events"];
-const SECONDARY_PHONE_TABS = ["jobs", "tips", "settings"];
+const PRIMARY_PHONE_TABS = ["actions", "niyyahs", "types", "jobs", "events"];
+const SECONDARY_PHONE_TABS = ["tips", "settings"];
 
 let currentTab = "actions";
 let tabHistory = ["actions"];
@@ -6356,16 +6362,6 @@ function confirmSheet(messageOrOpts, opts = {}) {
   });
 }
 
-function triggerHaptic(duration = 10) {
-  try {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator && typeof navigator.vibrate === "function") {
-      navigator.vibrate(duration);
-    }
-  } catch (err) {
-    // Non-fatal if unsupported or blocked by browser permissions
-  }
-}
-
 async function withButtonLoading(btn, asyncTask) {
   if (!btn) return;
   const origHtml = btn.innerHTML;
@@ -6377,7 +6373,6 @@ async function withButtonLoading(btn, asyncTask) {
     btn.classList.remove("is-loading");
     btn.classList.add("is-success");
     btn.innerHTML = `Saved ✓`;
-    triggerHaptic(10);
     await new Promise(r => setTimeout(r, 1500));
     return res;
   } catch (err) {
@@ -6429,7 +6424,6 @@ async function handleEditorSave({
       btn.classList.add("is-success");
       btn.innerHTML = `Saved ✓`;
     }
-    triggerHaptic(10);
     if (successToast) {
       toast(successToast, { type: "success" });
     }
@@ -6480,7 +6474,6 @@ function toast(msg, opts = false) {
     t.style.cursor = "pointer";
     t.onclick = (e) => {
       e.stopPropagation();
-      triggerHaptic(10);
       t.hidden = true;
       try { onClick(); } catch (err) { fail(err); }
     };
@@ -6501,7 +6494,6 @@ function toast(msg, opts = false) {
     undoBtn.textContent = undoLabel;
     undoBtn.onclick = (e) => {
       e.stopPropagation();
-      triggerHaptic(15);
       t.hidden = true;
       try { undo(); } catch (err) { fail(err); }
     };
@@ -6659,18 +6651,15 @@ function pickerSheet(options, config = {}) {
 
       if (isMulti) {
         $("#picker-select-all", dlgPicker).onclick = () => {
-          triggerHaptic(10);
           normalizedOptions.forEach(o => currentSelected.add(o.value));
           render();
         };
         $("#picker-clear-all", dlgPicker).onclick = () => {
-          triggerHaptic(10);
           currentSelected.clear();
           render();
         };
         $("#picker-cancel-btn", dlgPicker).onclick = () => finish([...initialSelected]);
         $("#picker-done-btn", dlgPicker).onclick = () => {
-          triggerHaptic(15);
           finish([...currentSelected]);
         };
       }
@@ -6713,7 +6702,6 @@ function pickerSheet(options, config = {}) {
       dlgPicker.querySelectorAll(".picker-row").forEach(row => {
         row.onclick = () => {
           const val = row.dataset.val;
-          triggerHaptic(10);
           if (isMulti) {
             if (currentSelected.has(val)) currentSelected.delete(val);
             else currentSelected.add(val);
@@ -7187,7 +7175,6 @@ function treePickerSheet(config = {}) {
       if (clearBtn) {
         clearBtn.onclick = () => {
           if (isReadOnly) return;
-          triggerHaptic(10);
           currentSelected.clear();
           updateHeaderCount();
           refreshList();
@@ -7245,7 +7232,6 @@ function treePickerSheet(config = {}) {
 
       // Footer Done / Close
       $("#tree-picker-done-btn", dlgPicker).onclick = () => {
-        triggerHaptic(15);
         if (isReadOnly) {
           finish(null);
         } else {
@@ -7261,7 +7247,6 @@ function treePickerSheet(config = {}) {
           const chevronBtn = e.target.closest(".tree-chevron-btn");
           if (chevronBtn) {
             e.stopPropagation();
-            triggerHaptic(10);
             const fId = chevronBtn.dataset.chevronId;
             const targetSet = searchQuery.trim() ? searchAutoExpandedFolderIds : userExpandedFolderIds;
             if (targetSet.has(fId)) {
@@ -7278,7 +7263,6 @@ function treePickerSheet(config = {}) {
           if (toggleAllBtn) {
             e.stopPropagation();
             if (isReadOnly) return;
-            triggerHaptic(10);
             const fId = toggleAllBtn.dataset.toggleAllId;
             const desc = descendantsMap.get(fId) || [];
             const checkedCount = desc.filter(dId => currentSelected.has(dId)).length;
@@ -7298,7 +7282,6 @@ function treePickerSheet(config = {}) {
           const row = e.target.closest(".tree-row");
           if (row) {
             if (isReadOnly) return;
-            triggerHaptic(10);
             const actId = row.dataset.id;
             const idx = parseInt(row.dataset.idx, 10);
             activeIndex = isNaN(idx) ? -1 : idx;
@@ -7426,7 +7409,6 @@ window.compareActionNames = compareActionNames;
 function openHelpSheet(key) {
   const data = STRINGS.helpSheets[key];
   if (!data || !dlgHelp) return;
-  triggerHaptic(10);
   dlgHelp.innerHTML = `
     <div class="dlg help-sheet" data-noguard>
       <h2>${esc(data.title)}</h2>
@@ -7478,7 +7460,7 @@ const fail = e => {
   toast(formatError(e), true);
 };
 
-const sheetHelper = { openSheet, closeSheet, confirmSheet, openHelpSheet, toast, pickerSheet, withButtonLoading, triggerHaptic };
+const sheetHelper = { openSheet, closeSheet, confirmSheet, openHelpSheet, toast, pickerSheet, withButtonLoading };
 window.openSheet = openSheet;
 window.closeSheet = closeSheet;
 window.confirmSheet = confirmSheet;
@@ -7486,7 +7468,6 @@ window.openHelpSheet = openHelpSheet;
 window.toast = toast;
 window.pickerSheet = pickerSheet;
 window.withButtonLoading = withButtonLoading;
-window.triggerHaptic = triggerHaptic;
 window.trapFocus = trapFocus;
 window.sheetHelper = sheetHelper;
 
@@ -8144,7 +8125,6 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
       ctrl.onclick = e => {
         const b = e.target.closest("[data-st]");
         if (!b) return;
-        triggerHaptic(10);
         status[cur] = b.dataset.st;
         dlgDirty = true;
         capture();
@@ -8425,7 +8405,6 @@ function applyTab(name) {
 
 function goTab(name, pushHistory = true) {
   if (!TAB_TITLES[name]) return;
-  triggerHaptic(10);
   if (currentTab) {
     tabScrollPositions[currentTab] = window.scrollY;
     try { sessionStorage.setItem("admin_scroll_" + currentTab, String(window.scrollY)); } catch (e) {}
@@ -8456,13 +8435,6 @@ function openMoreSheet() {
     <div class="dlg more-sheet" data-noguard>
       <h2>More</h2>
       <div class="more-sheet-menu">
-        <button type="button" class="more-item ${currentTab === "jobs" ? "active" : ""}" data-act="go-more-tab" data-tab="jobs">
-          <span class="m-icon" aria-hidden="true">💼</span>
-          <div class="m-text">
-            <span class="m-title">Jobs</span>
-            <span class="m-desc">Manage job categories and requirements</span>
-          </div>
-        </button>
         <button type="button" class="more-item ${currentTab === "tips" ? "active" : ""}" data-act="go-more-tab" data-tab="tips">
           <span class="m-icon" aria-hidden="true">💡</span>
           <div class="m-text">
@@ -9101,7 +9073,6 @@ if (shortcutsTopBtn) shortcutsTopBtn.onclick = openShortcutsSheet;
 const fabBtn = $("#fab-create");
 if (fabBtn) {
   fabBtn.onclick = () => {
-    triggerHaptic(15);
     handleNewItemShortcut();
   };
 }
@@ -10009,7 +9980,7 @@ async function promptLockToEdit(targetControl, skipPrompt = false) {
   toast("Card locked. You can now edit.", { type: "success" });
 }
 
-async function executeEditorCreateItem({ coll, data }) {
+async function executeEditorCreateItem({ coll, data, extraWrites = null, revExtra = null }) {
   const canonical = canonicalColl(coll);
   const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
   const userEmail = user?.email || "";
@@ -10020,7 +9991,7 @@ async function executeEditorCreateItem({ coll, data }) {
   data.updatedByName = userName;
   data.updatedAt = serverTimestamp();
 
-  const docRef = await addDoc(collection(db, canonical), data);
+  const newDocRef = doc(collection(db, canonical));
   const revData = {
     ...data,
     savedBy: userEmail,
@@ -10034,18 +10005,28 @@ async function executeEditorCreateItem({ coll, data }) {
   delete revData.titleTemplate;
   delete revData.bodyTemplate;
   if (!data.parentId) delete revData.restricted;
-  await setDoc(doc(db, canonical, docRef.id, "revisions", "1"), revData);
-  return { ok: true, isNew: true, id: docRef.id };
+  if (revExtra) {
+    Object.assign(revData, revExtra);
+  }
+
+  const batch = writeBatch(db);
+  batch.set(newDocRef, data);
+  batch.set(doc(db, canonical, newDocRef.id, "revisions", "1"), revData);
+  if (extraWrites) {
+    await extraWrites(batch, newDocRef.id);
+  }
+  await batch.commit();
+  return { ok: true, isNew: true, id: newDocRef.id };
 }
 
-async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt }) {
+async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt, extraWrites = null, revExtra = null }) {
   if (!navigator.onLine || syncState.isOffline) {
     toast("Can't save offline", true);
     return { ok: false, reason: "offline" };
   }
 
   if (!id) {
-    return executeEditorCreateItem({ coll, data });
+    return executeEditorCreateItem({ coll, data, extraWrites, revExtra });
   }
 
   const canonical = canonicalColl(coll);
@@ -10107,9 +10088,15 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt 
       delete revData.titleTemplate;
       delete revData.bodyTemplate;
       if (!data.parentId) delete revData.restricted;
+      if (revExtra) {
+        Object.assign(revData, revExtra);
+      }
 
       tx.set(revRef, revData);
       tx.update(itemRef, data);
+      if (extraWrites) {
+        await extraWrites(tx, id);
+      }
       tx.delete(lockRef);
     });
 
@@ -10945,8 +10932,8 @@ function openCardMoreSheet(type, id) {
           <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-move" data-type="${esc(type)}" data-id="${esc(id)}">
             <span class="m-icon" aria-hidden="true">📁</span>
             <div class="m-text">
-              <span class="m-title">Move to category…</span>
-              <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Change parent category'}</span>
+              <span class="m-title">Move to Action Parent…</span>
+              <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Change Action Parent'}</span>
             </div>
           </button>
         ` : ''}
@@ -11080,7 +11067,6 @@ async function deleteItemWithUndo(type, id) {
     toast(`Locked by ${holder}`, true);
     return;
   }
-  triggerHaptic(20);
   const item = getItem(type, id);
   if (!item) return;
   const coll = collOf(type);
@@ -11162,7 +11148,6 @@ async function deleteItemWithUndo(type, id) {
   const title = getItemTitle(type, item);
   toast(`Deleted "${title.slice(0, 24)}${title.length > 24 ? "…" : ""}"`, {
     undo: () => {
-      triggerHaptic(15);
       if (pendingDeletes.has(id)) {
         clearTimeout(pendingDeletes.get(id).timer);
         pendingDeletes.delete(id);
@@ -11189,7 +11174,7 @@ function openMovePicker(type, id) {
 
   const content = `
     <div class="dlg move-sheet" data-noguard>
-      <h2>Move to category</h2>
+      <h2>Move to Action Parent</h2>
       <p class="muted" style="margin:0 0 var(--space-sm)">${esc(title)}</p>
       <div class="more-sheet-menu">
         ${childrenOf("").filter(c => c.id !== id).map(c => `
@@ -11201,7 +11186,7 @@ function openMovePicker(type, id) {
         ${item.parentId ? `
           <button type="button" class="more-item" data-act="reparent-action" data-cat="" data-id="${esc(id)}">
             <span class="m-icon" aria-hidden="true">📂</span>
-            <div class="m-text"><span class="m-title">Make top-level category</span></div>
+            <div class="m-text"><span class="m-title">Make Action Parent (top-level)</span></div>
           </button>
         ` : ''}
       </div>
@@ -11369,7 +11354,6 @@ async function executeBatchReview() {
 
 async function executeBatchDelete() {
   if (!selectedItemIds.size || !multiSelectType) return;
-  triggerHaptic(20);
   const type = multiSelectType;
   const coll = collOf(type);
   const { allowed, skipped } = partitionLockedItems(type, [...selectedItemIds]);
@@ -11444,7 +11428,6 @@ async function executeBatchDelete() {
     toast(`${deletedCopies.length} items deleted`, {
       undo: () => {
         undone = true;
-        triggerHaptic(15);
         clearTimeout(commitTimer);
         restoreToLocal();
         toast("Items restored", { type: "success" });
@@ -11937,7 +11920,6 @@ document.addEventListener("touchstart", e => {
   longPressTriggered = false;
   longPressTimer = setTimeout(() => {
     longPressTriggered = true;
-    if (navigator.vibrate) navigator.vibrate(40);
     if (card.dataset.id) enterMultiSelect(card.dataset.type, card.dataset.id);
   }, 500);
 }, { passive: true });
@@ -11997,11 +11979,9 @@ document.addEventListener("touchend", e => {
   const deltaY = e.changedTouches[0].clientY - calTouchStartY;
   if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > 1.4 * Math.abs(deltaY)) {
     if (deltaX < 0) {
-      triggerHaptic(10);
       calMonth.setMonth(calMonth.getMonth() + 1);
       renderEvents();
     } else {
-      triggerHaptic(10);
       calMonth.setMonth(calMonth.getMonth() - 1);
       renderEvents();
     }
@@ -12093,7 +12073,6 @@ document.addEventListener("click", e => {
       rtlInp.checked = sugLang.dataset.rtl === "true";
       rtlInp.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    triggerHaptic(10);
     return;
   }
 
@@ -12108,7 +12087,6 @@ document.addEventListener("click", e => {
       target.dispatchEvent(new Event("input", { bubbles: true }));
       target.focus();
     }
-    triggerHaptic(10);
     return;
   }
 
@@ -12125,7 +12103,6 @@ document.addEventListener("click", e => {
       target.dispatchEvent(new Event("input", { bubbles: true }));
       target.focus();
     }
-    triggerHaptic(10);
     return;
   }
 
@@ -12292,8 +12269,6 @@ function openAction(id, presetParent = "", _mode = null) {
   const a = id ? actionById(id) : { parentId: presetParent, inAppVisibility: true, restricted: false };
   const isActionVis = a.inAppVisibility ?? a.visible ?? true;
   const isParent = id ? !a.parentId : !presetParent;
-  const hasKids = id && childrenOf(id).length > 0;
-  const tops = childrenOf("").filter(x => x.id !== id);
   const names = nameMap(a);
   const initial = {};
   L.forEach(l => (initial[l.code] = {
@@ -12316,16 +12291,6 @@ function openAction(id, presetParent = "", _mode = null) {
     ${langFieldsHtml()}
     <div id="lf-status-container"></div>
   ` : `
-    <div class="f">
-      <div class="f-head">
-        <label class="f-label">Category</label>
-      </div>
-      <input type="hidden" id="a-parent" value="${esc(a.parentId || "")}">
-      <button type="button" class="picker-trigger-btn" id="btn-pick-parent" ${hasKids ? "disabled" : ""} aria-haspopup="dialog" style="margin-top:2px">
-        <span class="picker-btn-label" id="lbl-pick-parent">${esc(a.parentId ? (actionById(a.parentId) ? nm(actionById(a.parentId)) : a.parentId) : "None (main category)")}</span>
-        <span class="picker-chevron" aria-hidden="true">▾</span>
-      </button>
-    </div>
     <div class="f-switches-row" style="margin:4px 0 6px">
       <label class="chk switch-label">
         <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span>
@@ -12376,14 +12341,6 @@ function openAction(id, presetParent = "", _mode = null) {
     return true;
   };
 
-  const getFormData = () => ({
-    parentId: isParent ? "" : ($("#a-parent")?.value || ""),
-    inAppVisibility: $("#a-visible")?.checked || false,
-    restricted: isParent ? false : ($("#a-restricted")?.checked || false),
-    jobIds: isParent ? [] : [...curJobIds],
-    names: lf ? lf.values() : {}
-  });
-
   const onFieldChange = () => {
     validate();
   };
@@ -12395,13 +12352,6 @@ function openAction(id, presetParent = "", _mode = null) {
   validate();
 
   activeEditorLockState.restoreData = (rev) => {
-    if (!isParent && rev.parentId !== undefined && !hasKids) {
-      const pInput = $("#a-parent");
-      if (pInput) pInput.value = rev.parentId;
-      const match = tops.find(t => t.id === rev.parentId);
-      const pLbl = $("#lbl-pick-parent");
-      if (pLbl) pLbl.textContent = match ? nm(match) : "None (main category)";
-    }
     const rVis = rev.inAppVisibility !== undefined ? rev.inAppVisibility : rev.visible;
     const vChk = $("#a-visible");
     if (vChk && rVis !== undefined) vChk.checked = !!rVis;
@@ -12451,8 +12401,7 @@ function openAction(id, presetParent = "", _mode = null) {
         const sortedJobs = [...jobs].sort((j1, j2) => nm(j1).localeCompare(nm(j2), viewLang, { sensitivity: "base" }));
         const jobOpts = sortedJobs.map(j => ({
           value: j.id,
-          label: nm(j),
-          icon: "💼"
+          label: nm(j)
         }));
         const chosen = await pickerSheet(jobOpts, {
           title: "Select Jobs",
@@ -12470,31 +12419,6 @@ function openAction(id, presetParent = "", _mode = null) {
         }
       };
     }
-
-    const btnParent = $("#btn-pick-parent");
-    if (btnParent && !hasKids) {
-      btnParent.onclick = async () => {
-        const catOpts = [
-          { value: "", label: "None (main category)", subtitle: "Top-level category" },
-          ...tops.map(t => ({ value: t.id, label: nm(t) }))
-        ];
-        const cur = $("#a-parent").value;
-        const chosen = await pickerSheet(catOpts, {
-          title: "Select Category",
-          selected: cur,
-          search: catOpts.length > 8,
-          anchorEl: btnParent,
-          readOnly: _mode === "review"
-        });
-        if (chosen !== undefined) {
-          $("#a-parent").value = chosen;
-          const match = tops.find(t => t.id === chosen);
-          $("#lbl-pick-parent").textContent = match ? nm(match) : "None (main category)";
-          dlgDirty = true;
-          onFieldChange();
-        }
-      };
-    }
   }
 
   $("#d-save").onclick = async () => {
@@ -12506,16 +12430,17 @@ function openAction(id, presetParent = "", _mode = null) {
     });
     keepUnknown(nameMap(a), nmOut);
     if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
-    const parentId = isParent ? "" : (hasKids ? "" : $("#a-parent").value);
     const isRestricted = !isParent && $("#a-restricted").checked;
     const data = {
       names: nmOut,
       name: pickName(nmOut),
-      parentId,
       inAppVisibility: $("#a-visible").checked,
       statuses: statusOut(a, L, nmOut, lf),
       updatedAt: serverTimestamp()
     };
+    if (!id) {
+      data.parentId = isParent ? "" : presetParent;
+    }
     if (isParent) {
       if (id) {
         data.restricted = deleteField();
@@ -12530,89 +12455,96 @@ function openAction(id, presetParent = "", _mode = null) {
       data.titleTemplate = deleteField();
       data.bodyTemplate = deleteField();
     }
-    triggerHaptic(10);
+
+    const targetJobIds = isRestricted ? [...curJobIds] : [];
+    const currentJobIds = id ? jobs.filter(j => (j.actionIds || []).includes(id)).map(j => j.id) : [];
+    const toAdd = targetJobIds.filter(jid => !currentJobIds.includes(jid));
+    const toRemove = currentJobIds.filter(jid => !targetJobIds.includes(jid));
+    const affectedJobIds = [...new Set([...toAdd, ...toRemove])];
+
+    if (!isParent && affectedJobIds.length > 0) {
+      const lockedByOther = affectedJobIds.filter(jid => {
+        const l = lockOf("jobTypes", jid);
+        return l && !l.isMine;
+      });
+      if (lockedByOther.length > 0) {
+        const lockedNames = lockedByOther.map(jid => {
+          const j = jobs.find(x => x.id === jid);
+          return j ? nm(j) : jid;
+        }).join(", ");
+        toast(`Cannot save: the following job(s) are locked by someone else: ${lockedNames}`, true);
+        return;
+      }
+    }
+
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: isParent ? (id ? "Action Parent saved." : "Action Parent created.") : "Action saved.",
       saveTask: async () => {
         let actionId = id;
+        const revExtra = !isParent ? { jobIds: targetJobIds } : undefined;
+
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
-            const sRes = await executeEditorSaveTransaction({ coll: "actions", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) return false;
-          } else {
-            const sibs = childrenOf(parentId);
-            data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
-            const newDoc = await addDoc(collection(db, "actions"), data);
-            actionId = newDoc.id;
-            if (!parentId) {
-              collapsedGroups.add("cat_" + newDoc.id);
-            }
-          }
-
-          // Persist job links for child actions
-          if (!isParent && actionId) {
-            const targetJobIds = isRestricted ? curJobIds : [];
-            const currentJobIds = jobs.filter(j => (j.actionIds || []).includes(actionId)).map(j => j.id);
-            const toAdd = targetJobIds.filter(jid => !currentJobIds.includes(jid));
-            const toRemove = currentJobIds.filter(jid => !targetJobIds.includes(jid));
-
-            if (toAdd.length > 0 || toRemove.length > 0) {
-              const lockedByOther = [...toAdd, ...toRemove].filter(jid => {
-                const l = lockOf("jobTypes", jid);
-                return l && !l.isMine;
-              });
-              if (lockedByOther.length > 0) {
-                const lockedNames = lockedByOther.map(jid => {
-                  const j = jobs.find(x => x.id === jid);
-                  return j ? nm(j) : jid;
-                }).join(", ");
-                toast(`Skipped updating links for locked job(s): ${lockedNames}`, true);
-              }
-              const b = writeBatch(db);
+            const extraWrites = (toAdd.length > 0 || toRemove.length > 0) ? async (tx) => {
               toAdd.forEach(jid => {
-                if (!lockedByOther.includes(jid)) {
-                  b.update(doc(db, "jobTypes", jid), { actionIds: arrayUnion(actionId) });
-                  const jObj = jobs.find(x => x.id === jid);
-                  if (jObj) {
-                    if (!jObj.actionIds) jObj.actionIds = [];
-                    if (!jObj.actionIds.includes(actionId)) jObj.actionIds.push(actionId);
-                  }
-                }
+                tx.update(doc(db, "jobTypes", jid), { actionIds: arrayUnion(actionId) });
               });
               toRemove.forEach(jid => {
-                if (!lockedByOther.includes(jid)) {
-                  b.update(doc(db, "jobTypes", jid), { actionIds: arrayRemove(actionId) });
-                  const jObj = jobs.find(x => x.id === jid);
-                  if (jObj && jObj.actionIds) {
-                    jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
-                  }
-                }
+                tx.update(doc(db, "jobTypes", jid), { actionIds: arrayRemove(actionId) });
               });
-              await b.commit();
+            } : null;
+
+            const sRes = await executeEditorSaveTransaction({
+              coll: "actions",
+              id,
+              data,
+              originalUpdatedAt: activeEditorLockState.originalUpdatedAt,
+              extraWrites,
+              revExtra
+            });
+            if (!sRes.ok) return false;
+          } else {
+            const sibs = childrenOf(presetParent);
+            data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
+
+            const extraWrites = (toAdd.length > 0) ? async (batchOrTx, newId) => {
+              toAdd.forEach(jid => {
+                batchOrTx.update(doc(db, "jobTypes", jid), { actionIds: arrayUnion(newId) });
+              });
+            } : null;
+
+            const cRes = await executeEditorCreateItem({
+              coll: "actions",
+              data,
+              extraWrites,
+              revExtra
+            });
+            if (!cRes.ok) return false;
+            actionId = cRes.id;
+            if (!data.parentId) {
+              collapsedGroups.add("cat_" + actionId);
             }
           }
-        } else {
-          // In test mode: update local in-memory jobs array
-          if (!isParent && actionId) {
-            const targetJobIds = isRestricted ? curJobIds : [];
-            const currentJobIds = jobs.filter(j => (j.actionIds || []).includes(actionId)).map(j => j.id);
-            const toAdd = targetJobIds.filter(jid => !currentJobIds.includes(jid));
-            const toRemove = currentJobIds.filter(jid => !targetJobIds.includes(jid));
-            toAdd.forEach(jid => {
-              const jObj = jobs.find(x => x.id === jid);
-              if (jObj) {
-                if (!jObj.actionIds) jObj.actionIds = [];
-                if (!jObj.actionIds.includes(actionId)) jObj.actionIds.push(actionId);
-              }
-            });
-            toRemove.forEach(jid => {
-              const jObj = jobs.find(x => x.id === jid);
-              if (jObj && jObj.actionIds) {
-                jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
-              }
-            });
-          }
+        }
+
+        // Reflect new links immediately on local in-memory jobs and UI
+        if (!isParent && actionId) {
+          toAdd.forEach(jid => {
+            const jObj = jobs.find(x => x.id === jid);
+            if (jObj) {
+              if (!jObj.actionIds) jObj.actionIds = [];
+              if (!jObj.actionIds.includes(actionId)) jObj.actionIds.push(actionId);
+            }
+          });
+          toRemove.forEach(jid => {
+            const jObj = jobs.find(x => x.id === jid);
+            if (jObj && jObj.actionIds) {
+              jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
+            }
+          });
+          if (currentTab === "jobs") renderJobs();
+          if (currentTab === "actions") renderActions();
         }
         return true;
       }
@@ -13009,7 +12941,6 @@ function openNiyyah(id, _mode = null) {
       sCtrl.onclick = e => {
         const b = e.target.closest("[data-st]");
         if (!b) return;
-        triggerHaptic(10);
         draft[cur].status = b.dataset.st;
         paintTabs();
         paintStatus();
@@ -13130,7 +13061,6 @@ function openNiyyah(id, _mode = null) {
       updatedAt: serverTimestamp(),
       ...mirrorFields(translations)
     };
-    triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Niyyah saved.",
@@ -13279,7 +13209,6 @@ function openNamed(key, id, _mode = null) {
     keepUnknown(names, out);
     if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
     const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: curActionIds, updatedAt: serverTimestamp() };
-    triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Saved.",
@@ -13531,7 +13460,6 @@ function openTip(id, _mode = null) {
 
   $$("#t-cat-ctrl .seg-item").forEach(btn => {
     btn.onclick = () => {
-      triggerHaptic(10);
       $$("#t-cat-ctrl .seg-item").forEach(b => {
         b.classList.toggle("is-selected", b === btn);
         b.setAttribute("aria-checked", b === btn ? "true" : "false");
@@ -13585,7 +13513,6 @@ function openTip(id, _mode = null) {
     if (!Object.keys(out).length) return toast("Write the tip in at least one language.", true);
     const statuses = statusOut(t, L, out, lf);
     const data = { texts: out, statuses, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: anyPublished(statuses), updatedAt: serverTimestamp() };
-    triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Tip saved.",
@@ -13886,7 +13813,6 @@ function openEvent(id, preset = null, _mode = null) {
 
   $$("#e-type-ctrl .seg-item").forEach(btn => {
     btn.onclick = () => {
-      triggerHaptic(10);
       $$("#e-type-ctrl .seg-item").forEach(b => {
         b.classList.toggle("is-selected", b === btn);
         b.setAttribute("aria-checked", b === btn ? "true" : "false");
@@ -13924,7 +13850,6 @@ function openEvent(id, preset = null, _mode = null) {
 
   $$("#e-wd-chips .radio-chip").forEach(chip => {
     chip.onclick = () => {
-      triggerHaptic(10);
       $$("#e-wd-chips .radio-chip").forEach(c => {
         c.classList.toggle("is-selected", c === chip);
         c.setAttribute("aria-checked", c === chip ? "true" : "false");
@@ -13936,7 +13861,6 @@ function openEvent(id, preset = null, _mode = null) {
 
   $$("#e-before-ctrl .seg-item").forEach(btn => {
     btn.onclick = () => {
-      triggerHaptic(10);
       $$("#e-before-ctrl .seg-item").forEach(b => {
         b.classList.toggle("is-selected", b === btn);
         b.setAttribute("aria-checked", b === btn ? "true" : "false");
@@ -14028,7 +13952,6 @@ function openEvent(id, preset = null, _mode = null) {
     const statuses = statusOut(e, L, out, lf);
     const data = { names: out, name: pickName(out), statuses, rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
       disputed: $("#e-disp").checked, published: anyPublished(statuses), updatedAt: serverTimestamp() };
-    triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Event saved.",
@@ -14389,7 +14312,6 @@ function openPublishAllNames() {
 
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
-    triggerHaptic(10);
     try {
       await withButtonLoading($("#d-save"), async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
@@ -14531,7 +14453,6 @@ function openLanguage(id) {
     if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(code)) return toast("Enter a short language code like fr, ur or pt-br.", true);
     if (!id && languages.some(x => x.code === code)) return toast(`The code "${code}" is already used.`, true);
     const data = { name, code, rtl: $("#l-rtl").checked, updatedAt: serverTimestamp() };
-    triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Language saved.",
@@ -14636,7 +14557,6 @@ function openConvertNames() {
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
     const c = $("#c-lang").value;
-    triggerHaptic(10);
     try {
       await withButtonLoading($("#d-save"), async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
@@ -14715,7 +14635,6 @@ function openCleanupActions() {
   const saveBtn = $("#d-save");
   if (saveBtn) {
     saveBtn.onclick = async () => {
-      triggerHaptic(10);
       try {
         await withButtonLoading(saveBtn, async () => {
           if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
@@ -14807,7 +14726,6 @@ function openImport(plan, fileName) {
       <button class="btn primary" id="d-save" ${fresh.length ? "" : "disabled"}>Import ${fresh.length}</button></div></div>`;
   $("#d-cancel").onclick = () => dlg.close();
   $("#d-save").onclick = async () => {
-    triggerHaptic(10);
     try {
       await withButtonLoading($("#d-save"), async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
@@ -14852,7 +14770,7 @@ window.__ADMIN__ = {
   get selectedItemIds() { return selectedItemIds; },
   TAB_TITLES,
   renderAll, renderActions, renderNiyyahs, renderCard, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openTip, openEvent, openLanguage, openCardEditor,
-  openSheet, closeSheet, confirmSheet, toast, withButtonLoading, triggerHaptic,
+  openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet,
   handleSearchTrigger, handleNewItemShortcut,
   GATE_COLLECTIONS, syncState, openFreshnessGate, closeFreshnessGate, enterOfflineMode, handleResume, handleCollectionSnapshot, openSyncStatusSheet, updateSyncStatusDot, checkWritePermission,
