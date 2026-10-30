@@ -11014,6 +11014,15 @@ async function duplicateItem(type, id) {
     if (type === "actions") {
       copy.inAppVisibility = copy.inAppVisibility ?? copy.visible ?? true;
       delete copy.visible;
+      delete copy.titleTemplates;
+      delete copy.bodyTemplates;
+      delete copy.titleTemplate;
+      delete copy.bodyTemplate;
+      if (copy.onboardingNames) {
+        const onb = { ...copy.onboardingNames };
+        for (const c of Object.keys(onb)) if (onb[c]) onb[c] += " (Copy)";
+        copy.onboardingNames = onb;
+      }
     }
   }
   copy.createdAt = serverTimestamp();
@@ -12270,9 +12279,11 @@ function openAction(id, presetParent = "", _mode = null) {
   const isActionVis = a.inAppVisibility ?? a.visible ?? true;
   const isParent = id ? !a.parentId : !presetParent;
   const names = nameMap(a);
+  const onbNames = a.onboardingNames || {};
   const initial = {};
   L.forEach(l => (initial[l.code] = {
-    name: names[l.code] || ""
+    name: names[l.code] || "",
+    onboardingName: onbNames[l.code] || ""
   }));
 
   const initialJobIds = id ? jobs.filter(j => (j.actionIds || []).includes(id)).map(j => j.id) : [];
@@ -12345,9 +12356,13 @@ function openAction(id, presetParent = "", _mode = null) {
     validate();
   };
 
-  const lf = langFields(L, [
+  const actionFields = [
     { key: "name", label: "Name", ph: STRINGS.placeholders.actionName, required: true }
-  ], initial, onFieldChange, statusInit(a, L, names));
+  ];
+  if (!isParent) {
+    actionFields.push({ key: "onboardingName", label: "Onboarding Name (optional)", ph: "Shorter name for onboarding screen", required: false });
+  }
+  const lf = langFields(L, actionFields, initial, onFieldChange, statusInit(a, L, names));
 
   validate();
 
@@ -12368,11 +12383,12 @@ function openAction(id, presetParent = "", _mode = null) {
         if (jLbl) jLbl.textContent = formatJobsLabel(curJobIds);
       }
     }
-    if (rev.names) {
+    if (rev.names || rev.onboardingNames) {
       const lfVals = {};
       L.forEach(l => {
         lfVals[l.code] = {
-          name: rev.names?.[l.code] || ""
+          name: rev.names?.[l.code] || "",
+          onboardingName: rev.onboardingNames?.[l.code] || ""
         };
       });
       lf.setValues(lfVals);
@@ -12423,10 +12439,11 @@ function openAction(id, presetParent = "", _mode = null) {
 
   $("#d-save").onclick = async () => {
     if (!validate()) return;
-    const v = lf.values(), nmOut = {};
+    const v = lf.values(), nmOut = {}, onbOut = {};
     L.forEach(l => {
       const d = v[l.code];
       if (d.name && d.name.trim()) nmOut[l.code] = d.name.trim();
+      if (d.onboardingName && d.onboardingName.trim()) onbOut[l.code] = d.onboardingName.trim();
     });
     keepUnknown(nameMap(a), nmOut);
     if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
@@ -12434,6 +12451,7 @@ function openAction(id, presetParent = "", _mode = null) {
     const data = {
       names: nmOut,
       name: pickName(nmOut),
+      onboardingNames: onbOut,
       inAppVisibility: $("#a-visible").checked,
       statuses: statusOut(a, L, nmOut, lf),
       updatedAt: serverTimestamp()
