@@ -55,7 +55,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
                                 openLanguageSheet()  — phone bottom sheet to choose display language.
                                 openShortcutsSheet() — keyboard shortcuts reference dialog.
    - Entity Dialogs:            openAction(), openNiyyah(), openNamed(), openTip(), openEvent(),
-                                openFetch(), openLanguage(), openPublishAllNames(), openConvertNames(), openImport().
+                                openFetch(), openLanguage(), openPublishAllNames(), openConvertNames(), openCleanupActions(), openImport().
 
 4. TOAST CODE:
    - Container: #toast with undo action support via toast(message, { undo, undoLabel, duration }).
@@ -76,7 +76,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
      * Events:      new-event, edit-event, del-event, seed-events, cal-prev, cal-next, cal-today,
                     cal-view, cal-range, cal-day, cal-add, cal-shift, cal-fetch.
      * Settings:    new-lang, edit-lang, del-lang, lang-up, lang-down, seed-langs,
-                    publish-all-names, convert-names, go-settings, go-more-tab, more-signout, set-view-lang.
+                    publish-all-names, convert-names, cleanup-actions, go-settings, go-more-tab, more-signout, set-view-lang.
 
 6. CSS LAYERS:
    - Design Tokens: :root tokens (spacing, radius, typography in rem, touch targets, z-index, shadows, status colors).
@@ -1708,7 +1708,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: sticky;
     top: calc(52px + env(safe-area-inset-top, 0px));
     z-index: 8;
-    background: var(--paper);
+    background: var(--card);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: 12px 14px 10px;
@@ -1717,12 +1717,17 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 6px rgba(0,0,0,.03);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
     touch-action: manipulation;
-    position: relative;
     box-sizing: border-box;
+  }
+  /* Actions tab spacing: tight gap under filter row */
+  #tab-actions .tab-top-row,
+  #tab-actions .search-filter-section {
+    margin-bottom: 6px;
+  }
+  #tab-actions .sticky-group:first-of-type .sticky-group-head {
+    margin-top: 0;
   }
   .sticky-group-head:hover {
     border-color: var(--line-strong, var(--muted));
@@ -4242,7 +4247,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   /* ===== Events calendar ===== */
   #tab-events, #tab-niyyahs, #tab-actions, #tab-types, #tab-jobs, #tab-tips, #tab-settings {
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     box-sizing: border-box;
   }
   .calbar {
@@ -5301,8 +5306,6 @@ const STRINGS = {
   },
   hints: {
     actionParent: "Group similar actions together (optional).",
-    actionTitleTpl: "Leave empty to use the app's default wording.",
-    actionBodyTpl: "Use {niyyah} to insert a random niyyah.",
     actionRestricted: "Only shown to users with matching professions.",
     niyyahGeneral: "Can be suggested anywhere as a general niyyah.",
     niyyahAfter: "Suggests this niyyah after related actions occur.",
@@ -5321,8 +5324,6 @@ const STRINGS = {
   },
   placeholders: {
     actionName: "e.g. Starting work",
-    actionTitleTpl: "e.g. Set your niyyah: {action}",
-    actionBodyTpl: "e.g. {niyyah}",
     niyyahText: "e.g. To serve Allah through excellence in my work",
     niyyahSource: "e.g. Sahih al-Bukhari 1",
     locationName: "e.g. Mosque",
@@ -5366,15 +5367,6 @@ const STRINGS = {
         { icon: "👁", label: "Reviewed", desc: "Checked and approved by editors, but not yet live." },
         { icon: "✎", label: "Draft", desc: "Work in progress. Saved for editing, hidden from users." },
         { icon: "○", label: "Empty", desc: "No text has been entered yet in this language." }
-      ]
-    },
-    templates: {
-      title: "Notification templates",
-      intro: "Customize how push notifications are worded for this action:",
-      items: [
-        { label: "{action}", desc: "Automatically replaced by the name of the current action." },
-        { label: "{niyyah}", desc: "Automatically replaced by one random niyyah from this action." },
-        { label: "Default", desc: "Leave the title empty to use the app's default message." }
       ]
     },
     restricted: {
@@ -5448,8 +5440,6 @@ let calView = "cal", calSel = null, calRange = false, calCountry = "";
 let hijriDocs = {};
 const openN = new Set();
 let shownN = [];
-const DEF_TITLE = "Set your niyyah: {action}";
-const DEF_BODY = "{niyyah}";
 
 /* ============================================================
    SEARCH & FILTER STATE (REMEMBERED PER TAB)
@@ -7977,7 +7967,6 @@ try { viewLang = localStorage.getItem("viewLang") || ""; } catch (e) {}
 const defLang = () => (langs().find(l => l.code === "en") || langs()[0])?.code || "en";
 const viewCode = () => (langs().some(l => l.code === viewLang) ? viewLang : defLang());
 const nameMap = x => x.names || (x.name ? { [defLang()]: x.name } : {});
-const tplMap = (x, kind) => x[kind + "Templates"] || (x[kind + "Template"] ? { [defLang()]: x[kind + "Template"] } : {});
 const firstOf = map => langs().map(l => map[l.code]).find(Boolean) || Object.values(map).find(Boolean) || "";
 const pickName = map => map[defLang()] || firstOf(map);
 const nm = x => { const m = nameMap(x); return m[viewCode()] || firstOf(m) || "(no name)"; };
@@ -10040,6 +10029,11 @@ async function executeEditorCreateItem({ coll, data }) {
     revSeq: 1
   };
   delete revData.visible;
+  delete revData.titleTemplates;
+  delete revData.bodyTemplates;
+  delete revData.titleTemplate;
+  delete revData.bodyTemplate;
+  if (!data.parentId) delete revData.restricted;
   await setDoc(doc(db, canonical, docRef.id, "revisions", "1"), revData);
   return { ok: true, isNew: true, id: docRef.id };
 }
@@ -10094,6 +10088,11 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt 
       const fullSavedData = { ...itemData, ...data };
       delete fullSavedData.revisions;
       delete fullSavedData.visible;
+      delete fullSavedData.titleTemplates;
+      delete fullSavedData.bodyTemplates;
+      delete fullSavedData.titleTemplate;
+      delete fullSavedData.bodyTemplate;
+      if (!data.parentId) delete fullSavedData.restricted;
 
       const revData = {
         ...fullSavedData,
@@ -10103,6 +10102,11 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt 
         revSeq: nextRevSeq
       };
       delete revData.visible;
+      delete revData.titleTemplates;
+      delete revData.bodyTemplates;
+      delete revData.titleTemplate;
+      delete revData.bodyTemplate;
+      if (!data.parentId) delete revData.restricted;
 
       tx.set(revRef, revData);
       tx.update(itemRef, data);
@@ -10361,7 +10365,6 @@ function getRevisionSnippet(rev) {
     if (cur) return cur.length > 70 ? cur.slice(0, 67) + "…" : cur;
   }
   if (rev.name) return rev.name.length > 70 ? rev.name.slice(0, 67) + "…" : rev.name;
-  if (rev.titleTemplate) return rev.titleTemplate.length > 70 ? rev.titleTemplate.slice(0, 67) + "…" : rev.titleTemplate;
   return "Saved version";
 }
 
@@ -10377,25 +10380,21 @@ function renderRevFieldsPreview(canonical, rev, code) {
   let html = "";
   if (canonical === "actions") {
     const name = rev.names?.[code] || "";
-    const titleTpl = rev.titleTemplates?.[code] || "";
-    const bodyTpl = rev.bodyTemplates?.[code] || "";
     html += `
       <div class="history-field-box">
         <label>Name (${code.toUpperCase()})</label>
         <div class="history-field-value">${esc(name || "—")}</div>
       </div>
-      <div class="history-field-box">
-        <label>Title Template (${code.toUpperCase()})</label>
-        <div class="history-field-value">${esc(titleTpl || "—")}</div>
-      </div>
-      <div class="history-field-box">
-        <label>Body Template (${code.toUpperCase()})</label>
-        <div class="history-field-value">${esc(bodyTpl || "—")}</div>
-      </div>
-      <div class="history-field-box">
-        <label>Parent Category</label>
-        <div class="history-field-value">${esc(rev.parentId ? (actions.find(a => a.id === rev.parentId)?.name || rev.parentId) : "None (Main Category)")}</div>
-      </div>
+      ${rev.parentId ? `
+        <div class="history-field-box">
+          <label>Parent Category</label>
+          <div class="history-field-value">${esc(actions.find(a => a.id === rev.parentId)?.name || rev.parentId)}</div>
+        </div>
+        <div class="history-field-box">
+          <label>Job specific</label>
+          <div class="history-field-value">${rev.restricted ? "Yes" : "No"}</div>
+        </div>
+      ` : ""}
       <div class="history-field-box">
         <label>In App Visibility</label>
         <div class="history-field-value">${(rev.inAppVisibility ?? rev.visible ?? true) ? "In app" : "Hidden"}</div>
@@ -10933,6 +10932,7 @@ function openCardMoreSheet(type, id) {
             <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Modify details and translations'}</span>
           </div>
         </button>
+        ${(type === "actions" && !item.parentId) ? '' : `
         <button type="button" class="more-item" data-act="card-sheet-duplicate" data-type="${esc(type)}" data-id="${esc(id)}">
           <span class="m-icon" aria-hidden="true">📋</span>
           <div class="m-text">
@@ -10940,7 +10940,8 @@ function openCardMoreSheet(type, id) {
             <span class="m-desc">Create a duplicate clone</span>
           </div>
         </button>
-        ${type === "actions" ? `
+        `}
+        ${(type === "actions" && item.parentId) ? `
           <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-move" data-type="${esc(type)}" data-id="${esc(id)}">
             <span class="m-icon" aria-hidden="true">📁</span>
             <div class="m-text">
@@ -10996,6 +10997,10 @@ async function duplicateItem(type, id) {
   if (!checkWritePermission()) return;
   const item = getItem(type, id);
   if (!item) return;
+  if (type === "actions" && !item.parentId) {
+    toast("Action Parents cannot be duplicated", true);
+    return;
+  }
   const coll = collOf(type);
   const copy = { ...item };
   delete copy.id;
@@ -11210,6 +11215,11 @@ function openMovePicker(type, id) {
 
 async function reparentAction(id, catId) {
   closeSheet();
+  const item = actionById(id);
+  if (!item || !item.parentId) {
+    toast("Action Parents cannot be moved", true);
+    return;
+  }
   const lock = lockOf("actions", id);
   if (lock && !lock.isMine) {
     const holder = getFirstName(lock.name || lock.email);
@@ -11450,10 +11460,18 @@ function openBatchMove() {
     toast("Batch move is available for actions");
     return;
   }
+  const eligibleIds = [...selectedItemIds].filter(id => {
+    const a = actionById(id);
+    return a && !!a.parentId;
+  });
+  if (!eligibleIds.length) {
+    toast("Action Parents cannot be moved", true);
+    return;
+  }
   const tops = childrenOf("");
   const content = `
     <div class="dlg move-sheet" data-noguard>
-      <h2>Move ${selectedItemIds.size} actions</h2>
+      <h2>Move ${eligibleIds.length} actions</h2>
       <p class="muted" style="margin:0 0 var(--space-sm)">Choose a destination category:</p>
       <div class="more-sheet-menu">
         ${tops.map(c => `
@@ -11462,10 +11480,6 @@ function openBatchMove() {
             <div class="m-text"><span class="m-title">${esc(nm(c))}</span></div>
           </button>
         `).join("")}
-        <button type="button" class="more-item" data-act="batch-move-cat" data-cat="">
-          <span class="m-icon" aria-hidden="true">📂</span>
-          <div class="m-text"><span class="m-title">Make top-level categories</span></div>
-        </button>
       </div>
       <div class="actions">
         <button type="button" class="btn" id="d-cancel">Cancel</button>
@@ -11477,7 +11491,15 @@ function openBatchMove() {
 
 async function executeBatchMoveCat(catId) {
   closeSheet();
-  const { allowed, skipped } = partitionLockedItems("actions", [...selectedItemIds]);
+  const eligibleIds = [...selectedItemIds].filter(id => {
+    const a = actionById(id);
+    return a && !!a.parentId;
+  });
+  if (!eligibleIds.length) {
+    exitMultiSelect();
+    return;
+  }
+  const { allowed, skipped } = partitionLockedItems("actions", eligibleIds);
   if (skipped.length > 0) {
     toast(`${skipped.length} skipped, locked by others`, {
       onClick: () => showSkippedItemsPopup(skipped),
@@ -12151,6 +12173,7 @@ document.addEventListener("click", e => {
     "del-job": () => delNamed("jobs", id),
     "seed-jobs": () => seedNamed("jobs"),
     "convert-names": openConvertNames,
+    "cleanup-actions": openCleanupActions,
     "publish-all-names": openPublishAllNames,
     "view-lang": () => setViewLang(id),
     "go-settings": () => goTab("settings"),
@@ -12247,6 +12270,17 @@ document.addEventListener("change", e => { if (e.target.id === "cal-country") { 
 /* ============================================================
    5. ACTIONS
    ============================================================ */
+const formatJobsLabel = (ids, emptyText = "Choose jobs…") => {
+  if (!ids || !ids.length) return emptyText;
+  const names = ids.map(x => {
+    const j = jobs.find(job => String(job.id) === String(x));
+    return j ? nm(j) : x;
+  }).filter(Boolean);
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]}, ${names[1]}`;
+  return `${names.length} jobs`;
+};
+
 function openAction(id, presetParent = "", _mode = null) {
   if (!checkWritePermission()) return;
   if (id && _mode === null) {
@@ -12257,19 +12291,31 @@ function openAction(id, presetParent = "", _mode = null) {
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
   const a = id ? actionById(id) : { parentId: presetParent, inAppVisibility: true, restricted: false };
   const isActionVis = a.inAppVisibility ?? a.visible ?? true;
+  const isParent = id ? !a.parentId : !presetParent;
   const hasKids = id && childrenOf(id).length > 0;
   const tops = childrenOf("").filter(x => x.id !== id);
-  const names = nameMap(a), titles = tplMap(a, "title"), bodies = tplMap(a, "body");
+  const names = nameMap(a);
   const initial = {};
   L.forEach(l => (initial[l.code] = {
-    name: names[l.code] || "",
-    title: titles[l.code] ?? (id ? "" : (l.code === "en" ? DEF_TITLE : "")),
-    body: bodies[l.code] ?? (id ? "" : DEF_BODY)
+    name: names[l.code] || ""
   }));
 
-  const title = id ? `${STRINGS.common.edit} action` : (a.parentId ? `${STRINGS.common.add} action` : `${STRINGS.common.add} category`);
+  const initialJobIds = id ? jobs.filter(j => (j.actionIds || []).includes(id)).map(j => j.id) : [];
+  let curJobIds = [...initialJobIds];
 
-  const bodyHtml = `
+  const title = isParent
+    ? (id ? "Edit Action Parent" : "Add Action Parent")
+    : (id ? `${STRINGS.common.edit} action` : `${STRINGS.common.add} action`);
+
+  const bodyHtml = isParent ? `
+    <div class="f-switches-row" style="margin:4px 0 12px">
+      <label class="chk switch-label">
+        <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span>
+      </label>
+    </div>
+    ${langFieldsHtml()}
+    <div id="lf-status-container"></div>
+  ` : `
     <div class="f">
       <div class="f-head">
         <label class="f-label">Category</label>
@@ -12280,16 +12326,23 @@ function openAction(id, presetParent = "", _mode = null) {
         <span class="picker-chevron" aria-hidden="true">▾</span>
       </button>
     </div>
-    <div class="f-switches-row">
-      <label class="chk switch-label"><input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span></label>
-      <label class="chk switch-label"><input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span>Restrict to specific jobs</span></label>
+    <div class="f-switches-row" style="margin:4px 0 6px">
+      <label class="chk switch-label">
+        <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span>
+      </label>
+      <label class="chk switch-label">
+        <input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span>Job specific</span>
+      </label>
+    </div>
+    <div class="f" id="sec-action-jobs" style="${a.restricted ? '' : 'display:none;'}margin:4px 0 12px">
+      <div class="f-head"><label class="f-label">Jobs</label></div>
+      <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog" style="margin-top:2px">
+        <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
+        <span class="picker-chevron" aria-hidden="true">▾</span>
+      </button>
+      <span class="f-hint" style="margin-top:4px">Only shown to users with these professions.</span>
     </div>
     ${langFieldsHtml()}
-    <div class="preview" aria-live="polite">
-      <small>Preview (active language)</small>
-      <b id="p-title"></b>
-      <span id="p-body"></span>
-    </div>
     <div id="lf-status-container"></div>
   `;
 
@@ -12315,57 +12368,61 @@ function openAction(id, presetParent = "", _mode = null) {
         return false;
       }
     }
+    if (!isParent && $("#a-restricted")?.checked && (!curJobIds || !curJobIds.length)) {
+      setSaveValidity("Please select at least one job for a job-specific action.");
+      return false;
+    }
     setSaveValidity("");
     return true;
   };
 
   const getFormData = () => ({
-    parentId: $("#a-parent")?.value || "",
+    parentId: isParent ? "" : ($("#a-parent")?.value || ""),
     inAppVisibility: $("#a-visible")?.checked || false,
-    restricted: $("#a-restricted")?.checked || false,
+    restricted: isParent ? false : ($("#a-restricted")?.checked || false),
+    jobIds: isParent ? [] : [...curJobIds],
     names: lf ? lf.values() : {}
   });
 
   const onFieldChange = () => {
-    paintPreview();
     validate();
   };
 
-  const paintPreview = () => {
-    const d = lf.values()[lf.current()];
-    const fill = s => s.replaceAll("{action}", d.name || "Action name").replaceAll("{niyyah}", "A random niyyah from this action appears here");
-    const dflt = "(the app's default wording for this language)";
-    $("#p-title").textContent = d.title.trim() ? fill(d.title) : dflt;
-    $("#p-body").textContent = d.body.trim() ? fill(d.body) : dflt;
-  };
-
   const lf = langFields(L, [
-    { key: "name", label: "Name", ph: STRINGS.placeholders.actionName, required: true },
-    { key: "title", label: "Notification title",
-      ph: "App default", maxChars: 60 },
-    { key: "body", label: "Notification message",
-      ph: "{niyyah}", maxChars: 160 }
+    { key: "name", label: "Name", ph: STRINGS.placeholders.actionName, required: true }
   ], initial, onFieldChange, statusInit(a, L, names));
 
-  paintPreview();
   validate();
 
   activeEditorLockState.restoreData = (rev) => {
-    if (rev.parentId !== undefined && !hasKids) {
-      $("#a-parent").value = rev.parentId;
+    if (!isParent && rev.parentId !== undefined && !hasKids) {
+      const pInput = $("#a-parent");
+      if (pInput) pInput.value = rev.parentId;
       const match = tops.find(t => t.id === rev.parentId);
-      $("#lbl-pick-parent").textContent = match ? nm(match) : "None (main category)";
+      const pLbl = $("#lbl-pick-parent");
+      if (pLbl) pLbl.textContent = match ? nm(match) : "None (main category)";
     }
     const rVis = rev.inAppVisibility !== undefined ? rev.inAppVisibility : rev.visible;
-    if (rVis !== undefined) $("#a-visible").checked = !!rVis;
-    if (rev.restricted !== undefined) $("#a-restricted").checked = !!rev.restricted;
+    const vChk = $("#a-visible");
+    if (vChk && rVis !== undefined) vChk.checked = !!rVis;
+    if (!isParent) {
+      const rChk = $("#a-restricted");
+      if (rChk && rev.restricted !== undefined) {
+        rChk.checked = !!rev.restricted;
+        const jSec = $("#sec-action-jobs");
+        if (jSec) jSec.style.display = rev.restricted ? "" : "none";
+      }
+      if (rev.jobIds !== undefined) {
+        curJobIds = Array.isArray(rev.jobIds) ? [...rev.jobIds] : [];
+        const jLbl = $("#lbl-pick-jobs");
+        if (jLbl) jLbl.textContent = formatJobsLabel(curJobIds);
+      }
+    }
     if (rev.names) {
       const lfVals = {};
       L.forEach(l => {
         lfVals[l.code] = {
-          name: rev.names?.[l.code] || "",
-          title: rev.titleTemplates?.[l.code] || "",
-          body: rev.bodyTemplates?.[l.code] || ""
+          name: rev.names?.[l.code] || ""
         };
       });
       lf.setValues(lfVals);
@@ -12375,65 +12432,110 @@ function openAction(id, presetParent = "", _mode = null) {
   };
 
   $("#a-visible").onchange = onFieldChange;
-  $("#a-restricted").onchange = onFieldChange;
 
-  const btnParent = $("#btn-pick-parent");
-  if (btnParent && !hasKids) {
-    btnParent.onclick = async () => {
-      const catOpts = [
-        { value: "", label: "None (main category)", subtitle: "Top-level category" },
-        ...tops.map(t => ({ value: t.id, label: nm(t) }))
-      ];
-      const cur = $("#a-parent").value;
-      const chosen = await pickerSheet(catOpts, {
-        title: "Select Category",
-        selected: cur,
-        search: catOpts.length > 8,
-        anchorEl: btnParent
-      });
-      if (chosen !== undefined) {
-        $("#a-parent").value = chosen;
-        const match = tops.find(t => t.id === chosen);
-        $("#lbl-pick-parent").textContent = match ? nm(match) : "None (main category)";
+  if (!isParent) {
+    const restChk = $("#a-restricted");
+    if (restChk) {
+      restChk.onchange = () => {
+        const isRest = restChk.checked;
+        const jSec = $("#sec-action-jobs");
+        if (jSec) jSec.style.display = isRest ? "" : "none";
         dlgDirty = true;
         onFieldChange();
-      }
-    };
+      };
+    }
+
+    const btnJobs = $("#btn-pick-jobs");
+    if (btnJobs) {
+      btnJobs.onclick = async () => {
+        const sortedJobs = [...jobs].sort((j1, j2) => nm(j1).localeCompare(nm(j2), viewLang, { sensitivity: "base" }));
+        const jobOpts = sortedJobs.map(j => ({
+          value: j.id,
+          label: nm(j),
+          icon: "💼"
+        }));
+        const chosen = await pickerSheet(jobOpts, {
+          title: "Select Jobs",
+          selected: curJobIds,
+          multi: true,
+          search: jobOpts.length > 5,
+          anchorEl: btnJobs,
+          readOnly: _mode === "review"
+        });
+        if (chosen !== undefined) {
+          curJobIds = Array.isArray(chosen) ? chosen : [];
+          $("#lbl-pick-jobs").textContent = formatJobsLabel(curJobIds);
+          dlgDirty = true;
+          onFieldChange();
+        }
+      };
+    }
+
+    const btnParent = $("#btn-pick-parent");
+    if (btnParent && !hasKids) {
+      btnParent.onclick = async () => {
+        const catOpts = [
+          { value: "", label: "None (main category)", subtitle: "Top-level category" },
+          ...tops.map(t => ({ value: t.id, label: nm(t) }))
+        ];
+        const cur = $("#a-parent").value;
+        const chosen = await pickerSheet(catOpts, {
+          title: "Select Category",
+          selected: cur,
+          search: catOpts.length > 8,
+          anchorEl: btnParent,
+          readOnly: _mode === "review"
+        });
+        if (chosen !== undefined) {
+          $("#a-parent").value = chosen;
+          const match = tops.find(t => t.id === chosen);
+          $("#lbl-pick-parent").textContent = match ? nm(match) : "None (main category)";
+          dlgDirty = true;
+          onFieldChange();
+        }
+      };
+    }
   }
 
   $("#d-save").onclick = async () => {
     if (!validate()) return;
-    const v = lf.values(), nmOut = {}, tOut = {}, bOut = {};
+    const v = lf.values(), nmOut = {};
     L.forEach(l => {
       const d = v[l.code];
-      if (d.name.trim()) nmOut[l.code] = d.name.trim();
-      if (d.title.trim()) tOut[l.code] = d.title.trim();
-      if (d.body.trim()) bOut[l.code] = d.body.trim();
+      if (d.name && d.name.trim()) nmOut[l.code] = d.name.trim();
     });
-    keepUnknown(nameMap(a), nmOut); keepUnknown(tplMap(a, "title"), tOut); keepUnknown(tplMap(a, "body"), bOut);
+    keepUnknown(nameMap(a), nmOut);
     if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
-    const parentId = hasKids ? "" : $("#a-parent").value;
+    const parentId = isParent ? "" : (hasKids ? "" : $("#a-parent").value);
+    const isRestricted = !isParent && $("#a-restricted").checked;
     const data = {
       names: nmOut,
       name: pickName(nmOut),
       parentId,
       inAppVisibility: $("#a-visible").checked,
-      restricted: $("#a-restricted").checked,
       statuses: statusOut(a, L, nmOut, lf),
-      titleTemplates: tOut,
-      bodyTemplates: bOut,
-      titleTemplate: pickName(tOut) || DEF_TITLE,
-      bodyTemplate: pickName(bOut) || DEF_BODY,
       updatedAt: serverTimestamp()
     };
+    if (isParent) {
+      if (id) {
+        data.restricted = deleteField();
+      }
+    } else {
+      data.restricted = isRestricted;
+    }
     if (id) {
       data.visible = deleteField();
+      data.titleTemplates = deleteField();
+      data.bodyTemplates = deleteField();
+      data.titleTemplate = deleteField();
+      data.bodyTemplate = deleteField();
     }
     triggerHaptic(10);
     await handleEditorSave({
       btn: $("#d-save"),
-      successToast: "Action saved.",
+      successToast: isParent ? (id ? "Action Parent saved." : "Action Parent created.") : "Action saved.",
       saveTask: async () => {
+        let actionId = id;
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: "actions", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
@@ -12442,9 +12544,74 @@ function openAction(id, presetParent = "", _mode = null) {
             const sibs = childrenOf(parentId);
             data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
             const newDoc = await addDoc(collection(db, "actions"), data);
+            actionId = newDoc.id;
             if (!parentId) {
               collapsedGroups.add("cat_" + newDoc.id);
             }
+          }
+
+          // Persist job links for child actions
+          if (!isParent && actionId) {
+            const targetJobIds = isRestricted ? curJobIds : [];
+            const currentJobIds = jobs.filter(j => (j.actionIds || []).includes(actionId)).map(j => j.id);
+            const toAdd = targetJobIds.filter(jid => !currentJobIds.includes(jid));
+            const toRemove = currentJobIds.filter(jid => !targetJobIds.includes(jid));
+
+            if (toAdd.length > 0 || toRemove.length > 0) {
+              const lockedByOther = [...toAdd, ...toRemove].filter(jid => {
+                const l = lockOf("jobTypes", jid);
+                return l && !l.isMine;
+              });
+              if (lockedByOther.length > 0) {
+                const lockedNames = lockedByOther.map(jid => {
+                  const j = jobs.find(x => x.id === jid);
+                  return j ? nm(j) : jid;
+                }).join(", ");
+                toast(`Skipped updating links for locked job(s): ${lockedNames}`, true);
+              }
+              const b = writeBatch(db);
+              toAdd.forEach(jid => {
+                if (!lockedByOther.includes(jid)) {
+                  b.update(doc(db, "jobTypes", jid), { actionIds: arrayUnion(actionId) });
+                  const jObj = jobs.find(x => x.id === jid);
+                  if (jObj) {
+                    if (!jObj.actionIds) jObj.actionIds = [];
+                    if (!jObj.actionIds.includes(actionId)) jObj.actionIds.push(actionId);
+                  }
+                }
+              });
+              toRemove.forEach(jid => {
+                if (!lockedByOther.includes(jid)) {
+                  b.update(doc(db, "jobTypes", jid), { actionIds: arrayRemove(actionId) });
+                  const jObj = jobs.find(x => x.id === jid);
+                  if (jObj && jObj.actionIds) {
+                    jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
+                  }
+                }
+              });
+              await b.commit();
+            }
+          }
+        } else {
+          // In test mode: update local in-memory jobs array
+          if (!isParent && actionId) {
+            const targetJobIds = isRestricted ? curJobIds : [];
+            const currentJobIds = jobs.filter(j => (j.actionIds || []).includes(actionId)).map(j => j.id);
+            const toAdd = targetJobIds.filter(jid => !currentJobIds.includes(jid));
+            const toRemove = currentJobIds.filter(jid => !targetJobIds.includes(jid));
+            toAdd.forEach(jid => {
+              const jObj = jobs.find(x => x.id === jid);
+              if (jObj) {
+                if (!jObj.actionIds) jObj.actionIds = [];
+                if (!jObj.actionIds.includes(actionId)) jObj.actionIds.push(actionId);
+              }
+            });
+            toRemove.forEach(jid => {
+              const jObj = jobs.find(x => x.id === jid);
+              if (jObj && jObj.actionIds) {
+                jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
+              }
+            });
           }
         }
         return true;
@@ -12474,9 +12641,11 @@ async function delAction(id) {
 
 function seedFields(name, parentId, order) {
   const dl = defLang();
-  return { names: { [dl]: name }, name, parentId, order, inAppVisibility: true, restricted: false,
-    titleTemplates: dl === "en" ? { en: DEF_TITLE } : {}, bodyTemplates: { [dl]: DEF_BODY },
-    titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() };
+  const res = { names: { [dl]: name }, name, parentId, order, inAppVisibility: true, updatedAt: serverTimestamp() };
+  if (parentId) {
+    res.restricted = false;
+  }
+  return res;
 }
 async function seedActions() {
   const starter = {
@@ -14117,6 +14286,11 @@ function renderSettings() {
     <button type="button" class="btn" data-act="convert-names">Convert names (${legacyN})</button></div>
     <p class="muted" style="margin-top:0">${legacyN} record(s) were saved before names had per-language fields.</p>`;
 
+  // Clean up actions
+  html += `<div class="bar" style="margin-top:16px"><h3>Clean up actions</h3>
+    <button type="button" class="btn" data-act="cleanup-actions">Clean up actions</button></div>
+    <p class="muted" style="margin-top:0">Removes obsolete notification template fields, legacy visibility, and Action Parent restrictions without touching last-edited info.</p>`;
+
   // Catalog check panel
   html += renderCatalogCheck();
 
@@ -14470,10 +14644,6 @@ function openConvertNames() {
             const batch = writeBatch(db);
             todo.slice(i, i + 400).forEach(([coll, x]) => {
               const data = { names: { [c]: x.name } };
-              if (coll === "actions") {
-                data.titleTemplates = x.titleTemplate ? { [c]: x.titleTemplate } : {};
-                data.bodyTemplates = x.bodyTemplate ? { [c]: x.bodyTemplate } : {};
-              }
               batch.update(doc(db, coll, x.id), data);
             });
             await batch.commit();
@@ -14484,6 +14654,104 @@ function openConvertNames() {
       toast("Names converted.", { type: "success" });
     } catch (e) { fail(e); }
   };
+  showDlg();
+}
+
+function openCleanupActions() {
+  const needsCleanup = a => {
+    const hasTemplates = !!(a.titleTemplates || a.bodyTemplates || a.titleTemplate || a.bodyTemplate);
+    const hasVisible = a.visible !== undefined;
+    const isParent = !a.parentId;
+    const hasRestrictedParent = isParent && a.restricted !== undefined;
+    return hasTemplates || hasVisible || hasRestrictedParent;
+  };
+
+  const targets = actions.filter(needsCleanup);
+  let templateCount = 0;
+  let visibleCount = 0;
+  let parentRestrictedCount = 0;
+  targets.forEach(a => {
+    if (a.titleTemplates || a.bodyTemplates || a.titleTemplate || a.bodyTemplate) templateCount++;
+    if (a.visible !== undefined) visibleCount++;
+    if (!a.parentId && a.restricted !== undefined) parentRestrictedCount++;
+  });
+
+  dlg.innerHTML = `
+    <div class="dlg" data-noguard>
+      <h2>Clean up actions</h2>
+      <p style="margin:0 0 var(--space-sm)">Removes obsolete notification templates, legacy visibility fields, and restriction fields on Action Parents in chunks of 400 without modifying last-edited information.</p>
+      ${targets.length === 0 ? `
+        <div class="empty" style="padding:16px;border-color:var(--green);background:var(--green-soft)">
+          <p style="color:var(--green);font-weight:600;margin:0">✓ All actions are already cleaned up!</p>
+        </div>
+        <div class="actions" style="margin-top:16px">
+          <button type="button" class="btn primary" id="d-cancel">Done</button>
+        </div>
+      ` : `
+        <ul style="margin:0 0 16px;padding-left:20px;font-size:14px" class="muted">
+          <li><b>${targets.length}</b> total document(s) to clean up</li>
+          <li><b>${templateCount}</b> with obsolete notification template fields</li>
+          <li><b>${visibleCount}</b> with legacy "visible" field</li>
+          <li><b>${parentRestrictedCount}</b> Action Parent(s) with obsolete "restricted" field</li>
+        </ul>
+        <div class="actions">
+          <button type="button" class="btn" id="d-cancel">Cancel</button>
+          <button type="button" class="btn" id="btn-cleanup-dryrun">Dry run (log only)</button>
+          <button type="button" class="btn primary" id="d-save">Clean up ${targets.length} actions</button>
+        </div>
+      `}
+    </div>
+  `;
+
+  $("#d-cancel").onclick = () => dlg.close();
+  const dryBtn = $("#btn-cleanup-dryrun");
+  if (dryBtn) {
+    dryBtn.onclick = () => {
+      console.log(`[Clean up actions DRY RUN] ${targets.length} doc(s) would be updated:`, targets.map(t => ({ id: t.id, name: nm(t), parentId: t.parentId })));
+      toast(`Dry run: ${targets.length} document(s) would be cleaned up (no changes written).`);
+    };
+  }
+
+  const saveBtn = $("#d-save");
+  if (saveBtn) {
+    saveBtn.onclick = async () => {
+      triggerHaptic(10);
+      try {
+        await withButtonLoading(saveBtn, async () => {
+          if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
+            for (let i = 0; i < targets.length; i += 400) {
+              const batch = writeBatch(db);
+              targets.slice(i, i + 400).forEach(a => {
+                const updates = {
+                  titleTemplates: deleteField(),
+                  bodyTemplates: deleteField(),
+                  titleTemplate: deleteField(),
+                  bodyTemplate: deleteField(),
+                  visible: deleteField()
+                };
+                if (!a.parentId) {
+                  updates.restricted = deleteField();
+                }
+                batch.update(doc(db, "actions", a.id), updates);
+              });
+              await batch.commit();
+            }
+          }
+          targets.forEach(a => {
+            delete a.titleTemplates;
+            delete a.bodyTemplates;
+            delete a.titleTemplate;
+            delete a.bodyTemplate;
+            delete a.visible;
+            if (!a.parentId) delete a.restricted;
+          });
+        });
+        dlg.close();
+        toast(`Cleaned up ${targets.length} action(s).`, { type: "success" });
+        renderAll();
+      } catch (err) { fail(err); }
+    };
+  }
   showDlg();
 }
 
@@ -14597,7 +14865,7 @@ window.__ADMIN__ = {
   get activeCompactPreview() { return activeCompactPreview; },
   get dlgDirty() { return dlgDirty; }, set dlgDirty(v) { dlgDirty = v; },
   pendingDeletes,
-  tabFilterState, openFilterSheet, openCalSettingsSheet, renderTab, pickDay,
+  tabFilterState, openFilterSheet, openCalSettingsSheet, renderTab, pickDay, openCleanupActions, formatJobsLabel,
   STRINGS, formatError, openHelpSheet, renderEmptyState,
   startListening, delAction, childrenOf,
   // Lock & Viewer system exports
