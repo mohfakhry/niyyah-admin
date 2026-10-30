@@ -31,7 +31,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
      * #toast: Floating feedback notification container with undo support.
 
 2. RENDER FUNCTIONS PER TAB:
-   - Actions tab:   renderActions()       — builds category tree, child action rows, action chips.
+   - Actions tab:   renderActions()       — builds category parent cards (full title, inAppVisibility/restricted chips, count),
+                                            compact child action tree connectors, and action chips.
    - Niyyahs tab:   renderNiyyahs()       — filters (text, status, action), accordion cards, translations list.
    - Locations tab: renderNamed("types")  — location cards, linked action badges.
    - Jobs tab:      renderNamed("jobs")   — job cards, linked action badges.
@@ -44,6 +45,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
 3. DIALOG & SHEET CODE:
    - Universal Sheet Container: #dlg and #dlg-discard with showDlg(), requestClose().
+   - Save Confirmation:         handleEditorSave({ btn, saveTask, successToast }) validates server writes,
+                                sets dlgDirty = false immediately on server confirmation, shows "Saved ✓",
+                                guards requestClose() against discard prompt while saving or just saved.
    - Phone Back Button:         Popstate handler closes open sheet first; if no sheet is open,
                                 navigates to the previous tab in history.
    - Sheet Helpers:             openSheet(content), closeSheet(), confirmSheet(options), toast(msg, {undo}).
@@ -1594,16 +1598,59 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .lp-seg.st-draft { background: var(--st-draft); }
   .lp-seg.st-empty { background: var(--st-empty); }
 
-  /* Card "⋯" options button (inherits 44px circular .btn-icon) */
-  .card-more-btn {
-    font-size: 20px;
-    margin: -6px -6px -6px 0;
+  /* Round circle style shared by .card-more-btn and .g-collapse-btn */
+  .card-more-btn,
+  .g-collapse-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--line);
+    background: var(--sand);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    flex-shrink: 0;
+    position: relative;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .card-more-btn::before,
+  .g-collapse-btn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .card-more-btn:hover,
+  .g-collapse-btn:hover {
+    background: var(--card);
+    border-color: var(--muted);
+  }
+  .card-more-btn:active,
+  .g-collapse-btn:active {
+    transform: scale(0.94);
   }
 
   /* Desktop hover reveal for more options */
   @media (min-width: 721px) {
     .card .card-more-btn {
-      opacity: 0.6;
+      opacity: 0.7;
     }
     .card:hover .card-more-btn,
     .card:focus-within .card-more-btn {
@@ -1653,9 +1700,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     cursor: pointer;
   }
 
-  /* Sticky group headers */
+  /* Sticky group headers (parent folder cards) */
   .sticky-group {
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-base);
   }
   .sticky-group-head {
     position: sticky;
@@ -1664,17 +1711,21 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     background: var(--paper);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
-    padding: 8px var(--space-base);
-    margin-bottom: var(--space-sm);
+    padding: 12px 14px 10px;
+    margin-top: 10px;
+    margin-bottom: 6px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm);
+    flex-direction: column;
     box-shadow: 0 2px 6px rgba(0,0,0,.03);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     cursor: pointer;
     touch-action: manipulation;
+    position: relative;
+    box-sizing: border-box;
+  }
+  .sticky-group-head:hover {
+    border-color: var(--line-strong, var(--muted));
   }
   .sticky-group-head .g-title {
     font-size: 16px;
@@ -1692,31 +1743,68 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     align-items: center;
     gap: var(--space-xs);
   }
-  .g-collapse-btn {
-    width: 44px;
-    height: 44px;
-    border: 0;
-    background: transparent;
-    border-radius: var(--radius-full);
+  .g-collapse-btn .g-chev {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    color: var(--muted);
-    cursor: pointer;
-  }
-  .g-collapse-btn:hover {
-    background: var(--sand);
-    color: var(--ink);
-  }
-  .g-collapse-btn .g-chev {
     transition: transform .2s ease;
+  }
+  .g-collapse-btn .g-chev svg {
+    display: block;
   }
   .sticky-group.collapsed .g-collapse-btn .g-chev {
     transform: rotate(-90deg);
   }
+  [dir="rtl"] .sticky-group.collapsed .g-collapse-btn .g-chev,
+  .rtl .sticky-group.collapsed .g-collapse-btn .g-chev {
+    transform: rotate(90deg);
+  }
   .sticky-group.collapsed .g-body {
     display: none !important;
+  }
+
+  /* Compact tree view for child actions under parent */
+  .actions-tree-body {
+    position: relative;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    padding-inline-start: 22px;
+    padding-inline-end: 0;
+    padding-top: 4px;
+    padding-bottom: 8px;
+    margin-bottom: var(--space-base);
+  }
+  @media (min-width: 721px) {
+    .actions-tree-body {
+      grid-template-columns: 1fr !important;
+      display: flex !important;
+    }
+  }
+  .actions-tree-body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 24px;
+    inset-inline-start: 8px;
+    width: 2px;
+    background: var(--line);
+    border-radius: 1px;
+  }
+  .actions-tree-body .card {
+    position: relative;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .actions-tree-body .card::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    inset-inline-start: -14px;
+    width: 14px;
+    height: 2px;
+    background: var(--line);
+    transform: translateY(-50%);
   }
 
   /* Multi-select sticky bottom bar */
@@ -3986,8 +4074,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .search-filter-section {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: var(--space-base);
+    gap: 4px;
+    margin-bottom: var(--space-xs);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -4011,8 +4099,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     width: 100%;
     padding-left: 38px;
     padding-right: 36px;
-    font-size: 16px;
-    min-height: var(--tap, 48px);
+    font-size: 15px;
+    min-height: 36px;
+    height: 36px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     background: var(--card);
@@ -4023,22 +4112,35 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     left: 12px;
     color: var(--muted);
     pointer-events: none;
-    font-size: 15px;
+    font-size: 14px;
   }
   .filter-trigger-btn {
     flex-shrink: 0;
-    min-height: var(--tap, 48px);
-    padding: 0 14px;
+    min-height: 36px;
+    height: 36px;
+    padding: 0 12px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border-radius: var(--radius-md);
-    font-size: 14px;
+    border-radius: var(--radius-full);
+    font-size: 13.5px;
     font-weight: 600;
     white-space: nowrap;
     background: var(--card);
     border: 1px solid var(--line);
     cursor: pointer;
+    position: relative;
+    touch-action: manipulation;
+  }
+  .filter-trigger-btn::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
   }
   .filter-trigger-btn.has-active {
     background: var(--green-soft);
@@ -4059,13 +4161,39 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .active-filter-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 4px;
     align-items: center;
     width: 100%;
     box-sizing: border-box;
+    margin-top: 2px;
   }
   .active-filter-chips:empty {
-    display: none;
+    display: none !important;
+  }
+
+  /* Desktop unified row for top bar & search filter */
+  @media (min-width: 721px) {
+    .tab-top-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xs);
+    }
+    .tab-top-row .tab-top-bar {
+      order: 2;
+      margin-bottom: 0;
+    }
+    .tab-top-row .search-filter-section {
+      order: 1;
+      width: auto;
+      margin-bottom: 0;
+    }
+    .tab-top-row .active-filter-chips {
+      order: 3;
+      width: 100%;
+    }
   }
   .filter-chip-removable {
     display: inline-flex;
@@ -5017,7 +5145,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, collection, doc, getDoc, getDocFromServer, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
-         serverTimestamp, Timestamp, runTransaction, writeBatch, arrayRemove, connectFirestoreEmulator }
+         serverTimestamp, Timestamp, runTransaction, writeBatch, arrayRemove, connectFirestoreEmulator, deleteField }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============================================================
@@ -5430,6 +5558,13 @@ let multiSelectMode = false;
 let multiSelectType = null;
 const selectedItemIds = new Set();
 const collapsedGroups = new Set();
+function collapseAllActionCategories() {
+  for (const a of actions) {
+    if (!a.parentId) {
+      collapsedGroups.add("cat_" + a.id);
+    }
+  }
+}
 let isInitialLoading = false;
 
 /* ---------- helpers ---------- */
@@ -5570,6 +5705,8 @@ dlg.addEventListener("change", () => (dlgDirty = true));
 dlg.addEventListener("close", () => {
   if (dlg.open) return;
   dlgDirty = false;
+  isEditorSaving = false;
+  editorJustSaved = false;
   dlg.classList.remove("editor-mode");
   cleanupEditorViewport();
   if (activeLangStripCleanup) {
@@ -6116,9 +6253,13 @@ function showDlg() {
   trapFocus(dlg);
 }
 
+let isEditorSaving = false;
+let editorJustSaved = false;
+
 function requestClose() {
   if (!dlg.open) return;
-  if (!dlgGuard || !dlgDirty) {
+  if (isEditorSaving) return;
+  if (editorJustSaved || !dlgGuard || !dlgDirty) {
     dlg.close();
     dlg.classList.remove("editor-mode");
     cleanupEditorViewport();
@@ -6126,6 +6267,7 @@ function requestClose() {
       activeLangStripCleanup();
       activeLangStripCleanup = null;
     }
+    editorJustSaved = false;
     return;
   }
   const discardTitle = STRINGS?.common?.discardChanges || "Discard your changes?";
@@ -6140,6 +6282,7 @@ function requestClose() {
   </div>`;
   $("#dd-discard").onclick = () => {
     dlgDirty = false;
+    editorJustSaved = false;
     dlgDiscard.close();
     dlg.close();
     dlg.classList.remove("editor-mode");
@@ -6256,6 +6399,73 @@ async function withButtonLoading(btn, asyncTask) {
     btn.classList.remove("is-loading", "is-success");
     btn.innerHTML = origHtml;
     btn.disabled = false;
+  }
+}
+
+async function handleEditorSave({
+  btn = $("#d-save"),
+  saveTask,
+  successToast = "Saved."
+}) {
+  if (isEditorSaving) return false;
+  if (!btn) btn = $("#d-save");
+  const origHtml = btn?.innerHTML || "Save";
+  isEditorSaving = true;
+  editorJustSaved = false;
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn.innerHTML = `<span class="btn-spinner" aria-hidden="true"></span> Saving…`;
+  }
+  try {
+    const res = await saveTask();
+    if (res === false || (res && res.ok === false)) {
+      if (btn) {
+        btn.classList.remove("is-loading", "is-success");
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+      }
+      isEditorSaving = false;
+      return false;
+    }
+
+    // Server confirmed the write
+    dlgDirty = false;
+    editorJustSaved = true;
+    isEditorSaving = false;
+
+    if (btn) {
+      btn.classList.remove("is-loading");
+      btn.classList.add("is-success");
+      btn.innerHTML = `Saved ✓`;
+    }
+    triggerHaptic(10);
+    if (successToast) {
+      toast(successToast, { type: "success" });
+    }
+
+    await new Promise(r => setTimeout(r, 1500));
+    if (dlg.open && editorJustSaved) {
+      dlg.close();
+      dlg.classList.remove("editor-mode");
+      cleanupEditorViewport();
+      if (activeLangStripCleanup) {
+        activeLangStripCleanup();
+        activeLangStripCleanup = null;
+      }
+    }
+    editorJustSaved = false;
+    return true;
+  } catch (err) {
+    if (btn) {
+      btn.classList.remove("is-loading", "is-success");
+      btn.innerHTML = origHtml;
+      btn.disabled = false;
+    }
+    isEditorSaving = false;
+    editorJustSaved = false;
+    fail(err);
+    return false;
   }
 }
 
@@ -7309,7 +7519,8 @@ const niyyahCount = id => niyyahs.filter(n => Array.isArray(n.actionIds) ? n.act
 /* ---------- chips for actions (visible / restricted) ---------- */
 function actionChips(a) {
   let h = "";
-  if (a.visible === false) {
+  const isVis = a.inAppVisibility ?? a.visible ?? true;
+  if (!isVis) {
     h += `<span class="chip" style="background:#fce8e6;color:var(--danger)">Hidden</span>`;
   } else {
     h += `<span class="chip">In app</span>`;
@@ -8124,7 +8335,13 @@ function startListening() {
       handleLiveReviewItemUpdated(name, items);
       renderAll();
     }, fail);
-  watch("actions", v => (actions = v));
+  watch("actions", v => {
+    actions = v;
+    if (currentTab === "actions" && !window.__hasInitializedActionsCollapse) {
+      window.__hasInitializedActionsCollapse = true;
+      collapseAllActionCategories();
+    }
+  });
   watch("niyyahs", v => (niyyahs = v));
   watch("locationTypes", v => (types = v));
   watch("languages", v => (languages = v));
@@ -8158,6 +8375,9 @@ function startListening() {
    ============================================================ */
 function applyTab(name) {
   currentTab = name;
+  if (name === "actions") {
+    collapseAllActionCategories();
+  }
   syncHeaderSearchUI(name);
   const title = TAB_TITLES[name] || "Actions";
   const titleEl = $("#page-title");
@@ -9819,6 +10039,7 @@ async function executeEditorCreateItem({ coll, data }) {
     savedAt: serverTimestamp(),
     revSeq: 1
   };
+  delete revData.visible;
   await setDoc(doc(db, canonical, docRef.id, "revisions", "1"), revData);
   return { ok: true, isNew: true, id: docRef.id };
 }
@@ -9872,6 +10093,7 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt 
 
       const fullSavedData = { ...itemData, ...data };
       delete fullSavedData.revisions;
+      delete fullSavedData.visible;
 
       const revData = {
         ...fullSavedData,
@@ -9880,6 +10102,7 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt 
         savedAt: serverTimestamp(),
         revSeq: nextRevSeq
       };
+      delete revData.visible;
 
       tx.set(revRef, revData);
       tx.update(itemRef, data);
@@ -10172,6 +10395,10 @@ function renderRevFieldsPreview(canonical, rev, code) {
       <div class="history-field-box">
         <label>Parent Category</label>
         <div class="history-field-value">${esc(rev.parentId ? (actions.find(a => a.id === rev.parentId)?.name || rev.parentId) : "None (Main Category)")}</div>
+      </div>
+      <div class="history-field-box">
+        <label>In App Visibility</label>
+        <div class="history-field-value">${(rev.inAppVisibility ?? rev.visible ?? true) ? "In app" : "Hidden"}</div>
       </div>
     `;
   } else if (canonical === "niyyahs") {
@@ -10624,9 +10851,7 @@ function renderCard({
           </div>
           <div class="card-head-tools">
             ${progHtml}
-            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="More options" title="More options">
-              ⋯
-            </button>
+            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit / options for ${esc(title)}" title="Edit / options">✏️</button>
           </div>
         </div>
         ${preview ? `
@@ -10794,6 +11019,10 @@ async function duplicateItem(type, id) {
     if (copy.name) copy.name += " (Copy)";
     copy.order = (copy.order || 0) + 1;
     if ("published" in copy) copy.published = false;
+    if (type === "actions") {
+      copy.inAppVisibility = copy.inAppVisibility ?? copy.visible ?? true;
+      delete copy.visible;
+    }
   }
   copy.createdAt = serverTimestamp();
   copy.updatedAt = serverTimestamp();
@@ -11287,8 +11516,9 @@ function renderActions() {
   const cat = state.catId || "";
 
   const matchesFilter = a => {
-    if (vis === "inapp" && a.visible === false) return false;
-    if (vis === "hidden" && a.visible !== false) return false;
+    const isVis = a.inAppVisibility ?? a.visible ?? true;
+    if (vis === "inapp" && !isVis) return false;
+    if (vis === "hidden" && isVis) return false;
     if (rest === "jobonly" && !a.restricted) return false;
     if (rest === "general" && a.restricted) return false;
     if (q) {
@@ -11321,7 +11551,8 @@ function renderActions() {
       }
 
       totalMatchingActions += filteredKids.length + (catMatches ? 1 : 0);
-      const isCollapsed = collapsedGroups.has("cat_" + c.id);
+      const isSearchActive = !!(q || vis || rest);
+      const isCollapsed = isSearchActive ? (filteredKids.length > 0 ? false : collapsedGroups.has("cat_" + c.id)) : collapsedGroups.has("cat_" + c.id);
       const catRtl = isArabic(nm(c));
 
       const catLock = lockOf("actions", c.id);
@@ -11362,32 +11593,45 @@ function renderActions() {
           <div class="sticky-group-head" role="button" tabindex="0" aria-label="Category header" data-type="actions" data-id="${c.id}">
             ${catLockBadgeHtml}
             ${catViewerBadgeHtml}
-            <div class="g-title">
-              <span aria-hidden="true">📁</span>
-              <span class="${catRtl ? 'rtl' : ''}" dir="${catRtl ? 'rtl' : 'auto'}">${esc(nm(c))}</span>
-              ${actionChips(c)}
-              <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${filteredKids.length})</span>
-            </div>
-            <div class="g-actions">
-              ${renderLangProgress(c, L, "actions")}
-              <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="More options for ${esc(nm(c))}" title="More options">⋯</button>
-              <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
-                <span class="g-chev" aria-hidden="true">▼</span>
-              </button>
+            <div class="card-main" style="width:100%">
+              <div class="card-head" style="align-items:flex-start">
+                <div class="card-title-wrap" style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                    <span class="cat-icon" aria-hidden="true" style="font-size:18px;line-height:1;flex-shrink:0">📁</span>
+                    <h3 class="card-title ${catRtl ? 'rtl' : ''}" dir="${catRtl ? 'rtl' : 'auto'}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${esc(nm(c))}</h3>
+                  </div>
+                  <div class="chips" style="margin-top:4px">
+                    ${actionChips(c)}
+                  </div>
+                  <div class="card-preview muted" style="margin-top:3px;font-size:13px;line-height:1.3">
+                    ${filteredKids.length} action${filteredKids.length === 1 ? '' : 's'}
+                  </div>
+                </div>
+                <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
+                  ${renderLangProgress(c, L, "actions")}
+                  <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Edit / options for ${esc(nm(c))}" title="Edit / options">✏️</button>
+                  <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
+                    <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+                  </button>
+                </div>
+              </div>
+              ${renderLangTray(c, L, "actions")}
             </div>
           </div>
-          ${renderLangTray(c, L, "actions")}
-          <div class="g-body cards-grid">
-            ${filteredKids.length ? filteredKids.map(k => renderCard({
-              type: "actions",
-              id: k.id,
-              title: nm(k),
-              isRtl: isArabic(nm(k)),
-              preview: `${niyyahCount(k.id)} niyyahs${k.restricted ? ' · Job-only' : ''}${k.visible === false ? ' · Hidden' : ''}`,
-              chips: actionChips(k),
-              item: k,
-              L
-            })).join("") : `<p class="muted" style="margin:4px 0 12px;font-size:13px">${(q || vis || rest) ? 'No matching child actions in this category.' : 'No child actions in this category yet.'}</p>`}
+          <div class="g-body cards-grid actions-tree-body">
+            ${filteredKids.length ? filteredKids.map(k => {
+              const kVis = k.inAppVisibility ?? k.visible ?? true;
+              return renderCard({
+                type: "actions",
+                id: k.id,
+                title: nm(k),
+                isRtl: isArabic(nm(k)),
+                preview: `${niyyahCount(k.id)} niyyahs${k.restricted ? ' · Job-only' : ''}${!kVis ? ' · Hidden' : ''}`,
+                chips: actionChips(k),
+                item: k,
+                L
+              });
+            }).join("") : `<p class="muted" style="margin:4px 0 12px;font-size:13px">${(q || vis || rest) ? 'No matching child actions in this category.' : 'No child actions in this category yet.'}</p>`}
           </div>
         </div>
       `;
@@ -11427,10 +11671,12 @@ function renderActions() {
   }
 
   let html = `<h2 class="sr-only">Actions</h2>
-  <div class="bar tab-top-bar desktop-only">
-    <button type="button" class="btn primary hdr-add-btn" data-act="new-cat">Add category</button>
+  <div class="tab-top-row">
+    <div class="bar tab-top-bar desktop-only">
+      <button type="button" class="btn primary hdr-add-btn" data-act="new-cat">Add category</button>
+    </div>
+    ${renderSearchFilterSection("actions")}
   </div>
-  ${renderSearchFilterSection("actions")}
   <div class="tab-list-content" id="list-cont-actions">
     ${listHtml}
   </div>`;
@@ -11525,16 +11771,18 @@ function renderNiyyahs() {
   }
 
   let html = `<h2 class="sr-only">Niyyahs</h2>
-  <div class="bar tab-top-bar">
-    <div class="tab-stat-text muted">
-      ${niyyahs.length} total, ${published} with a published language
+  <div class="tab-top-row">
+    <div class="bar tab-top-bar">
+      <div class="tab-stat-text muted">
+        ${niyyahs.length} total, ${published} with a published language
+      </div>
+      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
+        <button class="btn small" data-act="import-json">Import JSON</button>
+        <button type="button" class="btn primary hdr-add-btn" data-act="new-niyyah">Add niyyah</button>
+      </div>
     </div>
-    <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
-      <button class="btn small" data-act="import-json">Import JSON</button>
-      <button type="button" class="btn primary hdr-add-btn" data-act="new-niyyah">Add niyyah</button>
-    </div>
+    ${renderSearchFilterSection("niyyahs")}
   </div>
-  ${renderSearchFilterSection("niyyahs")}
     <div class="tab-list-content" id="list-cont-niyyahs">
       ${listHtml}
     </div>`;
@@ -11642,10 +11890,12 @@ function renderNamed(key) {
   }
 
   let html = `<h2 class="sr-only">${K.many}</h2>
-  <div class="bar tab-top-bar desktop-only">
-    <button type="button" class="btn primary hdr-add-btn" data-act="${K.add}">Add ${K.one}</button>
+  <div class="tab-top-row">
+    <div class="bar tab-top-bar desktop-only">
+      <button type="button" class="btn primary hdr-add-btn" data-act="${K.add}">Add ${K.one}</button>
+    </div>
+    ${renderSearchFilterSection(key)}
   </div>
-  ${renderSearchFilterSection(key)}
   <div class="tab-list-content" id="list-cont-${key}">
     ${listHtml}
   </div>`;
@@ -12005,7 +12255,8 @@ function openAction(id, presetParent = "", _mode = null) {
   }
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const a = id ? actionById(id) : { parentId: presetParent, visible: true, restricted: false };
+  const a = id ? actionById(id) : { parentId: presetParent, inAppVisibility: true, restricted: false };
+  const isActionVis = a.inAppVisibility ?? a.visible ?? true;
   const hasKids = id && childrenOf(id).length > 0;
   const tops = childrenOf("").filter(x => x.id !== id);
   const names = nameMap(a), titles = tplMap(a, "title"), bodies = tplMap(a, "body");
@@ -12030,7 +12281,7 @@ function openAction(id, presetParent = "", _mode = null) {
       </button>
     </div>
     <div class="f-switches-row">
-      <label class="chk switch-label"><input type="checkbox" id="a-visible" ${a.visible !== false ? "checked" : ""}> <span>Visible to users</span></label>
+      <label class="chk switch-label"><input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span></label>
       <label class="chk switch-label"><input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span>Restrict to specific jobs</span></label>
     </div>
     ${langFieldsHtml()}
@@ -12070,7 +12321,7 @@ function openAction(id, presetParent = "", _mode = null) {
 
   const getFormData = () => ({
     parentId: $("#a-parent")?.value || "",
-    visible: $("#a-visible")?.checked || false,
+    inAppVisibility: $("#a-visible")?.checked || false,
     restricted: $("#a-restricted")?.checked || false,
     names: lf ? lf.values() : {}
   });
@@ -12105,7 +12356,8 @@ function openAction(id, presetParent = "", _mode = null) {
       const match = tops.find(t => t.id === rev.parentId);
       $("#lbl-pick-parent").textContent = match ? nm(match) : "None (main category)";
     }
-    if (rev.visible !== undefined) $("#a-visible").checked = !!rev.visible;
+    const rVis = rev.inAppVisibility !== undefined ? rev.inAppVisibility : rev.visible;
+    if (rVis !== undefined) $("#a-visible").checked = !!rVis;
     if (rev.restricted !== undefined) $("#a-restricted").checked = !!rev.restricted;
     if (rev.names) {
       const lfVals = {};
@@ -12165,7 +12417,7 @@ function openAction(id, presetParent = "", _mode = null) {
       names: nmOut,
       name: pickName(nmOut),
       parentId,
-      visible: $("#a-visible").checked,
+      inAppVisibility: $("#a-visible").checked,
       restricted: $("#a-restricted").checked,
       statuses: statusOut(a, L, nmOut, lf),
       titleTemplates: tOut,
@@ -12174,26 +12426,30 @@ function openAction(id, presetParent = "", _mode = null) {
       bodyTemplate: pickName(bOut) || DEF_BODY,
       updatedAt: serverTimestamp()
     };
+    if (id) {
+      data.visible = deleteField();
+    }
     triggerHaptic(10);
-    try {
-      let saveOk = true;
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Action saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: "actions", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) { saveOk = false; return; }
+            if (!sRes.ok) return false;
           } else {
             const sibs = childrenOf(parentId);
             data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
-            await addDoc(collection(db, "actions"), data);
+            const newDoc = await addDoc(collection(db, "actions"), data);
+            if (!parentId) {
+              collapsedGroups.add("cat_" + newDoc.id);
+            }
           }
         }
-      });
-      if (!saveOk) return;
-      dlgDirty = false;
-      dlg.close();
-      toast("Action saved.", { type: "success" });
-    } catch (e) { fail(e); }
+        return true;
+      }
+    });
   };
   showDlg();
   if (_mode === "review") {
@@ -12218,7 +12474,7 @@ async function delAction(id) {
 
 function seedFields(name, parentId, order) {
   const dl = defLang();
-  return { names: { [dl]: name }, name, parentId, order, visible: true, restricted: false,
+  return { names: { [dl]: name }, name, parentId, order, inAppVisibility: true, restricted: false,
     titleTemplates: dl === "en" ? { en: DEF_TITLE } : {}, bodyTemplates: { [dl]: DEF_BODY },
     titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() };
 }
@@ -12706,23 +12962,21 @@ function openNiyyah(id, _mode = null) {
       ...mirrorFields(translations)
     };
     triggerHaptic(10);
-    try {
-      let saveOk = true;
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Niyyah saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: "niyyahs", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) { saveOk = false; return; }
+            if (!sRes.ok) return false;
           } else {
             await addDoc(collection(db, "niyyahs"), { ...data, createdAt: serverTimestamp() });
           }
         }
-      });
-      if (!saveOk) return;
-      dlgDirty = false;
-      dlg.close();
-      toast("Niyyah saved.", { type: "success" });
-    } catch (e) { fail(e); }
+        return true;
+      }
+    });
   };
   showDlg();
   if (_mode === "review") {
@@ -12857,24 +13111,22 @@ function openNamed(key, id, _mode = null) {
     if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
     const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: curActionIds, updatedAt: serverTimestamp() };
     triggerHaptic(10);
-    try {
-      let saveOk = true;
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: K.coll, id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) { saveOk = false; return; }
+            if (!sRes.ok) return false;
           } else {
             data.order = K.list().length;
             await addDoc(collection(db, K.coll), data);
           }
         }
-      });
-      if (!saveOk) return;
-      dlgDirty = false;
-      dlg.close();
-      toast("Saved.", { type: "success" });
-    } catch (e) { fail(e); }
+        return true;
+      }
+    });
   };
   showDlg();
   if (_mode === "review") {
@@ -12950,7 +13202,7 @@ function renderTips() {
               <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${catTips.length})</span>
             </div>
             <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="tipcat_${c}" aria-label="${isCollapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!isCollapsed}">
-              <span class="g-chev" aria-hidden="true">▼</span>
+              <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
             </button>
           </div>
           <div class="g-body cards-grid">
@@ -13005,15 +13257,17 @@ function renderTips() {
   }
 
   let html = `<h2 class="sr-only">Tips</h2>
-  <div class="bar tab-top-bar">
-    <div class="tab-stat-text muted">
-      ${tips.length} total, ${tips.filter(t => t.published).length} published
+  <div class="tab-top-row">
+    <div class="bar tab-top-bar">
+      <div class="tab-stat-text muted">
+        ${tips.length} total, ${tips.filter(t => t.published).length} published
+      </div>
+      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn primary hdr-add-btn" data-act="new-tip">Add tip</button>
+      </div>
     </div>
-    <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
-      <button type="button" class="btn primary hdr-add-btn" data-act="new-tip">Add tip</button>
-    </div>
+    ${renderSearchFilterSection("tips")}
   </div>
-  ${renderSearchFilterSection("tips")}
   <div class="tab-list-content" id="list-cont-tips">
     ${listHtml}
   </div>`;
@@ -13163,24 +13417,22 @@ function openTip(id, _mode = null) {
     const statuses = statusOut(t, L, out, lf);
     const data = { texts: out, statuses, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: anyPublished(statuses), updatedAt: serverTimestamp() };
     triggerHaptic(10);
-    try {
-      let saveOk = true;
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Tip saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: "tips", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) { saveOk = false; return; }
+            if (!sRes.ok) return false;
           } else {
             data.order = tips.length;
             await addDoc(collection(db, "tips"), data);
           }
         }
-      });
-      if (!saveOk) return;
-      dlgDirty = false;
-      dlg.close();
-      toast("Tip saved.", { type: "success" });
-    } catch (e) { fail(e); }
+        return true;
+      }
+    });
   };
   showDlg();
   $("#lf-text")?.focus();
@@ -13244,7 +13496,7 @@ function renderEventList() {
               <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${g.items.length})</span>
             </div>
             <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="evgroup_${g.id}" aria-label="${isCollapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!isCollapsed}">
-              <span class="g-chev" aria-hidden="true">▼</span>
+              <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
             </button>
           </div>
           <div class="g-body cards-grid">
@@ -13298,14 +13550,16 @@ function renderEventList() {
   }
 
   let html = `<h2 class="sr-only">Events</h2>
-  <div class="bar tab-top-bar">
-    <div class="tab-stat-text muted">common niyyahs by date</div>
-    <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
-      <button class="btn small" data-act="cal-view">Calendar view</button>
-      <button type="button" class="btn primary hdr-add-btn" data-act="new-event">Add event</button>
+  <div class="tab-top-row">
+    <div class="bar tab-top-bar">
+      <div class="tab-stat-text muted">common niyyahs by date</div>
+      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
+        <button class="btn small" data-act="cal-view">Calendar view</button>
+        <button type="button" class="btn primary hdr-add-btn" data-act="new-event">Add event</button>
+      </div>
     </div>
+    ${renderSearchFilterSection("events")}
   </div>
-  ${renderSearchFilterSection("events")}
   <div class="tab-list-content" id="list-cont-events">
     ${listHtml}
   </div>`;
@@ -13606,24 +13860,22 @@ function openEvent(id, preset = null, _mode = null) {
     const data = { names: out, name: pickName(out), statuses, rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
       disputed: $("#e-disp").checked, published: anyPublished(statuses), updatedAt: serverTimestamp() };
     triggerHaptic(10);
-    try {
-      let saveOk = true;
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Event saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
             const sRes = await executeEditorSaveTransaction({ coll: "events", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
-            if (!sRes.ok) { saveOk = false; return; }
+            if (!sRes.ok) return false;
           } else {
             data.order = events.length;
             await addDoc(collection(db, "events"), data);
           }
         }
-      });
-      if (!saveOk) return;
-      dlgDirty = false;
-      dlg.close();
-      toast("Event saved.", { type: "success" });
-    } catch (err) { fail(err); }
+        return true;
+      }
+    });
   };
   showDlg();
   if (_mode === "review") {
@@ -14106,17 +14358,17 @@ function openLanguage(id) {
     if (!id && languages.some(x => x.code === code)) return toast(`The code "${code}" is already used.`, true);
     const data = { name, code, rtl: $("#l-rtl").checked, updatedAt: serverTimestamp() };
     triggerHaptic(10);
-    try {
-      await withButtonLoading($("#d-save"), async () => {
+    await handleEditorSave({
+      btn: $("#d-save"),
+      successToast: "Language saved.",
+      saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) await updateDoc(doc(db, "languages", id), data);
           else { data.order = languages.length ? Math.max(...languages.map(x => x.order ?? 0)) + 1 : 0; await addDoc(collection(db, "languages"), data); }
         }
-      });
-      dlgDirty = false;
-      dlg.close();
-      toast("Language saved.", { type: "success" });
-    } catch (e) { fail(e); }
+        return true;
+      }
+    });
   };
   showDlg();
   $("#l-name")?.focus();
@@ -14317,7 +14569,7 @@ $("#import-file").onchange = async e => {
 };
 
 window.__ADMIN__ = {
-  get actions() { return actions; }, set actions(v) { actions = v; },
+  get actions() { return actions; }, set actions(v) { actions = v; if (currentTab === "actions") collapseAllActionCategories(); },
   get niyyahs() { return niyyahs; }, set niyyahs(v) { niyyahs = v; },
   get types() { return types; }, set types(v) { types = v; },
   get jobs() { return jobs; }, set jobs(v) { jobs = v; },
@@ -14341,7 +14593,7 @@ window.__ADMIN__ = {
   executeBatchPublish, executeBatchReview, executeBatchDelete, executeBatchMoveCat, partitionLockedItems,
   openLockInfoPopup, openViewerInfoPopup, showSkippedItemsPopup,
   pickerSheet,
-  requestClose, setSaveValidity, setupEditorCompactPreview,
+  requestClose, handleEditorSave, setSaveValidity, setupEditorCompactPreview,
   get activeCompactPreview() { return activeCompactPreview; },
   get dlgDirty() { return dlgDirty; }, set dlgDirty(v) { dlgDirty = v; },
   pendingDeletes,

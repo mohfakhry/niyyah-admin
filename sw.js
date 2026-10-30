@@ -6,7 +6,7 @@
    - NEVER touches Firestore, Auth or other Google API calls
    ============================================================ */
 
-const CACHE_NAME = "niyyah-shell-v3";
+const CACHE_NAME = "niyyah-shell-v4";
 const SDK_CACHE = "niyyah-sdk-v1";
 const NAV_TIMEOUT_MS = 4000;
 
