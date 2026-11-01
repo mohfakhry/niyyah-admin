@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niyyah Admin</title>
+<style>
+  :root {
+    --ink: #1d2b2a;
+    --muted: #5d6b69;
+    --paper: #f6f7f5;
+    --card: #ffffff;
+    --line: #dde2df;
+    --green: #14584d;
+    --green-soft: #e3efec;
+    --sand: #efe9da;
+    --danger: #a3412c;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 500 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  [hidden] { display: none !important; }
+  h1, h2, h3 { margin: 0; line-height: 1.25; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid #5aa897; outline-offset: 2px; }
+
+  /* Screens: login / denied */
+  .center { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: 14px; padding: 24px; }
+  .center h1 { font-size: 30px; letter-spacing: -0.01em; }
+  .center p { margin: 0; color: var(--muted); max-width: 40ch; }
+
+  /* Buttons */
+  .btn { border: 1px solid var(--line); background: var(--card); padding: 8px 14px; border-radius: var(--radius); }
+  .btn:hover { border-color: var(--green); }
+  .btn.primary { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn.primary:hover { background: #0f463d; }
+  .btn.danger { color: var(--danger); }
+  .btn.small { padding: 3px 9px; font-size: 14px; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+
+  /* App shell */
+  header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; background: var(--green); color: #fff; }
+  header.top h1 { font-size: 18px; }
+  header.top .who { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+  header.top .btn { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
+  nav.tabs { display: flex; gap: 4px; padding: 0 24px; background: var(--sand); border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav.tabs button { border: 0; background: transparent; padding: 12px 16px; border-bottom: 3px solid transparent; white-space: nowrap; }
+  nav.tabs button[aria-selected="true"] { border-bottom-color: var(--green); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .bar h2 { font-size: 20px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .filters input, .filters select { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+  .filters input { flex: 1 1 200px; }
+  .searchbox { position: relative; flex: 1 1 200px; display: flex; }
+  .searchbox input { width: 100%; padding-right: 34px; }
+  .searchbox input::-webkit-search-cancel-button { display: none; }
+  .clear-x { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 20px; line-height: 1; padding: 0; }
+  .clear-x:hover { background: var(--sand); color: var(--ink); }
+  .expandbar { display: flex; gap: 8px; margin: -6px 0 14px; }
+  .muted { color: var(--muted); }
+  .empty { padding: 32px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--card); }
+  .empty p { margin: 0 0 12px; color: var(--muted); }
+
+  /* Actions tree */
+  .cat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
+  .row .name { flex: 1; min-width: 0; }
+  .row .count { color: var(--muted); font-size: 13px; }
+  .row .tools { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .cat > .row { background: var(--green-soft); border-radius: var(--radius) var(--radius) 0 0; font-weight: 600; }
+  .cat .kids .row { border-top: 1px solid var(--line); }
+  .cat .kids { padding-left: 14px; }
+
+  /* Niyyah + location type cards */
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+  .item .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .item .en { font-weight: 500; }
+  .item .rtl { direction: rtl; text-align: right; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 22px; line-height: 1.8; font-weight: 600; }
+  .item .src { color: var(--muted); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { background: var(--sand); border-radius: 999px; padding: 2px 10px; font-size: 13.5px; }
+  .badge { border-radius: 999px; padding: 2px 10px; font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+  /* Status colours: empty = red, draft = pink, reviewed = yellow, published = green */
+  .st-empty { background: #e5484d; color: #fff; border-color: #e5484d; }
+  .st-draft { background: #f7b2cc; color: #6b1d3a; border-color: #f7b2cc; }
+  .st-reviewed { background: #f6d54a; color: #5a4600; border-color: #f6d54a; }
+  .st-published { background: #2e9e5b; color: #fff; border-color: #2e9e5b; }
+  .lrow { padding: 8px 0; border-top: 1px solid var(--line); }
+  .lrow:first-child { border-top: 0; padding-top: 0; }
+  .lrow .ltext { margin: 4px 0 2px; }
+  .lrow .ltext:not(.rtl) { font-weight: 600; font-size: 16.5px; }
+  .item .tools { display: flex; gap: 4px; margin-top: 10px; }
+
+  /* Dialog */
+  dialog { border: 0; border-radius: 12px; padding: 0; width: min(640px, 94vw); max-height: 92vh; box-shadow: 0 20px 60px rgba(0,0,0,.28); }
+  dialog::backdrop { background: rgba(20, 35, 33, .5); }
+  .dlg { padding: 22px; display: grid; gap: 14px; position: relative; }
+  .dlg h2 { font-size: 19px; padding-right: 40px; }
+  .dlg label.f { display: grid; gap: 4px; font-weight: 500; }
+  .dlg label.f small { font-weight: 400; color: var(--muted); }
+  .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
+  .dlg textarea { min-height: 76px; resize: vertical; }
+  .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 21px; font-weight: 600; }
+  .dlg .actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .checklist, .evlist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
+  .grp-h { font-weight: 600; margin-top: 6px; }
+  .chk { display: flex; align-items: center; gap: 8px; padding: 2px 0 2px 4px; font-weight: 400; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .ltabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ltab { border: 2px solid transparent; border-radius: var(--radius); padding: 7px 16px; font-weight: 600; }
+  .ltab[aria-selected="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+  .lpanel { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; background: #fbfcfb; }
+  .src-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .src-row input { flex: 1; }
+  .imp-list { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  .imp-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--line); }
+  .imp-row:first-child { border-top: 0; }
+  .imp-row.skip { opacity: .5; }
+  .imp-row .snip { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .imp-row .id { color: var(--muted); font-size: 12.5px; min-width: 38px; }
+  .imp-row .badge { padding: 0 8px; font-size: 12px; }
+  .nitem { padding: 0; }
+  .nhead { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; text-align: start; padding: 12px 16px; border-radius: var(--radius); }
+  .nhead:hover { background: var(--paper); }
+  .nhead .chev { color: var(--muted); transition: transform .15s; flex: none; }
+  .nitem.open .chev { transform: rotate(180deg); }
+  .nhead .main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+  .nhead .prev { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nhead .prev { font-weight: 600; }
+  .nhead .prev.rtl { font-size: 20px; line-height: 1.6; }
+  .dots { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+  .lcode { display: inline-block; border: 1px solid transparent; border-radius: 999px; padding: 0 8px; min-width: 30px; text-align: center;
+    font-size: 12px; line-height: 1.6; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .nbody { padding: 2px 16px 14px; border-top: 1px solid var(--line); margin-top: 0; }
+  .nbody .lrow:first-child { padding-top: 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; }
+  .preview { background: var(--sand); border-radius: var(--radius); padding: 10px 14px; }
+  .preview b { display: block; }
+  .preview small { color: var(--muted); }
+  header.top select { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius); padding: 3px 6px; font-size: 14px; }
+  header.top select option { color: var(--ink); }
+  .dlg input[type=text].rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
+
+  /* Dialog close button, discard warning, language warnings, names picker */
+  .dlg-x { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; padding: 0; }
+  .dlg-x:hover { background: var(--sand); color: var(--ink); }
+  #dlg-discard { width: min(440px, 94vw); }
+  #dlg-discard .dlg h2 { padding-right: 0; }
+  .btn.discard { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn.discard:hover { background: #8a3623; border-color: #8a3623; }
+  .dlg label.f small.lwarn { color: var(--danger); font-weight: 600; }
+  .langpick { position: relative; }
+  .langpick .cur { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius); padding: 3px 10px; font-size: 14px; }
+  .langpick .menu { position: absolute; right: 0; top: 100%; padding-top: 6px; display: none; z-index: 30; min-width: 100%; }
+  .langpick:hover .menu, .langpick:focus-within .menu { display: block; }
+  .langpick .menu-in { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,.2); overflow: hidden; display: grid; }
+  .langpick .menu button { border: 0; background: transparent; color: var(--ink); text-align: start; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+  .langpick .menu button:hover { background: var(--green-soft); }
+  .langpick .menu button.is-cur { background: var(--green-soft); font-weight: 700; box-shadow: inset 3px 0 0 var(--green); }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: var(--radius); max-width: 90vw; z-index: 50; }
+  #toast.err { background: var(--danger); }
+  @media (max-width: 560px) { main, header.top, nav.tabs { padding-left: 14px; padding-right: 14px; } .row { flex-wrap: wrap; } }
+  @media (prefers-reduced-motion: no-preference) { .btn { transition: border-color .15s, background .15s; } }
+
+  /* Events calendar */
+  .calbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .calbar .ttl { font-weight: 600; font-size: 17px; flex: 1 1 220px; }
+  .calbar .ttl small { display: block; font-weight: 400; font-size: 13px; color: var(--muted); }
+  .calbar select { padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+  .btn.on { background: var(--green-soft); border-color: var(--green); }
+  .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cal .dow { background: var(--sand); padding: 6px; text-align: center; font-size: 13px; font-weight: 600; }
+  .cday { background: var(--card); border: 0; border-radius: 0; min-height: 88px; padding: 5px 6px; text-align: start; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .cday:hover { background: #f1f6f4; }
+  .cday.other { background: var(--paper); color: var(--muted); }
+  .cday.sel { background: var(--green-soft); box-shadow: inset 0 0 0 2px var(--green); }
+  .cday .g { font-weight: 600; align-self: flex-start; line-height: 1.4; }
+  .cday.today .g { background: var(--green); color: #fff; border-radius: 999px; padding: 0 7px; }
+  .cday .h { font-size: 11px; font-weight: 400; color: var(--muted); line-height: 1.2; }
+  .cday .ev { font-size: 11px; background: var(--sand); border-radius: 4px; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+  .cday .evn { display: none; font-size: 11px; color: var(--green); font-weight: 700; }
+  .daypanel { margin-top: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; }
+  .daypanel h3 { font-size: 16px; }
+  .daypanel .erow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 8px; }
+  .daypanel .erow .name { flex: 1 1 160px; font-weight: 600; }
+  @media (max-width: 640px) { .cday { min-height: 56px; } .cday .ev { display: none; } .cday .evn { display: block; } main { padding: 14px; } }
+</style>
+</head>
+<body>
+
+<!-- Loading / login / denied -->
+<div id="loading" class="center"><p>Loading…</p></div>
+
+<div id="login" class="center" hidden>
+  <h1>Niyyah Admin</h1>
+  <p>Sign in with the Google account that is on the admin list to manage actions, niyyahs, and locations.</p>
+  <div><button class="btn primary" id="btn-login">Sign in with Google</button></div>
+  <p id="login-error" style="color:var(--danger)"></p>
+</div>
+
+<div id="denied" class="center" hidden>
+  <h1>No admin access</h1>
+  <p>Signed in as <b id="denied-email"></b>. This account is not on the admin list. Add its email as a document in the <code>admins</code> collection, or sign in with a different account.</p>
+  <div><button class="btn" id="btn-denied-out">Sign out</button></div>
+</div>
+
+<!-- App -->
+<div id="app" hidden>
+  <header class="top">
+    <h1>Niyyah Admin</h1>
+    <div class="who"><div class="langpick" id="view-lang" hidden></div><span id="who"></span><button class="btn small" id="btn-out">Sign out</button></div>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="actions" aria-selected="true">Actions</button>
+    <button role="tab" data-tab="niyyahs" aria-selected="false">Niyyahs</button>
+    <button role="tab" data-tab="types" aria-selected="false">Locations</button>
+    <button role="tab" data-tab="jobs" aria-selected="false">Jobs</button>
+    <button role="tab" data-tab="tips" aria-selected="false">Tips</button>
+    <button role="tab" data-tab="events" aria-selected="false">Events</button>
+    <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+  </nav>
+  <main>
+    <section id="tab-actions"></section>
+    <section id="tab-niyyahs" hidden></section>
+    <section id="tab-types" hidden></section>
+    <section id="tab-jobs" hidden></section>
+    <section id="tab-tips" hidden></section>
+    <section id="tab-events" hidden></section>
+    <section id="tab-settings" hidden></section>
+  </main>
+</div>
+
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+<dialog id="dlg"></dialog>
+<dialog id="dlg-discard"></dialog>
+<div id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
+         serverTimestamp, writeBatch, arrayRemove }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ============================================================
+   1. PASTE YOUR FIREBASE WEB CONFIG HERE
+      Firebase console > Project settings > General > Your apps > Web app
+   ============================================================ */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAG8k5ytThM9Eq8emC0E7ulcfSuq_ciTQc",
+  authDomain: "niyyah-4618a.firebaseapp.com",
+  projectId: "niyyah-4618a",
+  storageBucket: "niyyah-4618a.firebasestorage.app",
+  messagingSenderId: "405892887034",
+  appId: "1:405892887034:web:4cf5de3b0fa3ca3911f443",
+  measurementId: "G-NJK08JHVM6"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- state ---------- */
+let actions = [], niyyahs = [], types = [], jobs = [], languages = [], tips = [], events = [];
+let listening = false;
+let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
+let calView = "cal", calSel = null, calRange = false, calCountry = "";
+let hijriDocs = {};           // "SA_2026" -> { days: { "2026-10-15": "3-4-1448" } }
+const openN = new Set();      // niyyah ids that are expanded
+let shownN = [];              // ids currently listed (after filters)
+const DEF_TITLE = "Set your niyyah: {action}";
+const DEF_BODY = "{niyyah}";
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).localeCompare(String(b.name));
+const dlg = $("#dlg");
+const dlgDiscard = $("#dlg-discard");
+let dlgDirty = false, dlgGuard = true, activeLf = null;
+dlg.addEventListener("input", () => (dlgDirty = true));
+dlg.addEventListener("change", () => (dlgDirty = true));
+dlg.addEventListener("close", () => { dlgDirty = false; activeLf = null; });
+dlg.addEventListener("cancel", e => { e.preventDefault(); requestClose(); });   // Escape key
+dlg.addEventListener("click", e => {
+  if (e.target.closest("[data-rm]")) dlgDirty = true;
+  // Save is blocked while a field is not in its language (runs before the dialog's own Save handler)
+  if (e.target.closest("#d-save") && activeLf && !activeLf.check()) e.stopImmediatePropagation();
+}, true);
+function showDlg() {
+  dlgDirty = false;
+  dlgGuard = !dlg.querySelector("[data-noguard]");
+  const box = dlg.querySelector(".dlg");
+  if (box) {
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "dlg-x"; x.title = "Close"; x.setAttribute("aria-label", "Close"); x.textContent = "×";
+    x.onclick = requestClose;
+    box.append(x);
+    const c = $("#d-cancel", dlg); if (c) c.onclick = requestClose;
+  }
+  dlg.showModal();
+}
+function requestClose() {
+  if (!dlg.open) return;
+  if (!dlgGuard || !dlgDirty) return dlg.close();
+  dlgDiscard.innerHTML = `<div class="dlg"><h2>Discard changes?</h2>
+    <p class="muted" style="margin:0">You have changes that are not saved. If you close now they will be lost.</p>
+    <div class="actions"><button class="btn discard" id="dd-discard">Discard changes</button>
+      <button class="btn primary" id="dd-keep" autofocus>Continue editing</button></div></div>`;
+  $("#dd-discard").onclick = () => { dlgDiscard.close(); dlg.close(); };
+  $("#dd-keep").onclick = () => dlgDiscard.close();
+  dlgDiscard.showModal();
+}
+
+function toast(msg, isErr = false) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.className = isErr ? "err" : "";
+  t.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => (t.hidden = true), isErr ? 6000 : 2500);
+}
+const fail = e => { console.error(e); toast(e.message || String(e), true); };
+
+function show(id) {
+  for (const s of ["loading", "login", "denied", "app"]) $("#" + s).hidden = s !== id;
+}
+const childrenOf = pid => actions.filter(a => (a.parentId || "") === pid).sort(byOrder);
+const actionById = id => actions.find(a => a.id === id);
+function actionLabel(id) {
+  const a = actionById(id);
+  if (!a) return "(deleted action)";
+  const p = a.parentId && actionById(a.parentId);
+  return p ? `${nm(p)} › ${nm(a)}` : nm(a);
+}
+const niyyahCount = id => niyyahs.filter(n => (n.actionIds || []).includes(id)).length;
+
+/* ---------- languages + per-language niyyah text ---------- */
+const STATUSES = ["draft", "reviewed", "published"];
+// True language check: a filled field only counts when its letters are written in the script of its language.
+// Languages not listed here (or with a script not listed) are not checked.
+const LANG_RE = (() => {
+  const map = {}, set = (codes, re) => codes.split(" ").forEach(c => (map[c] = re));
+  set("ar ur fa ps ckb ug sd", /\p{Script=Arabic}/u);
+  set("en fr es de it pt nl tr id ms sw ha so vi pl ro sv no nb da fi cs sk hu sq hr sl lt lv et az uz tl fil ca eu af", /\p{Script=Latin}/u);
+  set("ru uk bg be mk kk ky tg mn", /\p{Script=Cyrillic}/u);
+  set("he yi", /\p{Script=Hebrew}/u);
+  set("hi mr ne sa", /\p{Script=Devanagari}/u);
+  set("bn as", /\p{Script=Bengali}/u);
+  set("ta", /\p{Script=Tamil}/u); set("te", /\p{Script=Telugu}/u);
+  set("th", /\p{Script=Thai}/u); set("ko", /\p{Script=Hangul}/u); set("el", /\p{Script=Greek}/u);
+  set("am", /\p{Script=Ethiopic}/u); set("ka", /\p{Script=Georgian}/u); set("hy", /\p{Script=Armenian}/u);
+  set("zh", /\p{Script=Han}/u); set("ja", /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u);
+  return map;
+})();
+// Latin script is shared by many languages, so the script test cannot tell French from English.
+// For those, count very common words of each language. A text is flagged only when another language
+// clearly wins. Short texts (under 4 words) and languages without a list are never flagged.
+const STOP_WORDS = (() => {
+  const w = s => new Set(s.split(" "));
+  return {
+    en: w("the and of that with for are this not you your have has from will their which who his her they would been when what all is"),
+    fr: w("le la les des du un une et est que qui dans pour pas sur avec au aux ce cette ses sont nous vous il elle ne se par plus mais comme être ou où"),
+    es: w("el los las del una y que por para con se su sus al lo como pero más este esta son está es un en"),
+    de: w("der die das und ist nicht mit von zu den dem ein eine auf für sich auch im dass wird sind bei als wie"),
+    it: w("il lo gli le di del della e è che non per con una sono come più anche nel nella dei delle questo suo"),
+    pt: w("o os as um uma do da dos das é que não para com por em no na mais como seu sua são"),
+    nl: w("de het een en van dat niet te met voor op zijn ook maar als aan er dan"),
+    tr: w("ve bir bu için ile çok daha gibi olarak ama var değil kadar"),
+    id: w("yang dan di ke dari untuk dengan ini itu pada adalah tidak akan atau juga saya kita mereka")
+  };
+})();
+const LANG_NAMES = { en: "English", fr: "French", es: "Spanish", de: "German", it: "Italian", pt: "Portuguese", nl: "Dutch", tr: "Turkish", id: "Indonesian" };
+const stopGroup = c => { c = String(c).toLowerCase().split("-")[0]; return c === "ms" ? "id" : c; };
+function guessOther(code, text) {   // returns the code of a different language that clearly fits better, or null
+  const exp = stopGroup(code);
+  if (!STOP_WORDS[exp]) return null;
+  const words = String(text || "").replace(/\{[a-z]+\}/gi, " ").toLowerCase().match(/\p{L}+/gu) || [];
+  if (words.length < 4) return null;
+  const hits = Object.fromEntries(Object.keys(STOP_WORDS).map(k => [k, words.filter(x => STOP_WORDS[k].has(x)).length]));
+  const best = Object.keys(hits).filter(k => k !== exp).sort((a, b) => hits[b] - hits[a])[0];
+  return hits[best] >= 2 && hits[best] >= 2 * hits[exp] + 1 ? best : null;
+}
+const guessNote = (code, text) => { const g = guessOther(code, text); return g ? ` It looks like ${LANG_NAMES[g]}.` : ""; };
+function langOk(code, text) {
+  const re = LANG_RE[String(code).toLowerCase().split("-")[0]];
+  const s = String(text || "").replace(/\{[a-z]+\}/gi, "");   // ignore {action} / {niyyah}
+  if (!re || !s.trim()) return true;
+  const letters = [...s].filter(ch => /\p{L}/u.test(ch));
+  if (!letters.length) return false;
+  return letters.filter(ch => re.test(ch)).length / letters.length >= 0.7 && !guessOther(code, s);
+}
+const langs = () => [...languages].sort(byOrder);
+// Niyyahs saved before languages existed only have textAr / textEn / source / status.
+// Treat those as the "ar" and "en" translations so nothing is lost.
+function allTr(n) {
+  if (n.translations) return n.translations;
+  const src = n.source ? [n.source] : [];
+  return {
+    ar: { text: n.textAr || "", sources: src, status: n.status },
+    en: { text: n.textEn || "", sources: src, status: n.status }
+  };
+}
+function trOf(n, code) {
+  const t = allTr(n)[code] || {};
+  const text = String(t.text || "").trim();
+  return {
+    text,
+    sources: (t.sources || []).map(x => String(x).trim()).filter(Boolean),
+    wrong: !!text && !langOk(code, text),
+    status: text && langOk(code, text) ? (STATUSES.includes(t.status) ? t.status : "draft") : "empty"
+  };
+}
+// Old single-language fields, kept in sync so anything still reading them keeps working.
+function mirrorFields(translations) {
+  const filled = Object.values(translations).filter(t => t.text);
+  const joined = c => (translations[c]?.sources || []).join("; ");
+  return {
+    textAr: translations.ar?.text || "", textEn: translations.en?.text || "",
+    source: joined("en") || joined("ar"),
+    status: filled.some(t => t.status === "published") ? "published" : filled.some(t => t.status === "reviewed") ? "reviewed" : "draft"
+  };
+}
+const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
+
+// Per-language status for records that keep their text in a map (names, tip texts).
+// Stored as  statuses: {ar: "reviewed", en: "published"}  next to the text map.
+// Older records have no statuses: tips and events fall back to their old published flag, everything else to draft.
+const langSt = (x, code, text) => {
+  if (!String(text || "").trim() || !langOk(code, text)) return "empty";
+  const s = (x.statuses || {})[code];
+  return STATUSES.includes(s) ? s : (x.published ? "published" : "draft");
+};
+const statusInit = (x, L, m) => { const o = {}; L.forEach(l => (o[l.code] = langSt(x, l.code, m[l.code]))); return o; };
+// statuses to save: only languages that have text, plus statuses of languages removed from Settings
+const statusOut = (x, L, out, lf) => {
+  const all = lf.statuses(), st = {};
+  L.forEach(l => { if (out[l.code]) st[l.code] = all[l.code]; });
+  return keepUnknown(x.statuses || {}, st);
+};
+const anyPublished = st => Object.values(st).includes("published");
+const lcodes = (L, m, x = {}) => `<span class="dots">${L.map(l => { const s = langSt(x, l.code, m[l.code]);
+  return `<span class="lcode st-${s}" title="${esc(l.name)}: ${s}">${esc(l.code)}</span>`; }).join("")}</span>`;
+
+/* ---------- names + notification templates in several languages ----------
+   New format:  names: {ar: "...", en: "..."}   titleTemplates: {...}   bodyTemplates: {...}
+   Older documents only have name / titleTemplate / bodyTemplate: those are treated as the default language.
+   name / titleTemplate / bodyTemplate are still written too, so anything reading them keeps working. */
+let viewLang = "";
+try { viewLang = localStorage.getItem("viewLang") || ""; } catch (e) {}
+const defLang = () => (langs().find(l => l.code === "en") || langs()[0])?.code || "en";
+const viewCode = () => (langs().some(l => l.code === viewLang) ? viewLang : defLang());
+const nameMap = x => x.names || (x.name ? { [defLang()]: x.name } : {});
+const tplMap = (x, kind) => x[kind + "Templates"] || (x[kind + "Template"] ? { [defLang()]: x[kind + "Template"] } : {});
+const firstOf = map => langs().map(l => map[l.code]).find(Boolean) || Object.values(map).find(Boolean) || "";
+const pickName = map => map[defLang()] || firstOf(map);
+const nm = x => { const m = nameMap(x); return m[viewCode()] || firstOf(m) || "(no name)"; };
+const isLegacyDoc = x => !x.names && !!x.name;
+// keep texts of languages that were removed from Settings
+function keepUnknown(old, out) {
+  const L = langs();
+  for (const c of Object.keys(old)) if (!L.some(l => l.code === c) && !(c in out)) out[c] = old[c];
+  return out;
+}
+function renderViewLang() {
+  const box = $("#view-lang"), L = langs(), cur = L.find(l => l.code === viewCode());
+  box.hidden = L.length < 2;
+  if (L.length < 2) return;
+  box.innerHTML = `<button type="button" class="cur" aria-haspopup="true" title="Show names in">Names: ${esc(cur.name)}</button>
+    <div class="menu"><div class="menu-in">${L.map(l =>
+      `<button type="button" class="${l === cur ? "is-cur" : ""}" ${l === cur ? 'aria-current="true"' : ""} data-act="view-lang" data-id="${esc(l.code)}">${l === cur ? "✓ " : ""}${esc(l.name)}</button>`).join("")}</div></div>`;
+}
+function setViewLang(code) {
+  viewLang = code;
+  try { localStorage.setItem("viewLang", viewLang); } catch (err) {}
+  renderAll();
+}
+
+// Language tabs for a dialog. The tab is red while the first field is empty, green once it is filled.
+// The caller writes <div id="lf-tabs">, <div id="lf-panel"> (see langFieldsHtml) before calling this.
+const langFieldsHtml = () => `<div class="ltabs" id="lf-tabs" role="tablist"></div>
+  <div class="legend"><span class="badge st-empty">empty</span><span class="badge st-draft">draft</span>
+    <span class="badge st-reviewed">reviewed</span><span class="badge st-published">published</span></div>
+  <div class="lpanel" id="lf-panel"></div>`;
+function langFields(L, fields, initial, onChange = () => {}, initialStatus = {}) {
+  const draft = {}, status = {};
+  L.forEach(l => (status[l.code] = STATUSES.includes(initialStatus[l.code]) ? initialStatus[l.code] : "draft"));
+  L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
+  let cur = L[0].code;
+  const fieldBad = (c, f) => { const v = String(draft[c][f.key] || ""); return !!v.trim() && !langOk(c, v); };
+  const anyBad = c => fields.some(f => fieldBad(c, f));
+  const stateOf = c => (String(draft[c][fields[0].key]).trim() && !anyBad(c) ? status[c] : "empty");
+  const paintWarn = () => {
+    const l = L.find(x => x.code === cur);
+    fields.forEach(f => {
+      const w = $("#lw-" + f.key); if (!w) return;
+      const bad = fieldBad(cur, f);
+      w.hidden = !bad;
+      w.textContent = bad ? `This does not look like ${l.name} text.${guessNote(cur, draft[cur][f.key])} Please write it in ${l.name}.` : "";
+    });
+  };
+  const capture = () => {
+    fields.forEach(f => { const el = $("#lf-" + f.key); if (el) draft[cur][f.key] = el.value; });
+    const st = $("#lf-status"); if (st) status[cur] = st.value;
+  };
+  const paintTabs = () => {
+    $("#lf-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stateOf(l.code)}" data-lang="${esc(l.code)}"
+      aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stateOf(l.code)}">${esc(l.name)}</button>`).join("");
+  };
+  const paintPanel = () => {
+    const l = L.find(x => x.code === cur), d = draft[cur];
+    $("#lf-panel").innerHTML = fields.map(f => `<label class="f">${esc(f.label)} (${esc(l.name)})${f.hint ? `<small>${esc(f.hint)}</small>` : ""}
+      <input type="text" id="lf-${f.key}" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""} value="${esc(d[f.key])}"
+        placeholder="${esc(f.placeholderFor ? f.placeholderFor(l) : (f.ph || ""))}"><small class="lwarn" id="lw-${f.key}" hidden></small></label>`).join("") +
+      `<label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
+        <select id="lf-status">${STATUSES.map(x => `<option ${x === status[cur] ? "selected" : ""}>${x}</option>`).join("")}</select></label>`;
+    fields.forEach(f => { $("#lf-" + f.key).oninput = () => { capture(); paintTabs(); paintWarn(); onChange(); }; });
+    paintWarn();
+    $("#lf-status").onchange = () => { capture(); paintTabs(); onChange(); };
+  };
+  $("#lf-tabs").onclick = e => {
+    const b = e.target.closest("[data-lang]");
+    if (!b || b.dataset.lang === cur) return;
+    capture(); cur = b.dataset.lang; paintTabs(); paintPanel(); onChange();
+  };
+  paintTabs(); paintPanel();
+  const api = {
+    values: () => { capture(); return draft; },
+    statuses: () => { capture(); const o = {}; L.forEach(l => (o[l.code] = stateOf(l.code))); return o; },
+    current: () => cur,
+    // false (and jumps to the offending tab) when a filled field is not written in its language
+    check: () => {
+      capture();
+      for (const l of L) for (const f of fields) if (fieldBad(l.code, f)) {
+        cur = l.code; paintTabs(); paintPanel();
+        $("#lf-" + f.key)?.focus();
+        toast(`The ${f.label.toLowerCase()} in ${l.name} does not look like ${l.name}.${guessNote(l.code, draft[l.code][f.key])} Please write it in ${l.name}.`, true);
+        return false;
+      }
+      return true;
+    }
+  };
+  activeLf = api;
+  return api;
+}
+
+/* ============================================================
+   2. SIGN IN + ADMIN CHECK
+   ============================================================ */
+$("#btn-login").onclick = async () => {
+  $("#login-error").textContent = "";
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (e) { $("#login-error").textContent = e.code === "auth/unauthorized-domain"
+      ? "This domain is not authorized. Add it in Firebase > Authentication > Settings > Authorized domains."
+      : (e.message || e.code); }
+};
+const doSignOut = () => signOut(auth).then(() => location.reload());
+$("#btn-out").onclick = doSignOut;
+$("#btn-denied-out").onclick = doSignOut;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) return show("login");
+  let isAdmin = false;
+  try { isAdmin = (await getDoc(doc(db, "admins", user.email))).exists(); }
+  catch (e) { console.warn("Admin check failed:", e.code); }
+  if (!isAdmin) { $("#denied-email").textContent = user.email; return show("denied"); }
+  $("#who").textContent = user.email;
+  show("app");
+  startListening();
+});
+
+function startListening() {
+  if (listening) return;
+  listening = true;
+  const watch = (name, set) => onSnapshot(collection(db, name),
+    snap => { set(snap.docs.map(d => ({ id: d.id, ...d.data() }))); renderAll(); }, fail);
+  watch("actions", v => (actions = v));
+  watch("niyyahs", v => (niyyahs = v));
+  watch("locationTypes", v => (types = v));
+  watch("languages", v => (languages = v));
+  watch("jobTypes", v => (jobs = v));
+  watch("tips", v => (tips = v));
+  watch("events", v => (events = v));
+  // Fetched calendars: failures here (e.g. security rules) must not break the rest of the app.
+  onSnapshot(collection(db, "hijriCalendars"),
+    snap => { hijriDocs = Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); renderEvents(); },
+    err => console.warn("hijriCalendars not readable", err));
+}
+
+/* ---------- tabs ---------- */
+function goTab(name) {
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === name));
+  for (const t of ["actions", "niyyahs", "types", "jobs", "tips", "events", "settings"]) $("#tab-" + t).hidden = t !== name;
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => goTab(b.dataset.tab));
+
+/* ============================================================
+   3. RENDERING
+   ============================================================ */
+function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderTips(); renderEvents(); renderSettings(); }
+
+function renderActions() {
+  const tops = childrenOf(""), L = langs();
+  let html = `<div class="bar"><h2>Actions</h2>
+    <button class="btn primary" data-act="new-cat">Add category</button></div>`;
+  if (!tops.length) {
+    html += `<div class="empty"><p>No actions yet. Start with a ready-made list, or add your own category.</p>
+      <button class="btn primary" data-act="seed-actions">Add starter list</button></div>`;
+  }
+  for (const c of tops) {
+    const kids = childrenOf(c.id);
+    html += `<div class="cat"><div class="row">
+        <span class="name">${esc(nm(c))}</span>
+        ${lcodes(L, nameMap(c), c)}
+        <span class="count">${niyyahCount(c.id) ? niyyahCount(c.id) + " niyyahs" : ""}</span>
+        <span class="tools">
+          <button class="btn small" data-act="up" data-id="${c.id}" title="Move up">↑</button>
+          <button class="btn small" data-act="down" data-id="${c.id}" title="Move down">↓</button>
+          <button class="btn small" data-act="new-mini" data-id="${c.id}">Add action</button>
+          <button class="btn small" data-act="edit-action" data-id="${c.id}">Edit</button>
+          <button class="btn small danger" data-act="del-action" data-id="${c.id}">Delete</button>
+        </span></div>`;
+    if (kids.length) {
+      html += `<div class="kids">` + kids.map(k => `<div class="row">
+          <span class="name">${esc(nm(k))}</span>
+          ${lcodes(L, nameMap(k), k)}
+          <span class="count">${niyyahCount(k.id)} niyyahs</span>
+          <span class="tools">
+            <button class="btn small" data-act="up" data-id="${k.id}" title="Move up">↑</button>
+            <button class="btn small" data-act="down" data-id="${k.id}" title="Move down">↓</button>
+            <button class="btn small" data-act="edit-action" data-id="${k.id}">Edit</button>
+            <button class="btn small danger" data-act="del-action" data-id="${k.id}">Delete</button>
+          </span></div>`).join("") + `</div>`;
+    }
+    html += `</div>`;
+  }
+  $("#tab-actions").innerHTML = html;
+}
+
+function renderNiyyahs() {
+  const root = $("#tab-niyyahs");
+  // keep filter values across re-renders
+  const q = ($("#f-q", root)?.value || "").toLowerCase();
+  const st = $("#f-status", root)?.value || "";
+  const ac = $("#f-action", root)?.value || "";
+  const L = langs();
+  const published = niyyahs.filter(n => hasStatus(n, "published")).length;
+
+  const actionOpts = [...actions].sort((a, b) => actionLabel(a.id).localeCompare(actionLabel(b.id)))
+    .map(a => `<option value="${a.id}" ${a.id === ac ? "selected" : ""}>${esc(actionLabel(a.id))}</option>`).join("");
+
+  const haystack = n => L.map(l => { const t = trOf(n, l.code); return `${t.text} ${t.sources.join(" ")}`; }).join(" ").toLowerCase();
+  let list = niyyahs.filter(n =>
+    (!st || hasStatus(n, st)) &&
+    (!ac || (n.actionIds || []).includes(ac)) &&
+    (!q || haystack(n).includes(q)));
+  list.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+
+  let html = `<div class="bar"><h2>Niyyahs <span class="muted" style="font-weight:400;font-size:14px">
+      ${niyyahs.length} total, ${published} with a published language</span></h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-act="import-json">Import JSON</button>
+      <button class="btn primary" data-act="new-niyyah">Add niyyah</button></div></div>
+    <div class="filters">
+      <div class="searchbox"><input id="f-q" type="search" placeholder="Search text or source" value="${esc(q)}">
+        <button type="button" class="clear-x" id="f-clear" aria-label="Clear search" title="Clear search" ${q ? "" : "hidden"}>×</button></div>
+      <select id="f-status"><option value="">Any language status</option>
+        ${["empty", ...STATUSES].map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select>
+      <select id="f-action"><option value="">All actions</option>${actionOpts}</select>
+    </div>
+    <div class="expandbar">
+      <button class="btn small" data-act="expand-all">Expand all</button>
+      <button class="btn small" data-act="collapse-all">Collapse all</button></div>`;
+
+  if (!L.length) html += `<div class="empty"><p>No languages yet. Add them in Settings to see and edit niyyah texts.</p>
+      <button class="btn primary" data-act="go-settings">Open Settings</button></div>`;
+  else if (!niyyahs.length) html += `<div class="empty"><p>No niyyahs yet. Add the first one.</p></div>`;
+  else if (!list.length) html += `<div class="empty"><p>No niyyah matches these filters.</p></div>`;
+  shownN = L.length ? list.map(n => n.id) : [];
+  if (L.length) for (const n of list) {
+    const trs = L.map(l => ({ l, t: trOf(n, l.code) }));
+    // collapsed preview: Arabic only (falls back to the first language that has text)
+    const pick = trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text);
+    const isOpen = openN.has(n.id);
+    const rows = trs.map(({ l, t }) => `<div class="lrow"><span class="badge st-${t.status}">${esc(l.name)}: ${t.wrong ? "wrong language" : t.status}</span>
+        ${t.text ? `<div class="ltext ${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(t.text)}</div>` : ""}
+        ${t.sources.length ? `<div class="src">Source: ${t.sources.map(esc).join(" · ")}</div>` : ""}</div>`).join("");
+    html += `<div class="item nitem ${isOpen ? "open" : ""}" data-nid="${n.id}">
+      <button type="button" class="nhead" data-act="toggle-niyyah" data-id="${n.id}" aria-expanded="${isOpen}">
+        <span class="main">
+          <span class="dots">${trs.map(({ l, t }) => `<span class="lcode st-${t.status}" title="${esc(l.name)}: ${t.status}">${esc(l.code)}</span>`).join("")}</span>
+          <span class="prev ${pick?.l.rtl ? "rtl" : ""}" ${pick?.l.rtl ? 'dir="rtl"' : ""}>${pick ? esc(pick.t.text) : '<span class="muted">(no text)</span>'}</span>
+        </span>
+        <span class="chev">▼</span>
+      </button>
+      <div class="nbody" ${isOpen ? "" : "hidden"}>${rows}
+        <div class="chips">${n.general ? `<span class="chip">Any action</span>` : ""}
+          ${(n.actionIds || []).map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")}
+          ${(n.eventIds || []).map(id => `<span class="chip">Event: ${esc(eventLabel(id))}</span>`).join("")}</div>
+        <div class="tools"><button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button>
+          <button class="btn small danger" data-act="del-niyyah" data-id="${n.id}">Delete</button></div></div></div>`;
+  }
+  root.innerHTML = html;
+  const rerender = () => renderNiyyahs();
+  $("#f-q", root).oninput = () => { rerender(); const i = $("#f-q", root); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+  $("#f-clear", root).onclick = () => { $("#f-q", root).value = ""; rerender(); $("#f-q", root).focus(); };
+  $("#f-status", root).onchange = rerender;
+  $("#f-action", root).onchange = rerender;
+}
+
+function toggleN(id) {
+  const open = !openN.has(id);
+  open ? openN.add(id) : openN.delete(id);
+  const el = document.querySelector(`.nitem[data-nid="${id}"]`);
+  if (!el) return;
+  el.classList.toggle("open", open);
+  $(".nbody", el).hidden = !open;
+  $(".nhead", el).setAttribute("aria-expanded", open);
+}
+
+const KINDS = {
+  types: { coll: "locationTypes", tab: "#tab-types", one: "location", many: "Locations", ph: "e.g. Gym",
+    hint: "Actions that usually happen here", add: "new-type", edit: "edit-type", del: "del-type", seed: "seed-types",
+    list: () => types, empty: "No locations yet.", seedLabel: "Add starter locations",
+    starter: ["Home", "Work", "Friend's house", "Gym", "Place with a memory"] },
+  jobs: { coll: "jobTypes", tab: "#tab-jobs", one: "job", many: "Jobs", ph: "e.g. Teacher",
+    hint: "Actions that belong to this job", add: "new-job", edit: "edit-job", del: "del-job", seed: "seed-jobs",
+    list: () => jobs, empty: "No jobs yet.", seedLabel: "Add starter jobs",
+    starter: ["Teacher", "Doctor or nurse", "Engineer or IT", "Driver", "Shop owner or trader", "Farmer", "Craftsman or laborer",
+              "Office employee", "Business owner", "Freelancer", "Student", "Homemaker", "Caregiver", "Job seeker", "Retired"] }
+};
+
+function renderNamed(key) {
+  const K = KINDS[key], L = langs();
+  const list = [...K.list()].sort(byOrder);
+  let html = `<div class="bar"><h2>${K.many}</h2>
+    <button class="btn primary" data-act="${K.add}">Add ${K.one}</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>${K.empty}</p>
+      <button class="btn primary" data-act="${K.seed}">${K.seedLabel}</button></div>`;
+  for (const x of list) {
+    const m = nameMap(x);
+    html += `<div class="item"><div class="head"><h3>${esc(nm(x))}</h3>
+        ${lcodes(L, m, x)}</div>
+      <div class="chips">${(x.actionIds || []).length
+        ? x.actionIds.map(id => `<span class="chip">${esc(actionLabel(id))}</span>`).join("")
+        : `<span class="muted">No actions linked yet</span>`}</div>
+      <div class="tools"><button class="btn small" data-act="${K.edit}" data-id="${x.id}">Edit</button>
+        <button class="btn small danger" data-act="${K.del}" data-id="${x.id}">Delete</button></div></div>`;
+  }
+  $(K.tab).innerHTML = html;
+}
+
+/* ============================================================
+   4. CLICK HANDLING
+   ============================================================ */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]");
+  if (!b) return;
+  const id = b.dataset.id;
+  const map = {
+    "new-cat": () => openAction(null, ""),
+    "new-mini": () => openAction(null, id),
+    "edit-action": () => openAction(id),
+    "del-action": () => delAction(id),
+    "up": () => move(id, -1),
+    "down": () => move(id, 1),
+    "seed-actions": seedActions,
+    "new-niyyah": () => openNiyyah(),
+    "edit-niyyah": () => openNiyyah(id),
+    "del-niyyah": () => delNiyyah(id),
+    "new-type": () => openNamed("types"),
+    "edit-type": () => openNamed("types", id),
+    "del-type": () => delNamed("types", id),
+    "seed-types": () => seedNamed("types"),
+    "new-job": () => openNamed("jobs"),
+    "edit-job": () => openNamed("jobs", id),
+    "del-job": () => delNamed("jobs", id),
+    "seed-jobs": () => seedNamed("jobs"),
+    "convert-names": openConvertNames,
+    "view-lang": () => setViewLang(id),
+    "go-settings": () => goTab("settings"),
+    "import-json": () => $("#import-file").click(),
+    "toggle-niyyah": () => toggleN(id),
+    "expand-all": () => { shownN.forEach(x => openN.add(x)); renderNiyyahs(); },
+    "collapse-all": () => { openN.clear(); renderNiyyahs(); },
+    "new-lang": () => openLanguage(),
+    "edit-lang": () => openLanguage(id),
+    "del-lang": () => delLanguage(id),
+    "lang-up": () => moveLang(id, -1),
+    "lang-down": () => moveLang(id, 1),
+    "seed-langs": seedLanguages,
+    "new-tip": () => openTip(),
+    "edit-tip": () => openTip(id),
+    "del-tip": () => delTip(id),
+    "new-event": () => openEvent(),
+    "edit-event": () => openEvent(id),
+    "del-event": () => delEvent(id),
+    "seed-events": seedEvents,
+    "cal-prev": () => { calMonth.setMonth(calMonth.getMonth() - 1); renderEvents(); },
+    "cal-next": () => { calMonth.setMonth(calMonth.getMonth() + 1); renderEvents(); },
+    "cal-today": () => { calMonth = new Date(); calMonth.setDate(1); renderEvents(); },
+    "cal-view": () => { calView = calView === "cal" ? "list" : "cal"; renderEvents(); },
+    "cal-range": () => { calRange = !calRange; renderEvents(); },
+    "cal-day": () => pickDay(b.dataset.date, e.shiftKey),
+    "cal-add": addFromSelection,
+    "cal-shift": () => setShift(+b.dataset.v),
+    "cal-fetch": openFetch
+  };
+  (map[b.dataset.act] || (() => {}))();
+});
+document.addEventListener("change", e => { if (e.target.id === "cal-country") { calCountry = e.target.value; renderEvents(); } });
+
+/* ============================================================
+   5. ACTIONS
+   ============================================================ */
+function openAction(id, presetParent = "") {
+  const L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const a = id ? actionById(id) : { parentId: presetParent };
+  const hasKids = id && childrenOf(id).length > 0;
+  const tops = childrenOf("").filter(x => x.id !== id);
+  const names = nameMap(a), titles = tplMap(a, "title"), bodies = tplMap(a, "body");
+  const initial = {};
+  L.forEach(l => (initial[l.code] = {
+    name: names[l.code] || "",
+    title: titles[l.code] ?? (id ? "" : (l.code === "en" ? DEF_TITLE : "")),
+    body: bodies[l.code] ?? (id ? "" : DEF_BODY)
+  }));
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit action" : (a.parentId ? "Add action" : "Add category")}</h2>
+    <label class="f">Category
+      <select id="a-parent" ${hasKids ? "disabled" : ""}>
+        <option value="">None (this is a main category)</option>
+        ${tops.map(t => `<option value="${t.id}" ${t.id === a.parentId ? "selected" : ""}>${esc(nm(t))}</option>`).join("")}
+      </select>
+      ${hasKids ? "<small>This category has actions inside it, so it stays a main category.</small>" : ""}
+    </label>
+    ${langFieldsHtml()}
+    <div class="preview" aria-live="polite"><small>Preview (language of the open tab)</small><b id="p-title"></b><span id="p-body"></span></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save action</button></div></div>`;
+  const paintPreview = () => {
+    const d = lf.values()[lf.current()];
+    const fill = s => s.replaceAll("{action}", d.name || "Action name").replaceAll("{niyyah}", "A random niyyah from this action appears here");
+    const dflt = "(the app's default wording for this language)";
+    $("#p-title").textContent = d.title.trim() ? fill(d.title) : dflt;
+    $("#p-body").textContent = d.body.trim() ? fill(d.body) : dflt;
+  };
+  const lf = langFields(L, [
+    { key: "name", label: "Name", ph: "e.g. Helping a coworker" },
+    { key: "title", label: "Notification title", hint: "Use {action} for the action name. Leave empty to use the app's default wording.",
+      placeholderFor: l => (l.code === "en" ? DEF_TITLE : "Empty = app's default wording") },
+    { key: "body", label: "Notification text", hint: "Use {niyyah} for a random niyyah from this action.", ph: DEF_BODY }
+  ], initial, paintPreview, statusInit(a, L, names));
+  paintPreview();
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), nmOut = {}, tOut = {}, bOut = {};
+    L.forEach(l => {
+      const d = v[l.code];
+      if (d.name.trim()) nmOut[l.code] = d.name.trim();
+      if (d.title.trim()) tOut[l.code] = d.title.trim();
+      if (d.body.trim()) bOut[l.code] = d.body.trim();
+    });
+    keepUnknown(nameMap(a), nmOut); keepUnknown(tplMap(a, "title"), tOut); keepUnknown(tplMap(a, "body"), bOut);
+    if (!Object.keys(nmOut).length) return toast("Enter a name in at least one language.", true);
+    const parentId = hasKids ? "" : $("#a-parent").value;
+    const data = { names: nmOut, name: pickName(nmOut), parentId,
+      statuses: statusOut(a, L, nmOut, lf), titleTemplates: tOut, bodyTemplates: bOut,
+      titleTemplate: pickName(tOut) || DEF_TITLE, bodyTemplate: pickName(bOut) || DEF_BODY,
+      updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "actions", id), data);
+      else {
+        const sibs = childrenOf(parentId);
+        data.order = sibs.length ? Math.max(...sibs.map(s => s.order ?? 0)) + 1 : 0;
+        await addDoc(collection(db, "actions"), data);
+      }
+      dlg.close(); toast("Action saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+  $("#lf-name").focus();
+}
+
+async function move(id, dir) {
+  const a = actionById(id);
+  const sibs = childrenOf(a.parentId || "");
+  const i = sibs.findIndex(s => s.id === id), j = i + dir;
+  if (j < 0 || j >= sibs.length) return;
+  [sibs[i], sibs[j]] = [sibs[j], sibs[i]];
+  try {
+    const batch = writeBatch(db);
+    sibs.forEach((s, idx) => batch.update(doc(db, "actions", s.id), { order: idx }));
+    await batch.commit();
+  } catch (e) { fail(e); }
+}
+
+async function delAction(id) {
+  const a = actionById(id);
+  if (childrenOf(id).length) return toast("Delete or move the actions inside this category first.", true);
+  const n = niyyahCount(id);
+  if (!confirm(`Delete "${nm(a)}"?` + (n ? `\n\n${n} niyyah(s) will be unlinked from it (the niyyahs are kept).` : ""))) return;
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "actions", id));
+    niyyahs.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "niyyahs", x.id), { actionIds: arrayRemove(id) }));
+    types.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) }));
+    jobs.filter(x => (x.actionIds || []).includes(id))
+      .forEach(x => batch.update(doc(db, "jobTypes", x.id), { actionIds: arrayRemove(id) }));
+    await batch.commit();
+    toast("Action deleted.");
+  } catch (e) { fail(e); }
+}
+
+function seedFields(name, parentId, order) {
+  const dl = defLang();
+  return { names: { [dl]: name }, name, parentId, order,
+    titleTemplates: dl === "en" ? { en: DEF_TITLE } : {}, bodyTemplates: { [dl]: DEF_BODY },
+    titleTemplate: DEF_TITLE, bodyTemplate: DEF_BODY, updatedAt: serverTimestamp() };
+}
+async function seedActions() {
+  const starter = {
+    "Work and earning": ["Earning halal income", "Honesty in dealings", "Helping a coworker", "Patience with a manager"],
+    "Home and family": ["Family time", "Caring for the children", "Cooking for the family", "Serving parents"],
+    "Friends and community": ["Visiting a friend", "Passing a friend's home", "Helping a Muslim in need", "Visiting the sick"],
+    "Body and health": ["Exercising", "Eating", "Sleeping"],
+    "Travel and moving": ["Leaving home", "Commuting", "Arriving"],
+    "Learning and growth": ["Studying", "Reading", "Teaching"],
+    "Places with memories": ["Gratitude", "Reflection", "Dua for someone"]
+  };
+  try {
+    const batch = writeBatch(db);
+    let order = 0;
+    for (const [cat, kids] of Object.entries(starter)) {
+      const cref = doc(collection(db, "actions"));
+      batch.set(cref, seedFields(cat, "", order++));
+      kids.forEach((k, i) => batch.set(doc(collection(db, "actions")),
+        seedFields(k, cref.id, i)));
+    }
+    await batch.commit();
+    toast("Starter list added. Rename or delete anything you don't need.");
+  } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   6. NIYYAHS
+   ============================================================ */
+function checklist(selected) {
+  const tops = childrenOf("");
+  if (!tops.length) return `<p class="muted">Create actions first.</p>`;
+  const box = a => `<label class="chk"><input type="checkbox" value="${a.id}" ${selected.includes(a.id) ? "checked" : ""}> ${esc(nm(a))}</label>`;
+  return tops.map(t => {
+    const kids = childrenOf(t.id);
+    return kids.length ? `<div><div class="grp-h">${esc(nm(t))}</div>${kids.map(box).join("")}</div>` : box(t);
+  }).join("");
+}
+const checkedIds = () => [...dlg.querySelectorAll(".checklist input:checked")].map(i => i.value);
+
+function openNiyyah(id) {
+  const L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const n = id ? niyyahs.find(x => x.id === id) : { general: false, actionIds: [] };
+
+  // one working copy per language, edited while the dialog is open
+  const draft = {};
+  L.forEach(l => {
+    const t = id ? trOf(n, l.code) : { text: "", sources: [], status: "draft" };
+    draft[l.code] = { text: t.text, sources: t.sources.length ? [...t.sources] : [""], status: t.status === "empty" ? "draft" : t.status };
+  });
+  let cur = L[0].code;
+  const stOf = c => (draft[c].text.trim() && langOk(c, draft[c].text) ? draft[c].status : "empty");
+  const paintWarn = () => {
+    const w = $("#l-warn"); if (!w) return;
+    const l = L.find(x => x.code === cur), bad = draft[cur].text.trim() && !langOk(cur, draft[cur].text);
+    w.hidden = !bad;
+    w.textContent = bad ? `This does not look like ${l.name} text.${guessNote(cur, draft[cur].text)} Please write it in ${l.name}.` : "";
+  };
+
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit niyyah" : "Add niyyah"}</h2>
+    <div class="ltabs" id="l-tabs" role="tablist"></div>
+    <div class="legend"><span class="badge st-empty">empty</span><span class="badge st-draft">draft</span>
+      <span class="badge st-reviewed">reviewed</span><span class="badge st-published">published</span></div>
+    <div class="lpanel" id="l-panel"></div>
+    <label class="chk"><input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> Fits any action (can be shown anywhere as a fallback)</label>
+    <div class="f"><b>Actions this niyyah belongs to</b>
+      <div class="checklist">${checklist(n.actionIds || [])}</div></div>
+    <div class="f"><b>Events this niyyah belongs to</b>
+      <div class="evlist">${eventChecklist(n.eventIds || [])}</div></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save niyyah</button></div></div>`;
+
+  const paintTabs = () => {
+    $("#l-tabs").innerHTML = L.map(l => `<button type="button" role="tab" class="ltab st-${stOf(l.code)}"
+      data-lang="${esc(l.code)}" aria-selected="${l.code === cur}" title="${esc(l.name)}: ${stOf(l.code)}">${esc(l.name)}</button>`).join("");
+  };
+  // copy what is typed in the visible panel into the working copy
+  const capture = () => {
+    if (!$("#l-text")) return;
+    draft[cur].text = $("#l-text").value;
+    draft[cur].sources = [...dlg.querySelectorAll(".src-in")].map(i => i.value);
+    draft[cur].status = $("#l-status").value;
+  };
+  const paintPanel = () => {
+    const l = L.find(x => x.code === cur), d = draft[cur];
+    $("#l-panel").innerHTML = `
+      <label class="f">${esc(l.name)} text<textarea id="l-text" class="${l.rtl ? "rtl" : ""}" ${l.rtl ? 'dir="rtl"' : ""}>${esc(d.text)}</textarea><small class="lwarn" id="l-warn" hidden></small></label>
+      <div class="f"><b>Sources</b><small>Hadith or Quran reference. Add as many as you need.</small>
+        ${d.sources.map((s, i) => `<div class="src-row"><input type="text" class="src-in" value="${esc(s)}">
+          <button type="button" class="btn small danger" data-rm="${i}" title="Remove source">Remove</button></div>`).join("")}
+        <div><button type="button" class="btn small" id="l-addsrc">Add source</button></div></div>
+      <label class="f">Status<small>Empty text always shows red. Only "published" texts reach users.</small>
+        <select id="l-status">${STATUSES.map(s => `<option ${s === d.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>`;
+    $("#l-text").oninput = () => { draft[cur].text = $("#l-text").value; paintTabs(); paintWarn(); };
+    $("#l-status").onchange = () => { draft[cur].status = $("#l-status").value; paintTabs(); };
+    paintWarn();
+    $("#l-addsrc").onclick = () => {
+      capture(); draft[cur].sources.push(""); paintPanel();
+      [...dlg.querySelectorAll(".src-in")].pop().focus();
+    };
+    dlg.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => {
+      capture(); draft[cur].sources.splice(+b.dataset.rm, 1);
+      if (!draft[cur].sources.length) draft[cur].sources.push("");
+      paintPanel();
+    });
+  };
+  $("#l-tabs").onclick = e => {
+    const b = e.target.closest("[data-lang]");
+    if (!b || b.dataset.lang === cur) return;
+    capture(); cur = b.dataset.lang; paintTabs(); paintPanel();
+  };
+  paintTabs(); paintPanel();
+
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    capture();
+    for (const l of L) if (draft[l.code].text.trim() && !langOk(l.code, draft[l.code].text)) {
+      cur = l.code; paintTabs(); paintPanel();
+      return toast(`The ${l.name} text does not look like ${l.name}.${guessNote(l.code, draft[l.code].text)} Please write it in ${l.name}.`, true);
+    }
+    // keep texts for languages that are not configured any more, then overwrite the configured ones
+    const translations = { ...(id ? allTr(n) : {}) };
+    L.forEach(l => {
+      const d = draft[l.code], text = d.text.trim();
+      translations[l.code] = { text, sources: d.sources.map(s => s.trim()).filter(Boolean), status: text ? d.status : "empty" };
+    });
+    const filled = Object.values(translations).filter(t => t.text);
+    if (!filled.length) return toast("Write the niyyah in at least one language.", true);
+    const general = $("#n-gen").checked, actionIds = checkedIds(), eventIds = [...dlg.querySelectorAll(".evlist input:checked")].map(i => i.value);
+    if (filled.some(t => t.status === "published") && !general && !actionIds.length && !eventIds.length)
+      return toast("A published niyyah needs at least one action or event, or 'Fits any action'.", true);
+    const data = { translations, general, actionIds, eventIds, updatedAt: serverTimestamp(), ...mirrorFields(translations) };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "niyyahs", id), data);
+      else await addDoc(collection(db, "niyyahs"), { ...data, createdAt: serverTimestamp() });
+      dlg.close(); toast("Niyyah saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+}
+
+async function delNiyyah(id) {
+  if (!confirm("Delete this niyyah? This cannot be undone.")) return;
+  try { await deleteDoc(doc(db, "niyyahs", id)); toast("Niyyah deleted."); } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   7. LOCATION TYPES
+   ============================================================ */
+function openNamed(key, id) {
+  const K = KINDS[key], L = langs();
+  if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
+  const x = id ? K.list().find(y => y.id === id) : { actionIds: [] };
+  const names = nameMap(x);
+  const initial = {};
+  L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit" : "Add"} ${K.one}</h2>
+    ${langFieldsHtml()}
+    <div class="f"><b>${K.hint}</b>
+      <div class="checklist">${checklist(x.actionIds || [])}</div></div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save ${K.one}</button></div></div>`;
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: K.ph }], initial, () => {}, statusInit(x, L, names));
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
+    keepUnknown(names, out);
+    if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
+    const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: checkedIds(), updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, K.coll, id), data);
+      else { data.order = K.list().length; await addDoc(collection(db, K.coll), data); }
+      dlg.close(); toast("Saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+  $("#lf-name").focus();
+}
+
+async function delNamed(key, id) {
+  const K = KINDS[key], x = K.list().find(y => y.id === id);
+  if (!confirm(`Delete the ${K.one} "${nm(x)}"?`)) return;
+  try { await deleteDoc(doc(db, K.coll, id)); toast("Deleted."); } catch (e) { fail(e); }
+}
+
+async function seedNamed(key) {
+  const K = KINDS[key], dl = defLang();
+  try {
+    const batch = writeBatch(db);
+    K.starter.forEach((name, i) => batch.set(doc(collection(db, K.coll)),
+      { names: { [dl]: name }, name, order: i, actionIds: [], updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Starter list added. Open each one to link its actions.");
+  } catch (e) { fail(e); }
+}
+
+/* ============================================================
+   7b. TIPS (tip of the day) + EVENTS (common niyyahs)
+   ============================================================ */
+const TIP_CATS = { habit: "Habit anchor", knowledge: "Knowledge", practical: "Practical" };
+const HIJRI = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]; // value 1-7, same as Dart's DateTime.weekday
+const needLang = () => { goTab("settings"); toast("Add at least one language in Settings first.", true); };
+const eventLabel = id => { const e = events.find(x => x.id === id); return e ? nm(e) : "(deleted event)"; };
+const eventChecklist = sel => events.length
+  ? [...events].sort(byOrder).map(e => `<label class="chk"><input type="checkbox" value="${e.id}" ${sel.includes(e.id) ? "checked" : ""}> ${esc(nm(e))}</label>`).join("")
+  : `<p class="muted">No events yet. Add them in the Events tab.</p>`;
+
+function renderTips() {
+  const L = langs(), list = [...tips].sort(byOrder), rtl = !!L.find(l => l.code === viewCode())?.rtl;
+  let html = `<div class="bar"><h2>Tips <span class="muted" style="font-weight:400;font-size:14px">${tips.length} total, ${tips.filter(t => t.published).length} published</span></h2>
+    <button class="btn primary" data-act="new-tip">Add tip</button></div>`;
+  if (!list.length) html += `<div class="empty"><p>No tips yet. Add the first tip of the day.</p></div>`;
+  for (const t of list) {
+    const m = t.texts || {};
+    html += `<div class="item"><div class="head"><div class="${rtl ? "rtl" : "en"}" ${rtl ? 'dir="rtl"' : ""}>${esc(m[viewCode()] || firstOf(m))}</div>${lcodes(L, m, t)}</div>
+      <div class="chips"><span class="chip">${esc(TIP_CATS[t.category] || TIP_CATS.habit)}</span>
+        <span class="badge ${t.published ? "st-published" : "st-draft"}">${t.published ? "published" : "draft"}</span>
+        ${t.source ? `<span class="chip">${esc(t.source)}</span>` : ""}</div>
+      <div class="tools"><button class="btn small" data-act="edit-tip" data-id="${t.id}">Edit</button>
+        <button class="btn small danger" data-act="del-tip" data-id="${t.id}">Delete</button></div></div>`;
+  }
+  $("#tab-tips").innerHTML = html;
+}
+
+function openTip(id) {
+  const L = langs();
+  if (!L.length) return needLang();
+  const t = id ? tips.find(x => x.id === id) : { texts: {}, category: "habit", published: false };
+  const initial = {};
+  L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit" : "Add"} tip</h2>
+    ${langFieldsHtml()}
+    <label class="f">Type<select id="t-cat">${Object.entries(TIP_CATS).map(([k, v]) => `<option value="${k}" ${k === (t.category || "habit") ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+    <label class="f">Source<small>Optional: hadith or Quran reference.</small><input type="text" id="t-src" value="${esc(t.source || "")}"></label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save tip</button></div></div>`;
+  const lf = langFields(L, [{ key: "text", label: "Tip", ph: "e.g. Pause for a second before you open the door and set your niyyah." }], initial, () => {}, statusInit(t, L, t.texts || {}));
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].text.trim(); if (s) out[l.code] = s; });
+    keepUnknown(t.texts || {}, out);
+    if (!Object.keys(out).length) return toast("Write the tip in at least one language.", true);
+    const statuses = statusOut(t, L, out, lf);
+    // "published" is kept as a summary flag: true when at least one language is published
+    const data = { texts: out, statuses, category: $("#t-cat").value, source: $("#t-src").value.trim(), published: anyPublished(statuses), updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "tips", id), data);
+      else { data.order = tips.length; await addDoc(collection(db, "tips"), data); }
+      dlg.close(); toast("Tip saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+  $("#lf-text").focus();
+}
+async function delTip(id) {
+  if (!confirm("Delete this tip?")) return;
+  try { await deleteDoc(doc(db, "tips", id)); toast("Tip deleted."); } catch (e) { fail(e); }
+}
+
+const ruleText = e => {
+  const r = e.rule || {};
+  if (r.type === "weekly") return `Every ${WEEKDAYS[(r.weekday || 5) - 1]}`;
+  return `${r.month ? HIJRI[r.month - 1] : "Every Hijri month"} ${r.day || 1}${r.days > 1 ? ` · ${r.days} days` : ""}`;
+};
+
+function renderEventList() {
+  const L = langs(), list = [...events].sort(byOrder);
+  let html = `<div class="bar"><h2>Events <span class="muted" style="font-weight:400;font-size:14px">common niyyahs by date</span></h2>
+    <span><button class="btn" data-act="cal-view">Calendar view</button> <button class="btn primary" data-act="new-event">Add event</button></span></div>`;
+  if (!list.length) html += `<div class="empty"><p>No events yet.</p><button class="btn primary" data-act="seed-events">Add starter events</button></div>`;
+  for (const e of list) {
+    const m = nameMap(e), cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
+    html += `<div class="item"><div class="head"><h3>${esc(nm(e))}</h3>${lcodes(L, m, e)}</div>
+      <div class="chips"><span class="chip">${esc(ruleText(e))}</span>
+        <span class="chip">${e.remindDaysBefore ? `${e.remindDaysBefore} day(s) before, ` : "On the day, "}${esc(e.notifyTime || "09:00")}</span>
+        <span class="chip">${cnt} niyyah${cnt === 1 ? "" : "s"}</span>
+        ${e.disputed ? `<span class="chip">Scholars differ</span>` : ""}
+        <span class="badge ${e.published ? "st-published" : "st-draft"}">${e.published ? "published" : "draft"}</span></div>
+      <div class="tools"><button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button>
+        <button class="btn small danger" data-act="del-event" data-id="${e.id}">Delete</button></div></div>`;
+  }
+  $("#tab-events").innerHTML = html;
+}
+
+function openEvent(id, preset) {
+  const L = langs();
+  if (!L.length) return needLang();
+  const e = id ? events.find(x => x.id === id) : (preset || { rule: { type: "hijri", month: 1, day: 1, days: 1 }, remindDaysBefore: 1, notifyTime: "09:00" });
+  const r = e.rule || {}, names = nameMap(e), initial = {};
+  L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
+  const opts = (arr, sel, first = 0) => arr.map((x, i) => `<option value="${i + first}" ${i + first === sel ? "selected" : ""}>${x}</option>`).join("");
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2>${id ? "Edit" : "Add"} event</h2>
+    ${langFieldsHtml()}
+    <label class="f">Repeats<select id="e-type"><option value="hijri" ${r.type !== "weekly" ? "selected" : ""}>On a Hijri date</option>
+      <option value="weekly" ${r.type === "weekly" ? "selected" : ""}>Every week</option></select></label>
+    <div class="grid2" id="e-hijri">
+      <label class="f">Month<select id="e-month"><option value="0" ${!r.month ? "selected" : ""}>Every month</option>${opts(HIJRI, r.month || -1, 1)}</select></label>
+      <label class="f">Day<input type="number" id="e-day" min="1" max="30" value="${r.day || 1}"></label>
+      <label class="f">Length (days)<small>Whole month: day 1, 30 days</small><input type="number" id="e-days" min="1" max="30" value="${r.days || 1}"></label></div>
+    <label class="f" id="e-weekly">Weekday<select id="e-wd">${opts(WEEKDAYS, r.weekday || 5, 1)}</select></label>
+    <div class="grid2">
+      <label class="f">Remind<select id="e-before">${[0, 1, 2, 3].map(d => `<option value="${d}" ${d === (e.remindDaysBefore ?? 1) ? "selected" : ""}>${d ? d + " day(s) before" : "On the day"}</option>`).join("")}</select></label>
+      <label class="f">Notify at (user's local time)<input type="time" id="e-time" value="${esc(e.notifyTime || "09:00")}"></label></div>
+    <label class="chk"><input type="checkbox" id="e-disp" ${e.disputed ? "checked" : ""}> Scholars differ on this event (off by default for users)</label>
+    <p class="muted" style="margin:0">Link niyyahs to this event from the Add / Edit niyyah box.</p>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save event</button></div></div>`;
+  const lf = langFields(L, [{ key: "name", label: "Name", ph: "e.g. Day of Arafah" }], initial, () => {}, statusInit(e, L, names));
+  const sync = () => { const w = $("#e-type").value === "weekly"; $("#e-hijri").hidden = w; $("#e-weekly").hidden = !w; };
+  $("#e-type").onchange = sync; sync();
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const v = lf.values(), out = {};
+    L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
+    keepUnknown(names, out);
+    if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
+    let rule;
+    if ($("#e-type").value === "weekly") rule = { type: "weekly", weekday: +$("#e-wd").value };
+    else {
+      rule = { type: "hijri", month: +$("#e-month").value, day: +$("#e-day").value, days: +$("#e-days").value };
+      if (!(rule.day >= 1 && rule.day <= 30) || !(rule.days >= 1 && rule.days <= 30)) return toast("Day and length must be between 1 and 30.", true);
+    }
+    const statuses = statusOut(e, L, out, lf);
+    const data = { names: out, name: pickName(out), statuses, rule, remindDaysBefore: +$("#e-before").value, notifyTime: $("#e-time").value || "09:00",
+      disputed: $("#e-disp").checked, published: anyPublished(statuses), updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "events", id), data);
+      else { data.order = events.length; await addDoc(collection(db, "events"), data); }
+      dlg.close(); toast("Event saved.");
+    } catch (err) { $("#d-save").disabled = false; fail(err); }
+  };
+  showDlg();
+  $("#lf-name").focus();
+}
+
+async function delEvent(id) {
+  if (!confirm(`Delete the event "${eventLabel(id)}"? It is also removed from niyyahs linked to it.`)) return;
+  try {
+    const batch = writeBatch(db);
+    niyyahs.filter(n => (n.eventIds || []).includes(id)).forEach(n => batch.update(doc(db, "niyyahs", n.id), { eventIds: arrayRemove(id) }));
+    batch.delete(doc(db, "events", id));
+    await batch.commit();
+    toast("Event deleted.");
+  } catch (e) { fail(e); }
+}
+
+async function seedEvents() {
+  const H = (name, month, day, days = 1, disputed = false) => ({ name, rule: { type: "hijri", month, day, days }, disputed });
+  const starter = [
+    H("Ramadan", 9, 1, 30), H("Last 10 nights of Ramadan", 9, 21, 10), H("Eid al-Fitr", 10, 1),
+    H("First 10 days of Dhul Hijjah", 12, 1, 10), H("Day of Arafah", 12, 9), H("Eid al-Adha", 12, 10),
+    H("Islamic New Year", 1, 1), H("Tasu'a and Ashura", 1, 9, 2), H("White days", 0, 13, 3),
+    { name: "Friday (Jumu'ah)", rule: { type: "weekly", weekday: 5 }, disputed: false },
+    H("Mawlid", 3, 12, 1, true), H("Isra and Mi'raj", 7, 27, 1, true), H("Middle of Shaban", 8, 15, 1, true)
+  ];
+  const dl = defLang();
+  try {
+    const batch = writeBatch(db);
+    starter.forEach((x, i) => batch.set(doc(collection(db, "events")), { names: { [dl]: x.name }, name: x.name, rule: x.rule,
+      remindDaysBefore: 1, notifyTime: "09:00", disputed: x.disputed, published: false, order: i, updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Starter events added as drafts. Add names in other languages and link niyyahs.");
+  } catch (e) { fail(e); }
+}
+
+
+/* ============================================================
+   7c. EVENTS CALENDAR (Gregorian days, small Hijri date) + FETCH
+   ============================================================ */
+// Each country picks the Hijri calendar method that AlAdhan offers (UAQ, DIYANET, MATHEMATICAL).
+// Countries that follow local moon sighting have no exact method: edit this table when you pick a source for them.
+const COUNTRIES = [
+  { code: "SA", name: "Saudi Arabia", method: "UAQ" },
+  { code: "TR", name: "Türkiye", method: "DIYANET" },
+  { code: "EG", name: "Egypt", method: "UAQ" },
+  { code: "AE", name: "United Arab Emirates", method: "UAQ" },
+  { code: "PK", name: "Pakistan", method: "MATHEMATICAL" },
+  { code: "ID", name: "Indonesia", method: "MATHEMATICAL" }
+];
+const pad2 = n => String(n).padStart(2, "0");
+const isoOf = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const dateOf = iso => { const [y, m, d] = iso.split("-").map(Number); return new Date(y, m - 1, d, 12); };
+let _hf;
+function baseHijri(d) {
+  const fetched = hijriDocs[`${calCountry}_${d.getFullYear()}`]?.days?.[isoOf(d)];
+  if (fetched) { const [day, m, y] = fetched.split("-").map(Number); return { d: day, m, y }; }
+  _hf = _hf || new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { day: "numeric", month: "numeric", year: "numeric" });
+  const p = Object.fromEntries(_hf.formatToParts(d).map(x => [x.type, x.value]));
+  return { d: +p.day, m: +p.month, y: parseInt(p.year, 10) };
+}
+// Month-start corrections: shifts["1448-4"] = +1 means that Hijri month starts a day later in this calendar, -1 a day earlier.
+const shiftKey = h => `${h.y}-${h.m}`;
+const shiftsNow = () => hijriDocs[`${calCountry || "DEFAULT"}_shifts`]?.shifts || {};
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12);
+function hijriOf(d) {
+  const b = baseHijri(d), sh = shiftsNow();
+  if (!Object.values(sh).some(v => v)) return b;
+  const bs = addDays(d, -(b.d - 1));                              // base start of this month
+  const pb = baseHijri(addDays(bs, -1)), ps = addDays(bs, -pb.d); // previous month
+  const ns = addDays(bs, baseHijri(addDays(bs, 29)).m === b.m ? 30 : 29), nb = baseHijri(ns); // next month
+  const months = [[pb, ps], [b, bs], [nb, ns]].map(([h, st]) => ({ h, start: addDays(st, sh[shiftKey(h)] || 0) }));
+  const cur = months.filter(x => x.start <= d).pop() || months[0];
+  return { d: Math.round((d - cur.start) / 864e5) + 1, m: cur.h.m, y: cur.h.y };
+}
+async function setShift(v) {
+  const r = selRange(); if (!r) return;
+  const key = shiftKey(baseHijri(dateOf(r[0])));
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(db, "hijriCalendars", `${calCountry || "DEFAULT"}_shifts`), { shifts: { [key]: v }, updatedAt: serverTimestamp() }, { merge: true });
+    await batch.commit();
+    toast(v ? `Hijri month start moved ${v > 0 ? "a day later" : "a day earlier"}.` : "Hijri month start reset.");
+  } catch (e) { fail(e); }
+}
+const eventsOn = (d, h) => [...events].sort(byOrder).filter(e => {
+  const r = e.rule || {};
+  if (r.type === "weekly") return ((d.getDay() + 6) % 7) + 1 === (r.weekday || 5);
+  if (r.month && r.month !== h.m) return false;
+  const start = r.day || 1;
+  return h.d >= start && h.d < start + (r.days || 1);
+});
+const hLabel = h => `${h.d} ${HIJRI[h.m - 1]} ${h.y}`;
+const selRange = () => calSel ? (calSel.a <= calSel.b ? [calSel.a, calSel.b] : [calSel.b, calSel.a]) : null;
+
+function pickDay(iso, shift) {
+  calSel = (shift || calRange) && calSel ? { a: calSel.a, b: iso } : { a: iso, b: iso };
+  renderEvents();
+}
+
+function renderEvents() {
+  if (calView === "list") return renderEventList();
+  const y = calMonth.getFullYear(), m = calMonth.getMonth(), today = isoOf(new Date());
+  const first = new Date(y, m, 1, 12), lead = (first.getDay() + 6) % 7;
+  const weeks = Math.ceil((lead + new Date(y, m + 1, 0).getDate()) / 7);
+  const h1 = hijriOf(first), h2 = hijriOf(new Date(y, m + 1, 0, 12));
+  const hTitle = h1.m === h2.m ? `${HIJRI[h1.m - 1]} ${h1.y}` : `${HIJRI[h1.m - 1]} – ${HIJRI[h2.m - 1]} ${h2.y}`;
+  const r = selRange();
+  const hasData = !!hijriDocs[`${calCountry}_${y}`];
+  let html = `<div class="calbar">
+      <button class="btn small" data-act="cal-prev" aria-label="Previous month">‹</button>
+      <button class="btn small" data-act="cal-next" aria-label="Next month">›</button>
+      <button class="btn small" data-act="cal-today">Today</button>
+      <div class="ttl">${first.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}<small>${esc(hTitle)}${calCountry && !hasData ? " · not fetched for this year, showing Umm al-Qura" : ""}</small></div>
+      <select id="cal-country" aria-label="Hijri calendar">
+        <option value="">Hijri: built-in (Umm al-Qura)</option>
+        ${COUNTRIES.map(c => `<option value="${c.code}" ${c.code === calCountry ? "selected" : ""}>Hijri: ${esc(c.name)}</option>`).join("")}</select>
+      <button class="btn ${calRange ? "on" : ""}" data-act="cal-range" title="Tap a second day to extend the selection (or hold Shift and click)">Select range</button>
+      <button class="btn" data-act="cal-fetch">Fetch</button>
+      <button class="btn" data-act="cal-view">List view</button></div>
+    <div class="cal">${WEEKDAYS.map(w => `<div class="dow">${w.slice(0, 3)}</div>`).join("")}`;
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(y, m, 1 - lead + i, 12), iso = isoOf(d), h = hijriOf(d), evs = eventsOn(d, h);
+    const sel = r && iso >= r[0] && iso <= r[1];
+    html += `<button class="cday ${d.getMonth() !== m ? "other" : ""} ${iso === today ? "today" : ""} ${sel ? "sel" : ""}" data-act="cal-day" data-date="${iso}">
+      <span class="g">${d.getDate()}</span><span class="h">${h.d === 1 ? `${h.d} ${HIJRI[h.m - 1]}` : h.d}</span>
+      ${evs.slice(0, 2).map(e => `<span class="ev" title="${esc(nm(e))}">${esc(nm(e))}</span>`).join("")}
+      ${evs.length > 2 ? `<span class="ev">+${evs.length - 2} more</span>` : ""}${evs.length ? `<span class="evn">● ${evs.length}</span>` : ""}</button>`;
+  }
+  html += `</div>`;
+  if (!events.length) html += `<div class="empty" style="margin-top:14px"><p>No events yet.</p><button class="btn primary" data-act="seed-events">Add starter events</button></div>`;
+  if (r) {
+    const a = dateOf(r[0]), z = dateOf(r[1]), n = Math.round((z - a) / 864e5) + 1;
+    const seen = new Map();
+    for (let i = 0; i < n; i++) { const d = new Date(a.getFullYear(), a.getMonth(), a.getDate() + i, 12); eventsOn(d, hijriOf(d)).forEach(e => seen.set(e.id, e)); }
+    const fmt = (d, o) => d.toLocaleDateString("en-GB", o);
+    html += `<div class="daypanel"><h3>${n === 1 ? fmt(a, { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + " · " + esc(hLabel(hijriOf(a)))
+        : `${n} days: ${fmt(a, { day: "numeric", month: "short" })} to ${fmt(z, { day: "numeric", month: "short", year: "numeric" })} · ${esc(hLabel(hijriOf(a)))} to ${esc(hLabel(hijriOf(z)))}`}</h3>`;
+    html += seen.size ? [...seen.values()].map(e => `<div class="erow"><span class="name">${esc(nm(e))}</span><span class="chip">${esc(ruleText(e))}</span>
+        <span class="badge ${e.published ? "st-published" : "st-draft"}">${e.published ? "published" : "draft"}</span>
+        <button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button>
+        <button class="btn small danger" data-act="del-event" data-id="${e.id}">Delete</button></div>`).join("")
+      : `<p class="muted" style="margin:0">No events on ${n === 1 ? "this day" : "these days"}.</p>`;
+    const bh = baseHijri(a), cur = shiftsNow()[shiftKey(bh)] || 0;
+    html += `<div class="erow"><span class="name">Hijri month: ${esc(HIJRI[bh.m - 1])} ${bh.y}</span>
+      <span class="muted">${esc(calCountry ? COUNTRIES.find(c => c.code === calCountry)?.name : "Built-in calendar")} · starts ${cur ? `${Math.abs(cur)} day ${cur > 0 ? "later" : "earlier"}` : "as calculated"}</span>
+      <button class="btn small ${cur < 0 ? "on" : ""}" data-act="cal-shift" data-v="-1" title="The Hijri date shown is a day behind">Starts a day earlier</button>
+      <button class="btn small ${cur > 0 ? "on" : ""}" data-act="cal-shift" data-v="1" title="The Hijri date shown is a day ahead">Starts a day later</button>
+      <button class="btn small" data-act="cal-shift" data-v="0" ${cur ? "" : "disabled"}>Reset</button></div>`;
+    html += `<div><button class="btn primary" data-act="cal-add">${n === 1 ? "Add event on this day" : `Add event for these ${n} days`}</button></div></div>`;
+  } else html += `<p class="muted" style="margin:10px 0 0">Click a day to see or add events. Shift-click (or Select range) picks several days.</p>`;
+  $("#tab-events").innerHTML = html;
+}
+
+function addFromSelection() {
+  const r = selRange(); if (!r) return;
+  const a = dateOf(r[0]), z = dateOf(r[1]), n = Math.round((z - a) / 864e5) + 1, h = hijriOf(a), hz = hijriOf(z);
+  if (hz.m !== h.m && n > 1) toast("This range crosses a Hijri month. The event is saved as a length from the first day: check it.", true);
+  openEvent(null, { rule: { type: "hijri", month: h.m, day: h.d, days: Math.min(n, 30) }, remindDaysBefore: 1, notifyTime: "09:00" });
+}
+
+function openFetch() {
+  const y = calMonth.getFullYear();
+  dlg.innerHTML = `<div class="dlg"><h2 data-noguard>Fetch Hijri calendar</h2>
+    <p class="muted" style="margin:0">Downloads the Hijri date of every day in <b>${y}</b> and saves it, so the calendar can show each country's own dates.</p>
+    <label class="chk"><input type="radio" name="f-mode" value="all" checked> All countries (${COUNTRIES.length})</label>
+    <label class="chk"><input type="radio" name="f-mode" value="some"> Specific countries</label>
+    <div class="checklist" id="f-list" hidden>${COUNTRIES.map(c => `<label class="chk"><input type="checkbox" value="${c.code}" ${c.code === calCountry ? "checked" : ""}> ${esc(c.name)} <span class="muted">· ${c.method}</span></label>`).join("")}</div>
+    <p id="f-status" class="muted" style="margin:0"></p>
+    <div class="actions"><button class="btn" id="d-cancel">Close</button><button class="btn primary" id="d-save">Fetch</button></div></div>`;
+  dlg.querySelectorAll("[name=f-mode]").forEach(r => r.onchange = () => ($("#f-list").hidden = dlg.querySelector("[name=f-mode]:checked").value !== "some"));
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const some = dlg.querySelector("[name=f-mode]:checked").value === "some";
+    const picked = some ? [...dlg.querySelectorAll("#f-list input:checked")].map(i => i.value) : COUNTRIES.map(c => c.code);
+    if (!picked.length) return toast("Choose at least one country.", true);
+    $("#d-save").disabled = true;
+    try {
+      for (const [i, code] of picked.entries()) {
+        const c = COUNTRIES.find(x => x.code === code);
+        $("#f-status").textContent = `Fetching ${c.name} (${i + 1}/${picked.length})…`;
+        const months = await Promise.all([...Array(12).keys()].map(async k => {
+          const res = await fetch(`https://api.aladhan.com/v1/gToHCalendar/${k + 1}/${y}?calendarMethod=${c.method}`);
+          if (!res.ok) throw new Error(`${c.name}: the calendar service answered ${res.status}.`);
+          return (await res.json()).data;
+        }));
+        const days = {};
+        months.flat().forEach(x => { const [dd, mm, yy] = x.gregorian.date.split("-"); days[`${yy}-${mm}-${dd}`] = `${+x.hijri.day}-${x.hijri.month.number}-${x.hijri.year}`; });
+        const batch = writeBatch(db);
+        batch.set(doc(db, "hijriCalendars", `${code}_${y}`), { code, year: y, method: c.method, days, fetchedAt: serverTimestamp() });
+        await batch.commit();
+      }
+      dlg.close(); toast(`Fetched ${picked.length} calendar${picked.length === 1 ? "" : "s"} for ${y}.`);
+    } catch (e) { $("#d-save").disabled = false; $("#f-status").textContent = ""; fail(e); }
+  };
+  showDlg();
+}
+
+/* ============================================================
+   8. SETTINGS: LANGUAGES
+   ============================================================ */
+function renderSettings() {
+  const L = langs();
+  const used = code => niyyahs.filter(n => trOf(n, code).text).length;
+  let html = `<div class="bar"><h2>Settings</h2></div>
+    <div class="bar"><h3>Languages</h3><button class="btn primary" data-act="new-lang">Add language</button></div>
+    <p class="muted" style="margin-top:0">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>`;
+  if (!L.length) html += `<div class="empty"><p>No languages yet.</p>
+      <button class="btn primary" data-act="seed-langs">Add Arabic and English</button></div>`;
+  else html += `<div class="cat"><div class="kids" style="padding-left:0">` + L.map(l => `<div class="row">
+      <span class="name">${esc(l.name)} <span class="chip">${esc(l.code)}</span>${l.rtl ? ` <span class="chip">right to left</span>` : ""}</span>
+      <span class="count">${used(l.code)} niyyahs</span>
+      <span class="tools">
+        <button class="btn small" data-act="lang-up" data-id="${l.id}" title="Move up">↑</button>
+        <button class="btn small" data-act="lang-down" data-id="${l.id}" title="Move down">↓</button>
+        <button class="btn small" data-act="edit-lang" data-id="${l.id}">Edit</button>
+        <button class="btn small danger" data-act="del-lang" data-id="${l.id}">Delete</button>
+      </span></div>`).join("") + `</div></div>`;
+  const legacyN = [...actions, ...types].filter(isLegacyDoc).length;
+  if (L.length && legacyN) html += `<div class="bar" style="margin-top:24px"><h3>Names in several languages</h3></div>
+    <p class="muted" style="margin-top:0">${legacyN} action / location name(s) were saved before names could have languages. They still display correctly.
+      Convert them so each language can have its own name and notification wording.</p>
+    <button class="btn primary" data-act="convert-names">Convert names</button>`;
+  $("#tab-settings").innerHTML = html;
+}
+
+function openLanguage(id) {
+  const l = id ? languages.find(x => x.id === id) : { name: "", code: "", rtl: false };
+  dlg.innerHTML = `<div class="dlg">
+    <h2>${id ? "Edit language" : "Add language"}</h2>
+    <label class="f">Name<input type="text" id="l-name" value="${esc(l.name)}" placeholder="e.g. French"></label>
+    <label class="f">Code<small>Short code such as fr, ur, tr. ${id ? "It cannot be changed because saved texts are stored under it." : "It cannot be changed later."}</small>
+      <input type="text" id="l-code" value="${esc(l.code)}" placeholder="fr" ${id ? "disabled" : ""}></label>
+    <label class="chk"><input type="checkbox" id="l-rtl" ${l.rtl ? "checked" : ""}> Written right to left (Arabic, Urdu, Persian...)</label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Save language</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const name = $("#l-name").value.trim();
+    const code = (id ? l.code : $("#l-code").value.trim().toLowerCase());
+    if (!name) return toast("Enter a name for the language.", true);
+    if (!/^[a-z]{2,3}(-[a-z0-9]{2,8})?$/.test(code)) return toast("Enter a short language code like fr, ur or pt-br.", true);
+    if (!id && languages.some(x => x.code === code)) return toast(`The code "${code}" is already used.`, true);
+    const data = { name, code, rtl: $("#l-rtl").checked, updatedAt: serverTimestamp() };
+    $("#d-save").disabled = true;
+    try {
+      if (id) await updateDoc(doc(db, "languages", id), data);
+      else { data.order = languages.length ? Math.max(...languages.map(x => x.order ?? 0)) + 1 : 0; await addDoc(collection(db, "languages"), data); }
+      dlg.close(); toast("Language saved.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+  $("#l-name").focus();
+}
+
+async function delLanguage(id) {
+  const l = languages.find(x => x.id === id);
+  if (!confirm(`Delete the language "${l.name}"?\n\nTexts already written in it are kept in the database but hidden. Adding a language with the same code ("${l.code}") brings them back.`)) return;
+  try { await deleteDoc(doc(db, "languages", id)); toast("Language deleted."); } catch (e) { fail(e); }
+}
+
+async function moveLang(id, dir) {
+  const L = langs(), i = L.findIndex(x => x.id === id), j = i + dir;
+  if (j < 0 || j >= L.length) return;
+  [L[i], L[j]] = [L[j], L[i]];
+  try {
+    const batch = writeBatch(db);
+    L.forEach((x, idx) => batch.update(doc(db, "languages", x.id), { order: idx }));
+    await batch.commit();
+  } catch (e) { fail(e); }
+}
+
+async function seedLanguages() {
+  try {
+    const batch = writeBatch(db);
+    [["Arabic", "ar", true], ["English", "en", false]].forEach(([name, code, rtl], i) =>
+      batch.set(doc(collection(db, "languages")), { name, code, rtl, order: i, updatedAt: serverTimestamp() }));
+    await batch.commit();
+    toast("Arabic and English added.");
+  } catch (e) { fail(e); }
+}
+function openConvertNames() {
+  const L = langs();
+  const todo = [...actions.filter(isLegacyDoc).map(x => ["actions", x]), ...types.filter(isLegacyDoc).map(x => ["locationTypes", x])];
+  if (!L.length || !todo.length) return;
+  dlg.innerHTML = `<div class="dlg">
+    <h2 data-noguard>Convert names</h2>
+    <p style="margin:0">${todo.length} name(s) will be moved into the new per-language format. Nothing is deleted.</p>
+    <label class="f">The existing names are written in
+      <select id="c-lang">${L.map(l => `<option value="${esc(l.code)}" ${l.code === defLang() ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</select></label>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save">Convert ${todo.length}</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    const c = $("#c-lang").value;
+    $("#d-save").disabled = true;
+    try {
+      for (let i = 0; i < todo.length; i += 400) {
+        const batch = writeBatch(db);
+        todo.slice(i, i + 400).forEach(([coll, x]) => {
+          const data = { names: { [c]: x.name } };
+          if (coll === "actions") {
+            data.titleTemplates = x.titleTemplate ? { [c]: x.titleTemplate } : {};
+            data.bodyTemplates = x.bodyTemplate ? { [c]: x.bodyTemplate } : {};
+          }
+          batch.update(doc(db, coll, x.id), data);
+        });
+        await batch.commit();
+      }
+      dlg.close(); toast("Names converted.");
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+}
+
+/* ============================================================
+   9. IMPORT NIYYAHS FROM JSON
+   Shape: { "<id>": { "<lang>": { situation, niyyah: [..], sources: [..] } } }
+   Each entry of "niyyah" becomes its own niyyah. All niyyahs of one id share that id's sources.
+   The same position in each language is the same niyyah. "situation" is ignored.
+   ============================================================ */
+const asArray = v => Array.isArray(v) ? v : (v ? [v] : []);
+
+// The export split every source text at its commas. Put the pieces back together,
+// then start a new source after each closing citation like [Al-Bukhari].
+function rebuildSources(raw, code) {
+  const parts = asArray(raw).map(x => String(x).trim()).filter(Boolean);
+  if (parts.length <= 1) return parts;
+  const joined = parts.join(code === "ar" ? "، " : ", ");
+  return joined.replace(/(\]\.?)[،,]?\s+(?=\S)/g, "$1\u0000").split("\u0000").map(x => x.trim()).filter(Boolean);
+}
+
+function buildImportPlan(json) {
+  if (!json || typeof json !== "object" || Array.isArray(json)) throw new Error("This file is not in the expected format (an object keyed by id).");
+  const items = [], codes = new Set();
+  const ids = Object.keys(json).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  for (const id of ids) {
+    const langEntries = Object.entries(json[id] || {}).filter(([, v]) => v && typeof v === "object");
+    langEntries.forEach(([c]) => codes.add(c));
+    const sources = Object.fromEntries(langEntries.map(([c, v]) => [c, rebuildSources(v.sources, c)]));
+    const count = Math.max(0, ...langEntries.map(([, v]) => asArray(v.niyyah).length));
+    for (let i = 0; i < count; i++) {
+      const translations = {};
+      for (const [c, v] of langEntries) {
+        const text = String(asArray(v.niyyah)[i] ?? "").trim();
+        translations[c] = { text, sources: [...sources[c]], status: text && langOk(c, text) ? "draft" : "empty" };
+      }
+      items.push({ importId: id, importIndex: i, translations,
+        skip: niyyahs.some(n => n.importId === id && n.importIndex === i) });
+    }
+  }
+  return { items, codes: [...codes] };
+}
+
+function openImport(plan, fileName) {
+  const fresh = plan.items.filter(x => !x.skip), skipped = plan.items.length - fresh.length;
+  const missing = plan.codes.filter(c => !languages.some(l => l.code === c));
+  const snip = it => { const t = it.translations; const c = ["en", "ar", ...Object.keys(t)].find(k => t[k]?.text); return c ? t[c].text : ""; };
+  dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
+    <h2 data-noguard>Import niyyahs</h2>
+    <p style="margin:0"><b>${esc(fileName)}</b>: ${fresh.length} niyyah${fresh.length === 1 ? "" : "s"} to add${skipped ? `, ${skipped} already imported (skipped)` : ""}.
+      Languages in the file: ${plan.codes.map(esc).join(", ") || "none"}.</p>
+    <p class="muted" style="margin:0">All texts are added as draft, with no actions yet. Situations in the file are ignored. A language with no text for a niyyah shows red.</p>
+    ${missing.length ? `<p style="margin:0;color:var(--danger)">Not in Settings yet: ${missing.map(esc).join(", ")}. Their texts are still saved and appear once you add that language.</p>` : ""}
+    <div class="imp-list">${plan.items.map(it => `<div class="imp-row ${it.skip ? "skip" : ""}">
+        <span class="id">#${esc(it.importId)}.${it.importIndex + 1}</span>
+        ${Object.entries(it.translations).map(([c, t]) => `<span class="badge st-${t.status}">${esc(c)}</span>`).join("")}
+        <span class="snip" dir="auto">${esc(snip(it))}</span></div>`).join("")}</div>
+    <div class="actions"><button class="btn" id="d-cancel">Cancel</button>
+      <button class="btn primary" id="d-save" ${fresh.length ? "" : "disabled"}>Import ${fresh.length}</button></div></div>`;
+  $("#d-cancel").onclick = () => dlg.close();
+  $("#d-save").onclick = async () => {
+    $("#d-save").disabled = true;
+    try {
+      for (let i = 0; i < fresh.length; i += 400) {
+        const batch = writeBatch(db);
+        fresh.slice(i, i + 400).forEach(it => batch.set(doc(collection(db, "niyyahs")), {
+          translations: it.translations, general: false, actionIds: [],
+          importId: it.importId, importIndex: it.importIndex,
+          ...mirrorFields(it.translations), createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+        await batch.commit();
+      }
+      dlg.close(); toast(`${fresh.length} niyyahs imported.`);
+    } catch (e) { $("#d-save").disabled = false; fail(e); }
+  };
+  showDlg();
+}
+
+$("#import-file").onchange = async e => {
+  const f = e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  try { openImport(buildImportPlan(JSON.parse(await f.text())), f.name); }
+  catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message, true); }
+};
+</script>
+</body>
+</html>

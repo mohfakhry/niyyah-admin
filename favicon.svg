@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14584d" />
+      <stop offset="100%" stop-color="#0b3831" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdfbf7" />
+      <stop offset="100%" stop-color="#efe9da" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <!-- Background rounded canvas -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Subtle decorative inner geometric ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#efe9da" stroke-width="2.5" stroke-opacity="0.25" stroke-dasharray="8 8" />
+  
+  <g filter="url(#shadow)">
+    <!-- Elegant Islamic Crescent (Niyyah Moon) -->
+    <path d="M 284 120 
+             C 368 120, 410 188, 410 262 
+             C 410 348, 340 408, 252 408 
+             C 174 408, 114 352, 114 274 
+             C 114 216, 150 162, 204 136 
+             C 192 154, 184 178, 184 204 
+             C 184 272, 238 322, 308 322 
+             C 342 322, 372 308, 390 286 
+             C 370 338, 318 372, 256 372 
+             C 188 372, 146 322, 146 264 
+             C 146 210, 186 158, 246 136 
+             C 258 132, 270 128, 284 120 Z" 
+          fill="url(#goldGrad)" />
+    
+    <!-- Inner Sprout / Pure Intention Leaf in negative space -->
+    <path d="M 276 168
+             C 276 168, 328 204, 328 250
+             C 328 278, 306 300, 278 300
+             C 250 300, 236 280, 236 254
+             C 236 218, 276 168, 276 168 Z"
+          fill="url(#goldGrad)" opacity="0.95" />
+    <path d="M 278 300 L 278 220" stroke="#14584d" stroke-width="4.5" stroke-linecap="round" />
+  </g>
+</svg>
