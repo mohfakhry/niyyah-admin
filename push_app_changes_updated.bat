@@ -10,13 +10,27 @@ if not defined COMMIT_MSG (
 )
 
 git add -A || goto :error
-git commit -m "%COMMIT_MSG%" || goto :error
-git push || goto :error
+git commit -m "%COMMIT_MSG%"
 
 echo.
-echo Changes pushed successfully.
+echo Syncing with remote before pushing...
+git pull --rebase origin main || goto :rebase_error
+
+git push origin main || goto :error
+
+echo.
+echo Changes pushed successfully to niyyah-admin.
 pause
 exit /b 0
+
+:rebase_error
+echo.
+echo Rebase encountered a conflict. Resolve conflicts in your editor, then run:
+echo   git add -A
+echo   git rebase --continue
+echo   git push origin main
+pause
+exit /b 1
 
 :error
 echo.
