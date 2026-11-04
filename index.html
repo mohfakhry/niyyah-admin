@@ -14241,7 +14241,7 @@ function openNiyyah(id, _mode = null) {
   }
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
+  const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, hasChildren: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
 
   let curJobIds = [...(n.jobIds || [])];
   let curMaritalIds = [...(n.maritalStatusIds || [])];
@@ -14289,6 +14289,9 @@ function openNiyyah(id, _mode = null) {
       </label>
       <label class="chk switch-label editor-toggle-tile">
         <input type="checkbox" id="n-marital-toggle" ${initMaritalOn ? "checked" : ""}> <span class="editor-toggle-label">Marital status</span>
+      </label>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-children-toggle" ${n && n.hasChildren ? "checked" : ""}> <span class="editor-toggle-label">Has children</span>
       </label>
       <label class="chk switch-label editor-toggle-tile">
         <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span class="editor-toggle-label">Chain niyyah</span>
@@ -14766,6 +14769,7 @@ function openNiyyah(id, _mode = null) {
   validate();
 
   $("#n-gen").onchange = onFieldChange;
+  if ($("#n-children-toggle")) $("#n-children-toggle").onchange = onFieldChange;
 
   const jobToggle = $("#n-job-toggle");
   if (jobToggle) {
@@ -15036,6 +15040,9 @@ function openNiyyah(id, _mode = null) {
 
   activeEditorLockState.restoreData = (rev) => {
     if (rev.general !== undefined) $("#n-gen").checked = !!rev.general;
+    if (rev.hasChildren !== undefined && $("#n-children-toggle")) {
+      $("#n-children-toggle").checked = !!rev.hasChildren;
+    }
 
     curJobIds = Array.isArray(rev.jobIds) ? [...rev.jobIds] : [];
     const hasJobs = curJobIds.length > 0;
@@ -15117,6 +15124,7 @@ function openNiyyah(id, _mode = null) {
     const filled = Object.values(translations).filter(t => t.text);
     if (!filled.length) return toast("Write the niyyah in at least one language.", true);
     const general = $("#n-gen").checked;
+    const hasChildren = $("#n-children-toggle")?.checked ?? false;
     const isJob = $("#n-job-toggle").checked;
     const isMarital = $("#n-marital-toggle")?.checked;
     const isChain = $("#n-chain-toggle").checked;
@@ -15141,6 +15149,7 @@ function openNiyyah(id, _mode = null) {
     const data = {
       translations,
       general,
+      hasChildren,
       jobIds,
       maritalStatusIds,
       actionIds,
@@ -17279,6 +17288,7 @@ function buildImportPlan(json) {
         importId: id,
         importIndex: idx,
         translations,
+        hasChildren: Boolean(it.hasChildren),
         jobIds: validJobIds,
         maritalStatusIds: validMaritalStatusIds,
         situations: cleanSituations,
@@ -17306,7 +17316,7 @@ function buildImportPlan(json) {
         rawAfterActionIds
       );
 
-      const langEntries = Object.entries(rawVal).filter(([k, v]) => v && typeof v === "object" && !Array.isArray(v) && k !== "translations" && k !== "jobIds" && k !== "maritalStatusIds" && k !== "situations" && k !== "beforeActionIds" && k !== "afterActionIds");
+      const langEntries = Object.entries(rawVal).filter(([k, v]) => v && typeof v === "object" && !Array.isArray(v) && k !== "translations" && k !== "jobIds" && k !== "maritalStatusIds" && k !== "situations" && k !== "beforeActionIds" && k !== "afterActionIds" && k !== "hasChildren");
       if (rawVal.translations && typeof rawVal.translations === "object") {
         Object.entries(rawVal.translations).forEach(([c, tr]) => {
           if (!langEntries.some(([existC]) => existC === c)) langEntries.push([c, tr]);
@@ -17325,6 +17335,7 @@ function buildImportPlan(json) {
           importId: id,
           importIndex: i,
           translations,
+          hasChildren: Boolean(rawVal.hasChildren),
           jobIds: validJobIds,
           maritalStatusIds: validMaritalStatusIds,
           situations: cleanSituations,
@@ -17391,6 +17402,7 @@ function openImport(plan, fileName) {
               number: startNum + i + idx,
               translations: it.translations,
               general: false,
+              hasChildren: it.hasChildren ?? false,
               jobIds: it.jobIds || [],
               maritalStatusIds: it.maritalStatusIds || [],
               actionIds: [],
@@ -17414,6 +17426,7 @@ function openImport(plan, fileName) {
               number: startNum + idx,
               translations: it.translations,
               general: false,
+              hasChildren: it.hasChildren ?? false,
               jobIds: it.jobIds || [],
               maritalStatusIds: it.maritalStatusIds || [],
               actionIds: [],
