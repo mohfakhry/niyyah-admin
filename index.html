@@ -981,6 +981,184 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: #4ade80;
   }
 
+  /* Database Sync Overlay & Modal Loading Indicator */
+  .db-sync-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: rgba(15, 23, 20, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+  .db-sync-overlay[hidden] {
+    display: none !important;
+  }
+  .db-sync-modal {
+    background: var(--card, #ffffff);
+    color: var(--ink, #1a202c);
+    border: 1px solid var(--line, #e2e8e5);
+    border-radius: var(--radius-lg, 14px);
+    padding: 24px 28px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+    gap: 12px;
+  }
+  body.dark .db-sync-modal {
+    background: var(--card, #1c2624);
+    border-color: var(--line, #2d3b37);
+    color: var(--ink, #f0fdf4);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+  .db-sync-spinner-ring {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3.5px solid var(--line, #e2e8e5);
+    border-top-color: var(--green, #1b6348);
+    animation: dbSyncSpin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  body.dark .db-sync-spinner-ring {
+    border-color: rgba(74, 222, 128, 0.2);
+    border-top-color: #4ade80;
+  }
+  @keyframes dbSyncSpin {
+    to { transform: rotate(360deg); }
+  }
+  .db-sync-title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+  }
+  .db-sync-subtitle {
+    font-size: 13px;
+    color: var(--muted, #64748b);
+    line-height: 1.4;
+    margin: 0;
+  }
+  body.dark .db-sync-subtitle {
+    color: #94a3b8;
+  }
+  .db-sync-retry-btn {
+    margin-top: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-md, 8px);
+    background: var(--sand, #f4f6f5);
+    border: 1px solid var(--line, #e2e8e5);
+    color: var(--ink, #1a202c);
+    cursor: pointer;
+  }
+  body.dark .db-sync-retry-btn {
+    background: #23312e;
+    border-color: #334440;
+    color: #f0fdf4;
+  }
+
+  /* Grouped Settings Cards in Editors */
+  .editor-settings-card {
+    background: var(--card, #ffffff);
+    border: 1px solid var(--line, #e2e8e5);
+    border-radius: var(--radius-md, 10px);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: border-color var(--trans-fast), opacity var(--trans-fast);
+  }
+  body.dark .editor-settings-card {
+    background: var(--card, #1c2624);
+    border-color: var(--line, #2d3b37);
+  }
+  .editor-settings-card.is-main-settings-locked {
+    background: var(--sand, #f8faf9);
+    border-color: var(--line, #e2e8e5);
+    position: relative;
+  }
+  body.dark .editor-settings-card.is-main-settings-locked {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .editor-settings-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line, #e2e8e5);
+  }
+  .editor-settings-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted, #64748b);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  body.dark .editor-settings-card-title {
+    color: #94a3b8;
+  }
+  .editor-settings-lock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--line, #e2e8e5);
+    background: var(--paper, #ffffff);
+    color: var(--ink, #1a202c);
+    transition: all 0.15s ease;
+  }
+  body.dark .editor-settings-lock-btn {
+    background: #23312e;
+    border-color: #334440;
+    color: #f0fdf4;
+  }
+  .editor-settings-lock-btn.is-locked {
+    background: var(--gold-soft, #fff9db);
+    border-color: var(--gold, #fab005);
+    color: #854d0e;
+  }
+  body.dark .editor-settings-lock-btn.is-locked {
+    background: rgba(250, 176, 5, 0.15);
+    border-color: rgba(250, 176, 5, 0.5);
+    color: #fef08a;
+  }
+  .editor-settings-card.is-main-settings-locked .editor-settings-card-body {
+    opacity: 0.65;
+    pointer-events: none;
+    user-select: none;
+  }
+  .editor-settings-card.is-main-settings-locked .picker-trigger-btn,
+  .editor-settings-card.is-main-settings-locked .editor-toggle-tile,
+  .editor-settings-card.is-main-settings-locked input,
+  .editor-settings-card.is-main-settings-locked button:not(.editor-settings-lock-btn) {
+    cursor: not-allowed !important;
+  }
+
   /* Offline Slim Banner */
   .offline-banner {
     background: #fef3c7;
@@ -6065,6 +6243,16 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
         </div>
       </div>
 
+      <!-- Dedicated Database Sync Overlay with Loading Circle & Status Info -->
+      <div class="db-sync-overlay" id="db-sync-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="db-sync-title">
+        <div class="db-sync-modal">
+          <div class="db-sync-spinner-ring" aria-hidden="true"></div>
+          <h3 class="db-sync-title" id="db-sync-title">Syncing with database…</h3>
+          <p class="db-sync-subtitle" id="db-sync-subtitle">Retrieving the latest updates</p>
+          <button type="button" class="db-sync-retry-btn" id="db-sync-retry-btn" style="display:none;">Retry connection</button>
+        </div>
+      </div>
+
       <!-- Offline Slim Banner: read-only warning -->
       <div class="offline-banner" id="offline-banner" hidden role="status" aria-live="polite">
         <span class="offline-banner-icon" aria-hidden="true">⚡</span>
@@ -9117,6 +9305,54 @@ function mirrorFields(translations) {
 }
 const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
+function isItemPublished(type, item) {
+  if (!item) return false;
+  if (type === "niyyahs" || type === "niyyah") {
+    if (item.status === "published" || hasStatus(item, "published")) return true;
+    if (item.translations && Object.values(item.translations).some(t => t && t.status === "published")) return true;
+    return false;
+  }
+  if (item.published === true) return true;
+  if (item.statuses && Object.values(item.statuses).some(s => s === "published")) return true;
+  return false;
+}
+
+function renderMainSettingsCard({ id = "main-settings-card", title = "Main Settings", isLocked = false, contentHtml = "" }) {
+  return `
+    <div class="editor-settings-card ${isLocked ? "is-main-settings-locked" : ""}" id="${esc(id)}">
+      <div class="editor-settings-card-header">
+        <div class="editor-settings-card-title">
+          <span class="editor-settings-card-icon" aria-hidden="true">⚙️</span>
+          <span>${esc(title)}</span>
+        </div>
+        <button type="button" class="editor-settings-lock-btn ${isLocked ? "is-locked" : "is-unlocked"}"
+                id="${esc(id)}-lock-btn"
+                aria-pressed="${isLocked}"
+                aria-label="${isLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock"}"
+                title="${isLocked ? "Unlock main settings" : "Lock main settings"}">
+          <span class="lock-emoji" aria-hidden="true">${isLocked ? "🔒" : "🔓"}</span>
+          <span class="lock-label">${isLocked ? "Locked" : "Unlocked"}</span>
+        </button>
+      </div>
+      <div class="editor-settings-card-body" id="${esc(id)}-body">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
+async function promptMainSettingsUnlock(opts = {}) {
+  const title = opts.title || "Unlock Main Settings?";
+  const message = opts.message || "This card has published content. Changing common settings (categories, filters, dates, toggles) affects all languages including published ones.\n\nDo you want to unlock main settings for editing?";
+  return await confirmSheet({
+    title: "🔓 " + title,
+    message,
+    confirmText: "Unlock",
+    cancelText: "Keep locked",
+    danger: false
+  });
+}
+
 const langSt = (x, code, text) => {
   if (!String(text || "").trim() || !langOk(code, text)) return "empty";
   const s = (x.statuses || {})[code];
@@ -9187,7 +9423,7 @@ function formatCharCounter(len, maxChars) {
 const langFieldsHtml = () => `
   <div class="lpanel" id="lf-panel"></div>
 `;
-function langFields(L, fields, initial, onChange = () => {}, initialStatus = {}) {
+function langFields(L, fields, initial, onChange = () => {}, initialStatus = {}, editorContext = {}) {
   const draft = {}, status = {};
   L.forEach(l => (status[l.code] = STATUSES.includes(initialStatus[l.code]) ? initialStatus[l.code] : "draft"));
   L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
@@ -9230,6 +9466,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
   const paintPanel = () => {
     const l = L.find(x => x.code === cur), d = draft[cur];
     const isReview = activeEditorLockState.mode === "review";
+    const isLangPublishedLocked = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
 
     let html = fields.map(f => {
       const val = d[f.key] || "";
@@ -9252,7 +9489,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
                  autocomplete="off"
                  autocapitalize="sentences"
                  enterkeyhint="next"
-                 ${isReview ? "readonly" : ""}>
+                 ${(isReview || isLangPublishedLocked) ? "readonly" : ""}>
           <small class="lwarn" id="lw-${f.key}" hidden></small>
         </div>
       `;
@@ -9297,6 +9534,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     }
     const curSt = status[cur] || "";
     const isReview = activeEditorLockState && activeEditorLockState.mode === "review";
+    const isLangPublishedLocked = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
     el.innerHTML = `
       <div class="editor-status-block">
         <div class="editor-status-title">
@@ -9309,7 +9547,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
               <button type="button" role="radio" aria-checked="${isSel}"
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
-                      ${(isReview || isPublishedLocked) ? 'aria-disabled="true"' : ""}>
+                      ${(isReview || isLangPublishedLocked) ? 'aria-disabled="true"' : ""}>
                 ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
@@ -9321,8 +9559,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     const ctrl = $("#lf-status-ctrl");
     if (ctrl) {
       const applyStatus = newSt => {
-        if (isPublishedLocked) {
-          toast("This niyyah is published. Mark as draft to edit.", true);
+        if (isLangPublishedLocked && newSt === "published") {
           return;
         }
         if (activeEditorLockState && activeEditorLockState.mode === "review") return;
@@ -10440,6 +10677,36 @@ function updateSyncStatusDot() {
   }
 }
 
+let hasCompletedInitialSync = false;
+
+function updateSyncOverlayUI(mode = "launch") {
+  const overlay = $("#db-sync-overlay");
+  if (!overlay) return;
+  const titleEl = $("#db-sync-title");
+  const subEl = $("#db-sync-subtitle");
+  const retryBtn = $("#db-sync-retry-btn");
+  if (!syncState.gateOpen) {
+    overlay.hidden = true;
+    return;
+  }
+  overlay.hidden = false;
+  if (retryBtn) {
+    retryBtn.style.display = "none";
+    retryBtn.onclick = () => {
+      openFreshnessGate("reconnecting");
+    };
+  }
+  const total = (typeof GATE_COLLECTIONS !== "undefined" ? GATE_COLLECTIONS.length : 10);
+  const synced = syncState.gateDelivered ? syncState.gateDelivered.size : 0;
+  if (mode === "reconnecting") {
+    if (titleEl) titleEl.textContent = "Reconnecting to database…";
+    if (subEl) subEl.textContent = `Syncing collections (${synced} of ${total} received)`;
+  } else {
+    if (titleEl) titleEl.textContent = "Connecting to database…";
+    if (subEl) subEl.textContent = `Syncing collections (${synced} of ${total} received)`;
+  }
+}
+
 function openFreshnessGate(mode = "launch") {
   if (!navigator.onLine) {
     enterOfflineMode();
@@ -10457,6 +10724,7 @@ function openFreshnessGate(mode = "launch") {
   if (gateBar) gateBar.hidden = false;
   if (gateText) gateText.textContent = mode === "reconnecting" ? "Reconnecting…" : "Updating…";
 
+  updateSyncOverlayUI(mode);
   updateSyncStatusDot();
   document.body.classList.add("sync-gate-active");
   document.body.classList.remove("sync-offline");
@@ -10472,12 +10740,15 @@ function openFreshnessGate(mode = "launch") {
 
 function closeFreshnessGate() {
   syncState.gateOpen = false;
+  hasCompletedInitialSync = true;
   if (syncState.gateTimer) {
     clearTimeout(syncState.gateTimer);
     syncState.gateTimer = null;
   }
   const gateBar = $("#sync-gate-bar");
   if (gateBar) gateBar.hidden = true;
+  const overlay = $("#db-sync-overlay");
+  if (overlay) overlay.hidden = true;
   document.body.classList.remove("sync-gate-active");
 
   const offlineBanner = $("#offline-banner");
@@ -10498,6 +10769,22 @@ function enterOfflineMode() {
 
   const gateBar = $("#sync-gate-bar");
   if (gateBar) gateBar.hidden = true;
+  const overlay = $("#db-sync-overlay");
+  if (overlay) {
+    const titleEl = $("#db-sync-title");
+    const subEl = $("#db-sync-subtitle");
+    const retryBtn = $("#db-sync-retry-btn");
+    if (!hasCompletedInitialSync) {
+      if (titleEl) titleEl.textContent = "Offline / Connection timeout";
+      if (subEl) subEl.textContent = "Could not sync latest data from database. You can retry or continue viewing saved cache.";
+      if (retryBtn) {
+        retryBtn.style.display = "";
+        retryBtn.textContent = "Retry connection";
+      }
+    } else {
+      overlay.hidden = true;
+    }
+  }
   document.body.classList.remove("sync-gate-active");
 
   const offlineBanner = $("#offline-banner");
@@ -10532,7 +10819,7 @@ function handleCollectionSnapshot(name, snap) {
   if (!isFromCache) {
     syncState.lastServerUpdate = new Date();
     if (syncState.gateOpen && GATE_COLLECTIONS.includes(name)) {
-      syncState.gateDelivered.add(name);
+      syncState.gateDelivered.add(name); updateSyncOverlayUI(syncState.gateMode);
       if (GATE_COLLECTIONS.every(c => syncState.gateDelivered.has(c))) {
         closeFreshnessGate();
       }
@@ -10767,8 +11054,8 @@ const LOCK_CONFIG = {
   leaseHiddenDurationMs: 5 * 60 * 1000, // 5 minutes
   heartbeatIntervalMs: 30 * 1000,       // 30 seconds
   inputThrottleMs: 20 * 1000,           // 20 seconds
-  inactivityWarningMs: 8 * 60 * 1000,   // 8 minutes
-  inactivityLimitMs: 10 * 60 * 1000,    // 10 minutes
+  inactivityWarningMs: 3.5 * 60 * 1000, // 3.5 minutes
+  inactivityLimitMs: 5 * 60 * 1000,     // 5 minutes
   toleranceMs: 15 * 1000                // 15 seconds clock skew tolerance
 };
 
@@ -13941,14 +14228,15 @@ function openAction(id, presetParent = "", _mode = null) {
     ? (id ? "Edit Action Parent" : "Add Action Parent")
     : (id ? `${STRINGS.common.edit} action` : `${STRINGS.common.add} action`);
 
-  const bodyHtml = isParent ? `
-    <div class="f-switches-row" style="margin:4px 0 12px">
+  const isActionPublished = isItemPublished("actions", a);
+  let isMainSettingsLocked = isActionPublished;
+
+  const mainSettingsHtml = isParent ? `
+    <div class="f-switches-row" style="margin:4px 0">
       <label class="chk switch-label">
         <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span>
       </label>
     </div>
-    ${langFieldsHtml()}
-    <div id="lf-status-container"></div>
   ` : `
     <div class="editor-toggle-grid" style="margin-top:4px;margin-bottom:8px">
       <label class="chk switch-label editor-toggle-tile">
@@ -13958,7 +14246,7 @@ function openAction(id, presetParent = "", _mode = null) {
         <input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span class="editor-toggle-label">Restrict to specific jobs</span>
       </label>
     </div>
-    <div class="f" id="sec-action-jobs" style="${a.restricted ? '' : 'display:none;'}margin:4px 0 12px">
+    <div class="f" id="sec-action-jobs" style="${a.restricted ? '' : 'display:none;'};margin:4px 0">
       <div class="f-head"><label class="f-label">Jobs</label></div>
       <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog" style="margin-top:2px">
         <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
@@ -13966,6 +14254,15 @@ function openAction(id, presetParent = "", _mode = null) {
       </button>
       <span class="f-hint" style="margin-top:4px">Only shown to users with these professions.</span>
     </div>
+  `;
+
+  const bodyHtml = `
+    ${renderMainSettingsCard({
+      id: "action-main-settings",
+      title: "Main Settings",
+      isLocked: isMainSettingsLocked,
+      contentHtml: mainSettingsHtml
+    })}
     ${langFieldsHtml()}
     <div id="lf-status-container"></div>
   `;
@@ -14010,7 +14307,51 @@ function openAction(id, presetParent = "", _mode = null) {
   if (!isParent) {
     actionFields.push({ key: "onboardingName", label: "Onboarding Name (optional)", ph: "Shorter name for onboarding screen", required: false });
   }
-  const lf = langFields(L, actionFields, initial, onFieldChange, statusInit(a, L, names));
+  const lf = langFields(L, actionFields, initial, onFieldChange, statusInit(a, L, names), { isPublished: isActionPublished });
+
+  const updateActionMainSettingsUI = () => {
+    const card = $("#action-main-settings");
+    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
+    const btn = $("#action-main-settings-lock-btn");
+    if (btn) {
+      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
+      btn.setAttribute("aria-pressed", isMainSettingsLocked);
+      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
+      const emoji = $(".lock-emoji", btn);
+      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
+      const lbl = $(".lock-label", btn);
+      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
+    }
+    const visChk = $("#a-visible");
+    if (visChk) visChk.disabled = isMainSettingsLocked;
+    const restChk = $("#a-restricted");
+    if (restChk) restChk.disabled = isMainSettingsLocked;
+    const pickJobs = $("#btn-pick-jobs");
+    if (pickJobs) pickJobs.disabled = isMainSettingsLocked;
+  };
+
+  const btnActionLock = $("#action-main-settings-lock-btn");
+  if (btnActionLock) {
+    btnActionLock.onclick = async () => {
+      if (isMainSettingsLocked) {
+        const ok = await promptMainSettingsUnlock({
+          title: "Unlock Action Settings?",
+          message: "This action has published translations. Changing visibility or job restrictions affects all languages.\n\nUnlock main settings for editing?"
+        });
+        if (ok) {
+          isMainSettingsLocked = false;
+          updateActionMainSettingsUI();
+          toast("Main settings unlocked.", { type: "info" });
+        }
+      } else {
+        isMainSettingsLocked = true;
+        updateActionMainSettingsUI();
+        toast("Main settings locked.", { type: "info" });
+      }
+    };
+  }
+  updateActionMainSettingsUI();
 
   validate();
 
@@ -14317,14 +14658,8 @@ function openNiyyah(id, _mode = null) {
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
   const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, hasChildren: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
 
-  const isPublished = Boolean(
-    id && n && (
-      n.status === "published" ||
-      hasStatus(n, "published") ||
-      Object.values(n.translations || {}).some(t => t.status === "published")
-    )
-  );
-  let isPublishedLocked = isPublished;
+  const isPublished = isItemPublished("niyyahs", n);
+  let isMainSettingsLocked = isPublished;
 
   let curJobIds = [...(n.jobIds || [])];
   let curMaritalIds = [...(n.maritalStatusIds || [])];
@@ -14361,86 +14696,92 @@ function openNiyyah(id, _mode = null) {
   const initEventOn = curEventIds.length > 0;
 
   const bodyHtml = `
-    <div class="editor-published-banner" id="d-published-banner" ${isPublishedLocked ? "" : "style=\"display:none;\""} role="alert">
+    <div class="editor-published-banner" id="d-published-banner" ${isPublished ? "" : "style=\"display:none;\""} role="alert">
       <div class="published-warning-main">
         <span class="warning-icon" aria-hidden="true">⚠️</span>
         <div class="warning-copy">
           <strong class="warning-title">Published Niyyah</strong>
-          <span class="warning-desc">All edits are locked because this niyyah is published.</span>
+          <span class="warning-desc">Card has published translations. Main settings and published text are protected. Draft translations remain editable.</span>
         </div>
       </div>
       <div class="published-warning-actions">
-        <button type="button" class="btn small primary" id="btn-mark-draft">Mark as draft</button>
+        <button type="button" class="btn small primary" id="btn-mark-draft">Mark all as draft</button>
         <button type="button" class="btn small" id="btn-published-cancel">Cancel</button>
       </div>
     </div>
 
+    ${renderMainSettingsCard({
+      id: "niyyah-main-settings",
+      title: "Main Settings",
+      isLocked: isMainSettingsLocked,
+      contentHtml: `
+        <div class="editor-toggle-grid">
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> <span class="editor-toggle-label">Fits any action</span>
+          </label>
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-job-toggle" ${initJobOn ? "checked" : ""}> <span class="editor-toggle-label">Job specific</span>
+          </label>
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-marital-toggle" ${initMaritalOn ? "checked" : ""}> <span class="editor-toggle-label">Marital status</span>
+          </label>
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-children-toggle" ${n && n.hasChildren ? "checked" : ""}> <span class="editor-toggle-label">Has children</span>
+          </label>
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span class="editor-toggle-label">Chain niyyah</span>
+          </label>
+          <label class="chk switch-label editor-toggle-tile">
+            <input type="checkbox" id="n-event-toggle" ${initEventOn ? "checked" : ""}> <span class="editor-toggle-label">Event niyyah</span>
+          </label>
+        </div>
+
+        <div class="editor-sections-stack">
+          <div class="f editor-collapsible-section" id="sec-niyyah-actions">
+            <div class="f-head"><label class="f-label">Actions for this niyyah</label></div>
+            <button type="button" class="picker-trigger-btn" id="btn-pick-actions" aria-haspopup="dialog">
+              <span class="picker-btn-label" id="lbl-pick-actions">${esc(formatActionsLabel(curActionIds, "Choose actions..."))}</span>
+              <span class="picker-chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
+
+          <div class="f editor-collapsible-section" id="sec-niyyah-jobs" style="${initJobOn ? '' : 'display:none;'}">
+            <div class="f-head"><label class="f-label">Jobs</label></div>
+            <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog">
+              <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
+              <span class="picker-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="inline-err" id="err-niyyah-jobs" style="display:none"></div>
+          </div>
+
+          <div class="f editor-collapsible-section" id="sec-niyyah-marital" style="${initMaritalOn ? '' : 'display:none;'}">
+            <div class="f-head"><label class="f-label">Marital status</label></div>
+            <button type="button" class="picker-trigger-btn" id="btn-pick-marital" aria-haspopup="dialog">
+              <span class="picker-btn-label" id="lbl-pick-marital">${esc(formatMaritalLabel(curMaritalIds))}</span>
+              <span class="picker-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="inline-err" id="err-niyyah-marital" style="display:none"></div>
+          </div>
+
+          <div class="editor-collapsible-section" id="sec-niyyah-chain" style="${initChainOn ? '' : 'display:none;'}">
+            <div id="situations-list"></div>
+            <button type="button" class="btn-icon btn-add-situation" id="btn-add-situation" aria-label="Add situation" title="Add situation">＋</button>
+            <div class="inline-err" id="err-niyyah-chain" style="display:none"></div>
+          </div>
+
+          <div class="f editor-collapsible-section" id="sec-niyyah-events" style="${initEventOn ? '' : 'display:none;'}">
+            <div class="f-head"><label class="f-label">Events for this niyyah</label></div>
+            <button type="button" class="picker-trigger-btn" id="btn-pick-events" aria-haspopup="dialog">
+              <span class="picker-btn-label" id="lbl-pick-events">${esc(formatEventsLabel(curEventIds, "Choose events..."))}</span>
+              <span class="picker-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="inline-err" id="err-niyyah-events" style="display:none"></div>
+          </div>
+        </div>
+      `
+    })}
+
     <div class="lpanel" id="l-panel"></div>
-
-    <div class="editor-toggle-grid">
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> <span class="editor-toggle-label">Fits any action</span>
-      </label>
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-job-toggle" ${initJobOn ? "checked" : ""}> <span class="editor-toggle-label">Job specific</span>
-      </label>
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-marital-toggle" ${initMaritalOn ? "checked" : ""}> <span class="editor-toggle-label">Marital status</span>
-      </label>
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-children-toggle" ${n && n.hasChildren ? "checked" : ""}> <span class="editor-toggle-label">Has children</span>
-      </label>
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span class="editor-toggle-label">Chain niyyah</span>
-      </label>
-      <label class="chk switch-label editor-toggle-tile">
-        <input type="checkbox" id="n-event-toggle" ${initEventOn ? "checked" : ""}> <span class="editor-toggle-label">Event niyyah</span>
-      </label>
-    </div>
-
-    <div class="editor-sections-stack">
-      <div class="f editor-collapsible-section" id="sec-niyyah-actions">
-        <div class="f-head"><label class="f-label">Actions for this niyyah</label></div>
-        <button type="button" class="picker-trigger-btn" id="btn-pick-actions" aria-haspopup="dialog">
-          <span class="picker-btn-label" id="lbl-pick-actions">${esc(formatActionsLabel(curActionIds, "Choose actions..."))}</span>
-          <span class="picker-chevron" aria-hidden="true">▾</span>
-        </button>
-      </div>
-
-      <div class="f editor-collapsible-section" id="sec-niyyah-jobs" style="${initJobOn ? '' : 'display:none;'}">
-        <div class="f-head"><label class="f-label">Jobs</label></div>
-        <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog">
-          <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
-          <span class="picker-chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="inline-err" id="err-niyyah-jobs" style="display:none"></div>
-      </div>
-
-      <div class="f editor-collapsible-section" id="sec-niyyah-marital" style="${initMaritalOn ? '' : 'display:none;'}">
-        <div class="f-head"><label class="f-label">Marital status</label></div>
-        <button type="button" class="picker-trigger-btn" id="btn-pick-marital" aria-haspopup="dialog">
-          <span class="picker-btn-label" id="lbl-pick-marital">${esc(formatMaritalLabel(curMaritalIds))}</span>
-          <span class="picker-chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="inline-err" id="err-niyyah-marital" style="display:none"></div>
-      </div>
-
-      <div class="editor-collapsible-section" id="sec-niyyah-chain" style="${initChainOn ? '' : 'display:none;'}">
-        <div id="situations-list"></div>
-        <button type="button" class="btn-icon btn-add-situation" id="btn-add-situation" aria-label="Add situation" title="Add situation">＋</button>
-        <div class="inline-err" id="err-niyyah-chain" style="display:none"></div>
-      </div>
-
-      <div class="f editor-collapsible-section" id="sec-niyyah-events" style="${initEventOn ? '' : 'display:none;'}">
-        <div class="f-head"><label class="f-label">Events for this niyyah</label></div>
-        <button type="button" class="picker-trigger-btn" id="btn-pick-events" aria-haspopup="dialog">
-          <span class="picker-btn-label" id="lbl-pick-events">${esc(formatEventsLabel(curEventIds, "Choose events..."))}</span>
-          <span class="picker-chevron" aria-hidden="true">▾</span>
-        </button>
-        <div class="inline-err" id="err-niyyah-events" style="display:none"></div>
-      </div>
-    </div>
-
     <div id="l-status-container"></div>
   `;
 
@@ -14451,10 +14792,7 @@ function openNiyyah(id, _mode = null) {
     bodyHtml,
     saveLabel: STRINGS.common.save
   });
-  if (isPublishedLocked) {
-    const pageEl = $(".editor-page", dlg);
-    if (pageEl) pageEl.classList.add("published-locked");
-  }
+  // Card and language locks handled independently
 
   const setInlineErr = (sel, msg) => {
     const el = $(sel);
@@ -14470,10 +14808,6 @@ function openNiyyah(id, _mode = null) {
 
   const validate = () => {
     capture();
-    if (isPublishedLocked) {
-      setSaveValidity("This niyyah is published. Mark as draft to edit.");
-      return false;
-    }
     const hasText = L.some(l => draft[l.code]?.text?.trim()?.length > 0);
     if (!hasText) {
       setInlineErr("#err-niyyah-jobs", "");
@@ -14665,14 +14999,14 @@ function openNiyyah(id, _mode = null) {
                   autocomplete="off"
                   autocapitalize="sentences"
                   enterkeyhint="next"
-                  ${(isReview || isPublishedLocked) ? "readonly" : ""}>${esc(d.text)}</textarea>
+                  ${(isReview || (isPublished && d.status === "published")) ? "readonly" : ""}>${esc(d.text)}</textarea>
         <small class="lwarn" id="l-warn" hidden></small>
       </div>
 
       <div class="f">
         <div class="f-head" style="align-items:center !important">
           <label class="f-label">Sources</label>
-          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${(isReview || isPublishedLocked) ? "disabled style='display:none;'" : ""}>＋</button>
+          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${(isReview || (isPublished && d.status === "published")) ? "disabled style='display:none;'" : ""}>＋</button>
         </div>
         ${d.sources.map((s, i) => {
           const hideDel = d.sources.length === 1 && !s.trim();
@@ -14686,8 +15020,8 @@ function openNiyyah(id, _mode = null) {
                       autocomplete="off"
                       enterkeyhint="next"
                       data-idx="${i}"
-                      ${(isReview || isPublishedLocked) ? "readonly" : ""}>${esc(s)}</textarea>
-            ${(isReview || isPublishedLocked) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
+                      ${(isReview || (isPublished && d.status === "published")) ? "readonly" : ""}>${esc(s)}</textarea>
+            ${(isReview || (isPublished && d.status === "published")) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
           </div>
         `;
         }).join("")}
@@ -14734,7 +15068,7 @@ function openNiyyah(id, _mode = null) {
     }
 
     const addSrcBtn = $("#l-addsrc");
-    if (addSrcBtn && !isReview && !isPublishedLocked) {
+    if (addSrcBtn && !isReview && !(isPublished && d.status === "published")) {
       addSrcBtn.onclick = () => {
         capture();
         draft[cur].sources.push("");
@@ -14866,62 +15200,67 @@ function openNiyyah(id, _mode = null) {
     }
   };
 
-  const unlockEditorControls = () => {
-    const pageEl = $(".editor-page", dlg);
-    if (pageEl) pageEl.classList.remove("published-locked");
-    const banner = $("#d-published-banner");
-    if (banner) banner.style.display = "none";
-
-    // Re-enable toggle checkboxes
+  const updateMainSettingsUI = () => {
+    const card = $("#niyyah-main-settings");
+    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
+    const btn = $("#niyyah-main-settings-lock-btn");
+    if (btn) {
+      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
+      btn.setAttribute("aria-pressed", isMainSettingsLocked);
+      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
+      const emoji = $(".lock-emoji", btn);
+      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
+      const lbl = $(".lock-label", btn);
+      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
+    }
     const toggles = [
       "#n-gen", "#n-job-toggle", "#n-marital-toggle",
       "#n-children-toggle", "#n-chain-toggle", "#n-event-toggle"
     ];
     toggles.forEach(sel => {
       const el = $(sel);
-      if (el) el.disabled = false;
+      if (el) el.disabled = isMainSettingsLocked;
     });
-
-    paintPanel();
-    paintStatus();
-    paintSituations();
     validate();
   };
 
-  const lockEditorControls = () => {
-    const pageEl = $(".editor-page", dlg);
-    if (pageEl) pageEl.classList.add("published-locked");
-    const banner = $("#d-published-banner");
-    if (banner) banner.style.display = "";
-
-    const toggles = [
-      "#n-gen", "#n-job-toggle", "#n-marital-toggle",
-      "#n-children-toggle", "#n-chain-toggle", "#n-event-toggle"
-    ];
-    toggles.forEach(sel => {
-      const el = $(sel);
-      if (el) el.disabled = true;
-    });
-
-    paintPanel();
-    paintStatus();
-    paintSituations();
-    validate();
-  };
+  const btnNiyyahLock = $("#niyyah-main-settings-lock-btn");
+  if (btnNiyyahLock) {
+    btnNiyyahLock.onclick = async () => {
+      if (isMainSettingsLocked) {
+        const ok = await promptMainSettingsUnlock({
+          title: "Unlock Niyyah Settings?",
+          message: "This card has published translations. Changing common settings (actions, jobs, marital status, situations, events) affects all languages.\n\nUnlock main settings for editing?"
+        });
+        if (ok) {
+          isMainSettingsLocked = false;
+          updateMainSettingsUI();
+          toast("Main settings unlocked.", { type: "info" });
+        }
+      } else {
+        isMainSettingsLocked = true;
+        updateMainSettingsUI();
+        toast("Main settings locked.", { type: "info" });
+      }
+    };
+  }
 
   // Wire published banner buttons
   const btnMarkDraft = $("#btn-mark-draft");
   if (btnMarkDraft) {
     btnMarkDraft.onclick = () => {
-      isPublishedLocked = false;
       L.forEach(l => {
         if (draft[l.code].status === "published") {
           draft[l.code].status = "draft";
         }
       });
-      unlockEditorControls();
       dlgDirty = true;
-      toast("Marked as draft. Edits unlocked.", { type: "info" });
+      paintTabs();
+      paintPanel();
+      paintStatus();
+      validate();
+      toast("Marked all translations as draft.", { type: "info" });
     };
   }
 
@@ -14936,17 +15275,15 @@ function openNiyyah(id, _mode = null) {
   paintPanel();
   paintStatus();
   paintSituations();
-  if (isPublishedLocked) {
-    lockEditorControls();
-  }
+  updateMainSettingsUI();
   updatePinnedNiyyah();
   validate();
 
   $("#n-gen").onchange = (e) => {
-    if (isPublishedLocked) {
+    if (isMainSettingsLocked) {
       e.preventDefault();
       $("#n-gen").checked = !$("#n-gen").checked;
-      toast("This niyyah is published. Mark as draft to edit.", true);
+      toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
       return;
     }
     onFieldChange();
@@ -14954,10 +15291,10 @@ function openNiyyah(id, _mode = null) {
 
   if ($("#n-children-toggle")) {
     $("#n-children-toggle").onchange = (e) => {
-      if (isPublishedLocked) {
+      if (isMainSettingsLocked) {
         e.preventDefault();
         $("#n-children-toggle").checked = !$("#n-children-toggle").checked;
-        toast("This niyyah is published. Mark as draft to edit.", true);
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       onFieldChange();
@@ -14967,10 +15304,10 @@ function openNiyyah(id, _mode = null) {
   const jobToggle = $("#n-job-toggle");
   if (jobToggle) {
     jobToggle.onchange = (e) => {
-      if (isPublishedLocked) {
+      if (isMainSettingsLocked) {
         e.preventDefault();
         jobToggle.checked = !jobToggle.checked;
-        toast("This niyyah is published. Mark as draft to edit.", true);
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isJob = jobToggle.checked;
@@ -14989,8 +15326,8 @@ function openNiyyah(id, _mode = null) {
   const btnPickJobs = $("#btn-pick-jobs");
   if (btnPickJobs) {
     btnPickJobs.onclick = async () => {
-      if (isPublishedLocked) {
-        toast("This niyyah is published. Mark as draft to edit.", true);
+      if (isMainSettingsLocked) {
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15020,10 +15357,10 @@ function openNiyyah(id, _mode = null) {
   const maritalToggle = $("#n-marital-toggle");
   if (maritalToggle) {
     maritalToggle.onchange = (e) => {
-      if (isPublishedLocked) {
+      if (isMainSettingsLocked) {
         e.preventDefault();
         maritalToggle.checked = !maritalToggle.checked;
-        toast("This niyyah is published. Mark as draft to edit.", true);
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isMarital = maritalToggle.checked;
@@ -15036,8 +15373,8 @@ function openNiyyah(id, _mode = null) {
   const btnPickMarital = $("#btn-pick-marital");
   if (btnPickMarital) {
     btnPickMarital.onclick = async () => {
-      if (isPublishedLocked) {
-        toast("This niyyah is published. Mark as draft to edit.", true);
+      if (isMainSettingsLocked) {
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15066,8 +15403,8 @@ function openNiyyah(id, _mode = null) {
   }
 
   $("#btn-pick-actions").onclick = async () => {
-    if (isPublishedLocked) {
-      toast("This niyyah is published. Mark as draft to edit.", true);
+    if (isMainSettingsLocked) {
+      toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
       return;
     }
     const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15088,10 +15425,10 @@ function openNiyyah(id, _mode = null) {
   const chainToggle = $("#n-chain-toggle");
   if (chainToggle) {
     chainToggle.onchange = (e) => {
-      if (isPublishedLocked) {
+      if (isMainSettingsLocked) {
         e.preventDefault();
         chainToggle.checked = !chainToggle.checked;
-        toast("This niyyah is published. Mark as draft to edit.", true);
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isChain = chainToggle.checked;
@@ -15135,8 +15472,8 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-pick-sit-before").forEach(btn => {
       btn.onclick = async () => {
-        if (isPublishedLocked) {
-          toast("This niyyah is published. Mark as draft to edit.", true);
+        if (isMainSettingsLocked) {
+          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
           return;
         }
         const idx = +btn.dataset.sitIdx;
@@ -15161,8 +15498,8 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-pick-sit-after").forEach(btn => {
       btn.onclick = async () => {
-        if (isPublishedLocked) {
-          toast("This niyyah is published. Mark as draft to edit.", true);
+        if (isMainSettingsLocked) {
+          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
           return;
         }
         const idx = +btn.dataset.sitIdx;
@@ -15187,8 +15524,8 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-del-situation").forEach(btn => {
       btn.onclick = (e) => {
-        if (isPublishedLocked) {
-          toast("This niyyah is published. Mark as draft to edit.", true);
+        if (isMainSettingsLocked) {
+          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
           return;
         }
         const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15220,8 +15557,8 @@ function openNiyyah(id, _mode = null) {
   const btnAddSit = $("#btn-add-situation");
   if (btnAddSit) {
     btnAddSit.onclick = () => {
-      if (isPublishedLocked) {
-        toast("This niyyah is published. Mark as draft to edit.", true);
+      if (isMainSettingsLocked) {
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15244,10 +15581,10 @@ function openNiyyah(id, _mode = null) {
   const eventToggle = $("#n-event-toggle");
   if (eventToggle) {
     eventToggle.onchange = (e) => {
-      if (isPublishedLocked) {
+      if (isMainSettingsLocked) {
         e.preventDefault();
         eventToggle.checked = !eventToggle.checked;
-        toast("This niyyah is published. Mark as draft to edit.", true);
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isEv = eventToggle.checked;
@@ -15260,8 +15597,8 @@ function openNiyyah(id, _mode = null) {
   const btnPickEvents = $("#btn-pick-events");
   if (btnPickEvents) {
     btnPickEvents.onclick = async () => {
-      if (isPublishedLocked) {
-        toast("This niyyah is published. Mark as draft to edit.", true);
+      if (isMainSettingsLocked) {
+        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
         return;
       }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -15494,17 +15831,25 @@ function openNamed(key, id, _mode = null) {
   const hasActions = K.hasActions !== false;
   let curActionIds = hasActions ? [...(x.actionIds || [])] : [];
 
+  const isNamedPublished = isItemPublished(key, x);
+  let isMainSettingsLocked = isNamedPublished;
   const title = `${id ? STRINGS.common.edit : STRINGS.common.add} ${K.one}`;
   const bodyHtml = `
+    ${hasActions ? renderMainSettingsCard({
+      id: "named-main-settings",
+      title: "Main Settings",
+      isLocked: isMainSettingsLocked,
+      contentHtml: `
+        <div class="f" style="margin:4px 0">
+          <div class="f-head"><label class="f-label">Linked actions</label></div>
+          <button type="button" class="picker-trigger-btn" id="btn-pick-named-actions" aria-haspopup="dialog" style="margin-top:2px">
+            <span class="picker-btn-label" id="lbl-pick-named-actions">${esc(formatActionsLabel(curActionIds, "Link actions..."))}</span>
+            <span class="picker-chevron" aria-hidden="true">▾</span>
+          </button>
+        </div>
+      `
+    }) : ""}
     ${langFieldsHtml()}
-    ${hasActions ? `
-    <div class="f">
-      <div class="f-head"><label class="f-label">Linked actions</label></div>
-      <button type="button" class="picker-trigger-btn" id="btn-pick-named-actions" aria-haspopup="dialog" style="margin-top:2px">
-        <span class="picker-btn-label" id="lbl-pick-named-actions">${esc(formatActionsLabel(curActionIds, "Link actions..."))}</span>
-        <span class="picker-chevron" aria-hidden="true">▾</span>
-      </button>
-    </div>` : ""}
     <div id="lf-status-container"></div>
   `;
 
@@ -15550,11 +15895,50 @@ function openNamed(key, id, _mode = null) {
     label: "Name",
     ph: K.ph || (key === "types" ? STRINGS.placeholders.locationName : STRINGS.placeholders.jobName),
     required: true
-  }], initial, onFieldChange, statusInit(x, L, names));
+  }], initial, onFieldChange, statusInit(x, L, names), { isPublished: isNamedPublished });
 
   validate();
 
   if (hasActions) {
+    const updateNamedMainSettingsUI = () => {
+      const card = $("#named-main-settings");
+      if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
+      const btn = $("#named-main-settings-lock-btn");
+      if (btn) {
+        btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
+        btn.setAttribute("aria-pressed", isMainSettingsLocked);
+        btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+        btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
+        const emoji = $(".lock-emoji", btn);
+        if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
+        const lbl = $(".lock-label", btn);
+        if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
+      }
+      const pickAct = $("#btn-pick-named-actions");
+      if (pickAct) pickAct.disabled = isMainSettingsLocked;
+    };
+    const btnNamedLock = $("#named-main-settings-lock-btn");
+    if (btnNamedLock) {
+      btnNamedLock.onclick = async () => {
+        if (isMainSettingsLocked) {
+          const ok = await promptMainSettingsUnlock({
+            title: `Unlock ${K.one} Settings?`,
+            message: `This item has published translations. Changing linked actions affects all languages.\n\nUnlock main settings for editing?`
+          });
+          if (ok) {
+            isMainSettingsLocked = false;
+            updateNamedMainSettingsUI();
+            toast("Main settings unlocked.", { type: "info" });
+          }
+        } else {
+          isMainSettingsLocked = true;
+          updateNamedMainSettingsUI();
+          toast("Main settings locked.", { type: "info" });
+        }
+      };
+    }
+    updateNamedMainSettingsUI();
+
     const btnPick = $("#btn-pick-named-actions");
     if (btnPick) {
       btnPick.onclick = async () => {
@@ -15953,25 +16337,34 @@ function openTip(id, _mode = null) {
   L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
   let curCat = t.category || "habit";
 
+  const isTipPublished = isItemPublished("tips", t);
+  let isMainSettingsLocked = isTipPublished;
   const title = id ? `${STRINGS.common.edit} tip` : `${STRINGS.common.add} tip`;
   const bodyHtml = `
+    ${renderMainSettingsCard({
+      id: "tip-main-settings",
+      title: "Main Settings",
+      isLocked: isMainSettingsLocked,
+      contentHtml: `
+        <div class="f" style="margin:4px 0">
+          <div class="f-head"><label class="f-label">Category</label></div>
+          <input type="hidden" id="t-cat" value="${esc(curCat)}">
+          <div class="segmented-ctrl" role="radiogroup" aria-label="Tip category" id="t-cat-ctrl" style="margin-top:4px">
+            ${Object.entries(TIP_CATS).map(([k, v]) => `
+              <button type="button" role="radio" aria-checked="${k === curCat}" class="seg-item ${k === curCat ? 'is-selected' : ''}" data-val="${k}">${esc(v)}</button>
+            `).join("")}
+          </div>
+        </div>
+        <div class="f" style="margin:4px 0">
+          <div class="f-head">
+            <label for="t-src" class="f-label">Source reference</label>
+            <span class="char-count" id="cc-tip-src">0 chars</span>
+          </div>
+          <input type="text" id="t-src" value="${esc(t.source || "")}" placeholder="${esc(STRINGS.placeholders.tipSource)}" autocomplete="off" autocapitalize="sentences">
+        </div>
+      `
+    })}
     ${langFieldsHtml()}
-    <div class="f">
-      <div class="f-head"><label class="f-label">Category</label></div>
-      <input type="hidden" id="t-cat" value="${esc(curCat)}">
-      <div class="segmented-ctrl" role="radiogroup" aria-label="Tip category" id="t-cat-ctrl" style="margin-top:4px">
-        ${Object.entries(TIP_CATS).map(([k, v]) => `
-          <button type="button" role="radio" aria-checked="${k === curCat}" class="seg-item ${k === curCat ? 'is-selected' : ''}" data-val="${k}">${esc(v)}</button>
-        `).join("")}
-      </div>
-    </div>
-    <div class="f">
-      <div class="f-head">
-        <label for="t-src" class="f-label">Source reference</label>
-        <span class="char-count" id="cc-tip-src">0 chars</span>
-      </div>
-      <input type="text" id="t-src" value="${esc(t.source || "")}" placeholder="${esc(STRINGS.placeholders.tipSource)}" autocomplete="off" autocapitalize="sentences">
-    </div>
     <div id="lf-status-container"></div>
   `;
 
@@ -16023,7 +16416,7 @@ function openTip(id, _mode = null) {
     label: "Tip",
     ph: STRINGS.placeholders.tipText,
     maxChars: 200
-  }], initial, onFieldChange, statusInit(t, L, t.texts || {}));
+  }], initial, onFieldChange, statusInit(t, L, t.texts || {}), { isPublished: isTipPublished });
 
   $$("#t-cat-ctrl .seg-item").forEach(btn => {
     btn.onclick = () => {
@@ -16048,6 +16441,46 @@ function openTip(id, _mode = null) {
       onFieldChange();
     };
   }
+
+  const updateTipMainSettingsUI = () => {
+    const card = $("#tip-main-settings");
+    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
+    const btn = $("#tip-main-settings-lock-btn");
+    if (btn) {
+      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
+      btn.setAttribute("aria-pressed", isMainSettingsLocked);
+      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
+      const emoji = $(".lock-emoji", btn);
+      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
+      const lbl = $(".lock-label", btn);
+      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
+    }
+    const srcEl = $("#t-src");
+    if (srcEl) srcEl.disabled = isMainSettingsLocked;
+    $("#t-cat-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+  };
+  const btnTipLock = $("#tip-main-settings-lock-btn");
+  if (btnTipLock) {
+    btnTipLock.onclick = async () => {
+      if (isMainSettingsLocked) {
+        const ok = await promptMainSettingsUnlock({
+          title: "Unlock Tip Settings?",
+          message: "This tip has published translations. Changing category or source reference affects all languages.\n\nUnlock main settings for editing?"
+        });
+        if (ok) {
+          isMainSettingsLocked = false;
+          updateTipMainSettingsUI();
+          toast("Main settings unlocked.", { type: "info" });
+        }
+      } else {
+        isMainSettingsLocked = true;
+        updateTipMainSettingsUI();
+        toast("Main settings locked.", { type: "info" });
+      }
+    };
+  }
+  updateTipMainSettingsUI();
 
   validate();
 
@@ -16244,68 +16677,77 @@ function openEvent(id, preset = null, _mode = null) {
   const curWd = r.weekday || 5;
   const curBefore = e.remindDaysBefore ?? 1;
 
+  const isEventPublished = isItemPublished("events", e);
+  let isMainSettingsLocked = isEventPublished;
   const title = id ? `${STRINGS.common.edit} event` : `${STRINGS.common.add} event`;
   const bodyHtml = `
-    ${langFieldsHtml()}
-    <div class="f">
-      <div class="f-head"><label class="f-label">Repeats</label></div>
-      <input type="hidden" id="e-type" value="${curType}">
-      <div class="segmented-ctrl" role="radiogroup" aria-label="Repeats rule" id="e-type-ctrl" style="margin-top:4px">
-        <button type="button" role="radio" aria-checked="${curType === 'hijri'}" class="seg-item ${curType === 'hijri' ? 'is-selected' : ''}" data-val="hijri">On a Hijri date</button>
-        <button type="button" role="radio" aria-checked="${curType === 'weekly'}" class="seg-item ${curType === 'weekly' ? 'is-selected' : ''}" data-val="weekly">Every week</button>
-      </div>
-    </div>
-    <div class="grid2" id="e-hijri">
-      <div class="f" style="grid-column: 1 / -1">
-        <div class="f-head"><label for="e-date-picker" class="f-label">Gregorian date (converts to Hijri)</label></div>
-        <input type="date" id="e-date-picker" value="${preset?.dateIso || ""}" style="width:100%">
-      </div>
-      <div class="f">
-        <div class="f-head"><label class="f-label">Month</label></div>
-        <input type="hidden" id="e-month" value="${curMonth}">
-        <button type="button" class="picker-trigger-btn" id="btn-pick-month" aria-haspopup="dialog" style="margin-top:4px">
-          <span class="picker-btn-label" id="lbl-pick-month">${curMonth ? `${curMonth}. ${HIJRI[curMonth - 1]}` : "Every month"}</span>
-          <span class="picker-chevron" aria-hidden="true">▾</span>
-        </button>
-      </div>
-      <div class="f">
-        <div class="f-head"><label for="e-day" class="f-label">Day</label></div>
-        <input type="number" id="e-day" min="1" max="30" inputmode="numeric" value="${r.day || 1}">
-      </div>
-      <div class="f">
-        <div class="f-head"><label for="e-days" class="f-label">Length (days)</label></div>
-        <input type="number" id="e-days" min="1" max="30" inputmode="numeric" value="${r.days || 1}">
-      </div>
-    </div>
-    <div class="f" id="e-weekly">
-      <div class="f-head"><label class="f-label">Weekday</label></div>
-      <input type="hidden" id="e-wd" value="${curWd}">
-      <div class="chips-group" role="radiogroup" aria-label="Weekday" id="e-wd-chips" style="margin-top:4px">
-        ${WEEKDAYS.map((w, i) => `
-          <button type="button" role="radio" aria-checked="${(i + 1) === curWd}" class="radio-chip ${(i + 1) === curWd ? 'is-selected' : ''}" data-val="${i + 1}">${w}</button>
-        `).join("")}
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="f">
-        <div class="f-head"><label class="f-label">Remind</label></div>
-        <input type="hidden" id="e-before" value="${curBefore}">
-        <div class="segmented-ctrl" role="radiogroup" aria-label="Remind before" id="e-before-ctrl" style="margin-top:4px">
-          ${[0, 1, 2, 3].map(d => `
-            <button type="button" role="radio" aria-checked="${d === curBefore}" class="seg-item ${d === curBefore ? 'is-selected' : ''}" data-val="${d}">${d ? `${d}d before` : "On day"}</button>
-          `).join("")}
+    ${renderMainSettingsCard({
+      id: "event-main-settings",
+      title: "Main Settings",
+      isLocked: isMainSettingsLocked,
+      contentHtml: `
+        <div class="f" style="margin:4px 0">
+          <div class="f-head"><label class="f-label">Repeats</label></div>
+          <input type="hidden" id="e-type" value="${curType}">
+          <div class="segmented-ctrl" role="radiogroup" aria-label="Repeats rule" id="e-type-ctrl" style="margin-top:4px">
+            <button type="button" role="radio" aria-checked="${curType === 'hijri'}" class="seg-item ${curType === 'hijri' ? 'is-selected' : ''}" data-val="hijri">On a Hijri date</button>
+            <button type="button" role="radio" aria-checked="${curType === 'weekly'}" class="seg-item ${curType === 'weekly' ? 'is-selected' : ''}" data-val="weekly">Every week</button>
+          </div>
         </div>
-      </div>
-      <div class="f">
-        <div class="f-head"><label for="e-time" class="f-label">Notify at (user's local time)</label></div>
-        <input type="time" id="e-time" value="${esc(e.notifyTime || "09:00")}">
-      </div>
-    </div>
-    <div class="f-switches-row" style="margin-top:4px">
-      <label class="chk switch-label">
-        <input type="checkbox" id="e-disp" ${e.disputed ? "checked" : ""}> <span>Scholarly difference of opinion</span>
-      </label>
-    </div>
+        <div class="grid2" id="e-hijri">
+          <div class="f" style="grid-column: 1 / -1">
+            <div class="f-head"><label for="e-date-picker" class="f-label">Gregorian date (converts to Hijri)</label></div>
+            <input type="date" id="e-date-picker" value="${preset?.dateIso || ""}" style="width:100%">
+          </div>
+          <div class="f">
+            <div class="f-head"><label class="f-label">Month</label></div>
+            <input type="hidden" id="e-month" value="${curMonth}">
+            <button type="button" class="picker-trigger-btn" id="btn-pick-month" aria-haspopup="dialog" style="margin-top:4px">
+              <span class="picker-btn-label" id="lbl-pick-month">${curMonth ? `${curMonth}. ${HIJRI[curMonth - 1]}` : "Every month"}</span>
+              <span class="picker-chevron" aria-hidden="true">▾</span>
+            </button>
+          </div>
+          <div class="f">
+            <div class="f-head"><label for="e-day" class="f-label">Day</label></div>
+            <input type="number" id="e-day" min="1" max="30" inputmode="numeric" value="${r.day || 1}">
+          </div>
+          <div class="f">
+            <div class="f-head"><label for="e-days" class="f-label">Length (days)</label></div>
+            <input type="number" id="e-days" min="1" max="30" inputmode="numeric" value="${r.days || 1}">
+          </div>
+        </div>
+        <div class="f" id="e-weekly">
+          <div class="f-head"><label class="f-label">Weekday</label></div>
+          <input type="hidden" id="e-wd" value="${curWd}">
+          <div class="chips-group" role="radiogroup" aria-label="Weekday" id="e-wd-chips" style="margin-top:4px">
+            ${WEEKDAYS.map((w, i) => `
+              <button type="button" role="radio" aria-checked="${(i + 1) === curWd}" class="radio-chip ${(i + 1) === curWd ? 'is-selected' : ''}" data-val="${i + 1}">${w}</button>
+            `).join("")}
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="f">
+            <div class="f-head"><label class="f-label">Remind</label></div>
+            <input type="hidden" id="e-before" value="${curBefore}">
+            <div class="segmented-ctrl" role="radiogroup" aria-label="Remind before" id="e-before-ctrl" style="margin-top:4px">
+              ${[0, 1, 2, 3].map(d => `
+                <button type="button" role="radio" aria-checked="${d === curBefore}" class="seg-item ${d === curBefore ? 'is-selected' : ''}" data-val="${d}">${d ? `${d}d before` : "On day"}</button>
+              `).join("")}
+            </div>
+          </div>
+          <div class="f">
+            <div class="f-head"><label for="e-time" class="f-label">Notify at (user's local time)</label></div>
+            <input type="time" id="e-time" value="${esc(e.notifyTime || "09:00")}">
+          </div>
+        </div>
+        <div class="f-switches-row" style="margin-top:4px">
+          <label class="chk switch-label">
+            <input type="checkbox" id="e-disp" ${e.disputed ? "checked" : ""}> <span>Scholarly difference of opinion</span>
+          </label>
+        </div>
+      `
+    })}
+    ${langFieldsHtml()}
     <div id="lf-status-container"></div>
   `;
 
@@ -16373,7 +16815,7 @@ function openEvent(id, preset = null, _mode = null) {
     label: "Name",
     ph: STRINGS.placeholders.eventName,
     required: true
-  }], initial, onFieldChange, statusInit(e, L, names));
+  }], initial, onFieldChange, statusInit(e, L, names), { isPublished: isEventPublished });
 
   $$("#e-type-ctrl .seg-item").forEach(btn => {
     btn.onclick = () => {
@@ -16455,6 +16897,50 @@ function openEvent(id, preset = null, _mode = null) {
     const el = $(sel);
     if (el) el.oninput = el.onchange = onFieldChange;
   });
+
+  const updateEventMainSettingsUI = () => {
+    const card = $("#event-main-settings");
+    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
+    const btn = $("#event-main-settings-lock-btn");
+    if (btn) {
+      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
+      btn.setAttribute("aria-pressed", isMainSettingsLocked);
+      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
+      const emoji = $(".lock-emoji", btn);
+      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
+      const lbl = $(".lock-label", btn);
+      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
+    }
+    $("#e-type-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $("#e-before-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $("#e-wd-chips .radio-chip").forEach(b => { b.disabled = isMainSettingsLocked; });
+    ["#e-date-picker", "#btn-pick-month", "#e-day", "#e-days", "#e-time", "#e-disp"].forEach(sel => {
+      const el = $(sel);
+      if (el) el.disabled = isMainSettingsLocked;
+    });
+  };
+  const btnEventLock = $("#event-main-settings-lock-btn");
+  if (btnEventLock) {
+    btnEventLock.onclick = async () => {
+      if (isMainSettingsLocked) {
+        const ok = await promptMainSettingsUnlock({
+          title: "Unlock Event Settings?",
+          message: "This event has published translations. Changing date recurrence, timing or notifications affects all languages.\n\nUnlock main settings for editing?"
+        });
+        if (ok) {
+          isMainSettingsLocked = false;
+          updateEventMainSettingsUI();
+          toast("Main settings unlocked.", { type: "info" });
+        }
+      } else {
+        isMainSettingsLocked = true;
+        updateEventMainSettingsUI();
+        toast("Main settings locked.", { type: "info" });
+      }
+    };
+  }
+  updateEventMainSettingsUI();
 
   validate();
 
