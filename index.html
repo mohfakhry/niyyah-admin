@@ -2755,15 +2755,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: #fff;
   }
 
-  .tree-folder-toggle-all {
-    margin-inline-start: 8px;
-    flex-shrink: 0;
-    font-size: 12px;
-    padding: 4px 8px;
-    height: auto;
-    min-height: 28px;
-    border-radius: var(--radius-sm);
-  }
+
 
   .tree-picker-footer {
     flex-shrink: 0;
@@ -3511,9 +3503,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .editor-toggle-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-top: 12px;
-    margin-bottom: 8px;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 6px;
   }
   @media (max-width: 300px) {
     .editor-toggle-grid {
@@ -3530,12 +3522,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     box-sizing: border-box;
-    height: 40px;
+    height: 34px;
     min-height: 0 !important;
-    max-height: 40px;
-    padding: 4px 8px !important;
+    max-height: 34px;
+    padding: 2px 8px !important;
     margin: 0 !important;
     background: var(--card);
     border: 1px solid var(--line);
@@ -3560,8 +3552,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: relative;
     z-index: 2;
     margin: 0;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
   }
   .editor-toggle-tile:has(input:checked) {
@@ -3575,10 +3567,89 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1.15;
     color: var(--ink);
+  }
+
+  /* Published Niyyah Locked State & Banner */
+  .editor-published-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: var(--gold-soft, #fff9db);
+    border: 1px solid var(--gold, #fab005);
+    border-radius: var(--radius-sm, 6px);
+    color: var(--ink);
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+  body.dark .editor-published-banner {
+    background: rgba(250, 176, 5, 0.12);
+    border-color: rgba(250, 176, 5, 0.4);
+    color: var(--sand, #f8f9fa);
+  }
+  .published-warning-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 200px;
+  }
+  .published-warning-main .warning-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .published-warning-main .warning-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .published-warning-main .warning-title {
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+  .published-warning-main .warning-desc {
+    font-size: 12px;
+    line-height: 1.3;
+    opacity: 0.9;
+  }
+  .published-warning-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .editor-page.published-locked .editor-body textarea,
+  .editor-page.published-locked .editor-body input:not([type="checkbox"]) {
+    cursor: default;
+    background: var(--sand);
+    border-color: var(--line);
+  }
+  body.dark .editor-page.published-locked .editor-body textarea,
+  body.dark .editor-page.published-locked .editor-body input:not([type="checkbox"]) {
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .editor-page.published-locked .editor-toggle-tile {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .editor-page.published-locked .picker-trigger-btn {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  .editor-page.published-locked .btn-add-situation,
+  .editor-page.published-locked .btn-del-situation {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 
   .editor-sections-stack {
@@ -7955,6 +8026,9 @@ function treePickerSheet(config = {}) {
       ancestorsMap.set(String(a.id), pList);
     });
 
+    // Track previously chosen children before parent was checked (to revert upon unchecking)
+    const previousChildrenSelection = new Map();
+
     // Initial expansion: folders containing selected actions start expanded
     const userExpandedFolderIds = new Set();
     initialSelected.forEach(id => {
@@ -8165,11 +8239,6 @@ function treePickerSheet(config = {}) {
             </div>
             ${row.action.icon ? `<span class="tree-node-icon" aria-hidden="true">${esc(row.action.icon)}</span>` : ""}
             <span class="tree-label ${isRtl ? "rtl" : ""}">${highlightSearch(row.displayName, q)}${altMatch ? ` <span class="tree-sub-match ${isAltRtl ? "rtl" : ""}">(${highlightSearch(altMatch, q)})</span>` : ""}</span>
-            ${row.isFolder && !isReadOnly ? `
-              <button type="button" class="btn tree-folder-toggle-all" data-toggle-all-id="${esc(row.id)}">
-                ${row.allDescChecked ? "Deselect all" : "Select all"}
-              </button>
-            ` : ""}
           </div>
         `;
       }).join("");
@@ -8205,6 +8274,40 @@ function treePickerSheet(config = {}) {
         treeEl.scrollTop = prevScroll;
         updateIndeterminateStates();
       }
+    }
+
+    function toggleActionSelection(actId) {
+      if (isReadOnly) return;
+      const isFolder = isFolderNode(actId);
+      const desc = isFolder ? (descendantsMap.get(actId) || []) : [];
+
+      if (currentSelected.has(actId)) {
+        // Uncheck parent action: revert to previously chosen children action
+        currentSelected.delete(actId);
+        if (isFolder) {
+          const prevSet = previousChildrenSelection.get(actId);
+          desc.forEach(dId => {
+            if (prevSet && prevSet.has(dId)) {
+              currentSelected.add(dId);
+            } else {
+              currentSelected.delete(dId);
+            }
+          });
+          previousChildrenSelection.delete(actId);
+        }
+      } else {
+        // Checking parent action: select all its children (and remember previously chosen children)
+        if (isFolder) {
+          const prevChosen = desc.filter(dId => currentSelected.has(dId));
+          previousChildrenSelection.set(actId, new Set(prevChosen));
+          currentSelected.add(actId);
+          desc.forEach(dId => currentSelected.add(dId));
+        } else {
+          currentSelected.add(actId);
+        }
+      }
+      updateHeaderCount();
+      refreshList();
     }
 
     function focusActiveRow(visibleRows) {
@@ -8377,26 +8480,6 @@ function treePickerSheet(config = {}) {
             return;
           }
 
-          // Folder Select all / Deselect all click
-          const toggleAllBtn = e.target.closest(".tree-folder-toggle-all");
-          if (toggleAllBtn) {
-            e.stopPropagation();
-            if (isReadOnly) return;
-            const fId = toggleAllBtn.dataset.toggleAllId;
-            const desc = descendantsMap.get(fId) || [];
-            const checkedCount = desc.filter(dId => currentSelected.has(dId)).length;
-            if (checkedCount === desc.length) {
-              desc.forEach(dId => currentSelected.delete(dId));
-              currentSelected.delete(fId);
-            } else {
-              desc.forEach(dId => currentSelected.add(dId));
-              currentSelected.add(fId);
-            }
-            updateHeaderCount();
-            refreshList();
-            return;
-          }
-
           // Row click
           const row = e.target.closest(".tree-row");
           if (row) {
@@ -8404,14 +8487,7 @@ function treePickerSheet(config = {}) {
             const actId = row.dataset.id;
             const idx = parseInt(row.dataset.idx, 10);
             activeIndex = isNaN(idx) ? -1 : idx;
-
-            if (currentSelected.has(actId)) {
-              currentSelected.delete(actId);
-            } else {
-              currentSelected.add(actId);
-            }
-            updateHeaderCount();
-            refreshList();
+            toggleActionSelection(actId);
           }
         };
       }
@@ -8479,13 +8555,7 @@ function treePickerSheet(config = {}) {
         if (isReadOnly) return;
         if (activeIndex >= 0 && activeIndex < visibleRows.length) {
           const row = visibleRows[activeIndex];
-          if (currentSelected.has(row.id)) {
-            currentSelected.delete(row.id);
-          } else {
-            currentSelected.add(row.id);
-          }
-          updateHeaderCount();
-          refreshList();
+          toggleActionSelection(row.id);
         }
       } else if (e.key === "Enter" && !isInputFocused) {
         e.preventDefault();
@@ -9239,7 +9309,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
               <button type="button" role="radio" aria-checked="${isSel}"
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
-                      ${isReview ? 'aria-disabled="true"' : ""}>
+                      ${(isReview || isPublishedLocked) ? 'aria-disabled="true"' : ""}>
                 ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
@@ -9251,6 +9321,10 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {})
     const ctrl = $("#lf-status-ctrl");
     if (ctrl) {
       const applyStatus = newSt => {
+        if (isPublishedLocked) {
+          toast("This niyyah is published. Mark as draft to edit.", true);
+          return;
+        }
         if (activeEditorLockState && activeEditorLockState.mode === "review") return;
         if (status[cur] === newSt) return;
         status[cur] = newSt;
@@ -14243,6 +14317,15 @@ function openNiyyah(id, _mode = null) {
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
   const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, hasChildren: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
 
+  const isPublished = Boolean(
+    id && n && (
+      n.status === "published" ||
+      hasStatus(n, "published") ||
+      Object.values(n.translations || {}).some(t => t.status === "published")
+    )
+  );
+  let isPublishedLocked = isPublished;
+
   let curJobIds = [...(n.jobIds || [])];
   let curMaritalIds = [...(n.maritalStatusIds || [])];
   let curActionIds = [...(n.actionIds || [])];
@@ -14278,6 +14361,20 @@ function openNiyyah(id, _mode = null) {
   const initEventOn = curEventIds.length > 0;
 
   const bodyHtml = `
+    <div class="editor-published-banner" id="d-published-banner" ${isPublishedLocked ? "" : "style=\"display:none;\""} role="alert">
+      <div class="published-warning-main">
+        <span class="warning-icon" aria-hidden="true">⚠️</span>
+        <div class="warning-copy">
+          <strong class="warning-title">Published Niyyah</strong>
+          <span class="warning-desc">All edits are locked because this niyyah is published.</span>
+        </div>
+      </div>
+      <div class="published-warning-actions">
+        <button type="button" class="btn small primary" id="btn-mark-draft">Mark as draft</button>
+        <button type="button" class="btn small" id="btn-published-cancel">Cancel</button>
+      </div>
+    </div>
+
     <div class="lpanel" id="l-panel"></div>
 
     <div class="editor-toggle-grid">
@@ -14354,6 +14451,10 @@ function openNiyyah(id, _mode = null) {
     bodyHtml,
     saveLabel: STRINGS.common.save
   });
+  if (isPublishedLocked) {
+    const pageEl = $(".editor-page", dlg);
+    if (pageEl) pageEl.classList.add("published-locked");
+  }
 
   const setInlineErr = (sel, msg) => {
     const el = $(sel);
@@ -14369,6 +14470,10 @@ function openNiyyah(id, _mode = null) {
 
   const validate = () => {
     capture();
+    if (isPublishedLocked) {
+      setSaveValidity("This niyyah is published. Mark as draft to edit.");
+      return false;
+    }
     const hasText = L.some(l => draft[l.code]?.text?.trim()?.length > 0);
     if (!hasText) {
       setInlineErr("#err-niyyah-jobs", "");
@@ -14560,14 +14665,14 @@ function openNiyyah(id, _mode = null) {
                   autocomplete="off"
                   autocapitalize="sentences"
                   enterkeyhint="next"
-                  ${isReview ? "readonly" : ""}>${esc(d.text)}</textarea>
+                  ${(isReview || isPublishedLocked) ? "readonly" : ""}>${esc(d.text)}</textarea>
         <small class="lwarn" id="l-warn" hidden></small>
       </div>
 
       <div class="f">
         <div class="f-head" style="align-items:center !important">
           <label class="f-label">Sources</label>
-          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${isReview ? "disabled style='display:none;'" : ""}>＋</button>
+          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${(isReview || isPublishedLocked) ? "disabled style='display:none;'" : ""}>＋</button>
         </div>
         ${d.sources.map((s, i) => {
           const hideDel = d.sources.length === 1 && !s.trim();
@@ -14581,8 +14686,8 @@ function openNiyyah(id, _mode = null) {
                       autocomplete="off"
                       enterkeyhint="next"
                       data-idx="${i}"
-                      ${isReview ? "readonly" : ""}>${esc(s)}</textarea>
-            ${isReview ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
+                      ${(isReview || isPublishedLocked) ? "readonly" : ""}>${esc(s)}</textarea>
+            ${(isReview || isPublishedLocked) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
           </div>
         `;
         }).join("")}
@@ -14629,7 +14734,7 @@ function openNiyyah(id, _mode = null) {
     }
 
     const addSrcBtn = $("#l-addsrc");
-    if (addSrcBtn && !isReview) {
+    if (addSrcBtn && !isReview && !isPublishedLocked) {
       addSrcBtn.onclick = () => {
         capture();
         draft[cur].sources.push("");
@@ -14761,19 +14866,113 @@ function openNiyyah(id, _mode = null) {
     }
   };
 
+  const unlockEditorControls = () => {
+    const pageEl = $(".editor-page", dlg);
+    if (pageEl) pageEl.classList.remove("published-locked");
+    const banner = $("#d-published-banner");
+    if (banner) banner.style.display = "none";
+
+    // Re-enable toggle checkboxes
+    const toggles = [
+      "#n-gen", "#n-job-toggle", "#n-marital-toggle",
+      "#n-children-toggle", "#n-chain-toggle", "#n-event-toggle"
+    ];
+    toggles.forEach(sel => {
+      const el = $(sel);
+      if (el) el.disabled = false;
+    });
+
+    paintPanel();
+    paintStatus();
+    paintSituations();
+    validate();
+  };
+
+  const lockEditorControls = () => {
+    const pageEl = $(".editor-page", dlg);
+    if (pageEl) pageEl.classList.add("published-locked");
+    const banner = $("#d-published-banner");
+    if (banner) banner.style.display = "";
+
+    const toggles = [
+      "#n-gen", "#n-job-toggle", "#n-marital-toggle",
+      "#n-children-toggle", "#n-chain-toggle", "#n-event-toggle"
+    ];
+    toggles.forEach(sel => {
+      const el = $(sel);
+      if (el) el.disabled = true;
+    });
+
+    paintPanel();
+    paintStatus();
+    paintSituations();
+    validate();
+  };
+
+  // Wire published banner buttons
+  const btnMarkDraft = $("#btn-mark-draft");
+  if (btnMarkDraft) {
+    btnMarkDraft.onclick = () => {
+      isPublishedLocked = false;
+      L.forEach(l => {
+        if (draft[l.code].status === "published") {
+          draft[l.code].status = "draft";
+        }
+      });
+      unlockEditorControls();
+      dlgDirty = true;
+      toast("Marked as draft. Edits unlocked.", { type: "info" });
+    };
+  }
+
+  const btnPubCancel = $("#btn-published-cancel");
+  if (btnPubCancel) {
+    btnPubCancel.onclick = () => {
+      requestClose();
+    };
+  }
+
   paintTabs();
   paintPanel();
   paintStatus();
   paintSituations();
+  if (isPublishedLocked) {
+    lockEditorControls();
+  }
   updatePinnedNiyyah();
   validate();
 
-  $("#n-gen").onchange = onFieldChange;
-  if ($("#n-children-toggle")) $("#n-children-toggle").onchange = onFieldChange;
+  $("#n-gen").onchange = (e) => {
+    if (isPublishedLocked) {
+      e.preventDefault();
+      $("#n-gen").checked = !$("#n-gen").checked;
+      toast("This niyyah is published. Mark as draft to edit.", true);
+      return;
+    }
+    onFieldChange();
+  };
+
+  if ($("#n-children-toggle")) {
+    $("#n-children-toggle").onchange = (e) => {
+      if (isPublishedLocked) {
+        e.preventDefault();
+        $("#n-children-toggle").checked = !$("#n-children-toggle").checked;
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
+      onFieldChange();
+    };
+  }
 
   const jobToggle = $("#n-job-toggle");
   if (jobToggle) {
-    jobToggle.onchange = () => {
+    jobToggle.onchange = (e) => {
+      if (isPublishedLocked) {
+        e.preventDefault();
+        jobToggle.checked = !jobToggle.checked;
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isJob = jobToggle.checked;
       const sec = $("#sec-niyyah-jobs");
       if (sec) sec.style.display = isJob ? "" : "none";
@@ -14790,6 +14989,10 @@ function openNiyyah(id, _mode = null) {
   const btnPickJobs = $("#btn-pick-jobs");
   if (btnPickJobs) {
     btnPickJobs.onclick = async () => {
+      if (isPublishedLocked) {
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
       const sortedJobs = [...jobs].sort(compareByDisplayName);
       const jobOpts = sortedJobs.map(j => ({
@@ -14816,7 +15019,13 @@ function openNiyyah(id, _mode = null) {
 
   const maritalToggle = $("#n-marital-toggle");
   if (maritalToggle) {
-    maritalToggle.onchange = () => {
+    maritalToggle.onchange = (e) => {
+      if (isPublishedLocked) {
+        e.preventDefault();
+        maritalToggle.checked = !maritalToggle.checked;
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isMarital = maritalToggle.checked;
       const sec = $("#sec-niyyah-marital");
       if (sec) sec.style.display = isMarital ? "" : "none";
@@ -14827,6 +15036,10 @@ function openNiyyah(id, _mode = null) {
   const btnPickMarital = $("#btn-pick-marital");
   if (btnPickMarital) {
     btnPickMarital.onclick = async () => {
+      if (isPublishedLocked) {
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
       const sortedMarital = [...(typeof maritalStatuses !== "undefined" ? maritalStatuses : [])].sort(compareByDisplayName);
       const maritalOpts = sortedMarital.map(m => ({
@@ -14834,9 +15047,9 @@ function openNiyyah(id, _mode = null) {
         label: getItemDisplayName(m)
       }));
       const picked = await pickerSheet(maritalOpts, {
-        multi: true,
+        multi: false,
         search: maritalOpts.length > 8,
-        selected: curMaritalIds,
+        selected: curMaritalIds.length ? curMaritalIds[0] : null,
         title: "Marital status",
         anchorEl: btnPickMarital,
         readOnly: isReview,
@@ -14844,7 +15057,7 @@ function openNiyyah(id, _mode = null) {
         ...getPickerContext()
       });
       if (picked !== null && picked !== undefined) {
-        curMaritalIds = Array.isArray(picked) ? picked : [];
+        curMaritalIds = picked ? [picked] : [];
         $("#lbl-pick-marital").textContent = formatMaritalLabel(curMaritalIds);
         dlgDirty = true;
         onFieldChange();
@@ -14853,6 +15066,10 @@ function openNiyyah(id, _mode = null) {
   }
 
   $("#btn-pick-actions").onclick = async () => {
+    if (isPublishedLocked) {
+      toast("This niyyah is published. Mark as draft to edit.", true);
+      return;
+    }
     const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
     const picked = await treePickerSheet({
       selected: curActionIds,
@@ -14870,7 +15087,13 @@ function openNiyyah(id, _mode = null) {
 
   const chainToggle = $("#n-chain-toggle");
   if (chainToggle) {
-    chainToggle.onchange = () => {
+    chainToggle.onchange = (e) => {
+      if (isPublishedLocked) {
+        e.preventDefault();
+        chainToggle.checked = !chainToggle.checked;
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isChain = chainToggle.checked;
       const sec = $("#sec-niyyah-chain");
       if (sec) sec.style.display = isChain ? "" : "none";
@@ -14912,6 +15135,10 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-pick-sit-before").forEach(btn => {
       btn.onclick = async () => {
+        if (isPublishedLocked) {
+          toast("This niyyah is published. Mark as draft to edit.", true);
+          return;
+        }
         const idx = +btn.dataset.sitIdx;
         const sit = curSituations[idx];
         if (!sit) return;
@@ -14934,6 +15161,10 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-pick-sit-after").forEach(btn => {
       btn.onclick = async () => {
+        if (isPublishedLocked) {
+          toast("This niyyah is published. Mark as draft to edit.", true);
+          return;
+        }
         const idx = +btn.dataset.sitIdx;
         const sit = curSituations[idx];
         if (!sit) return;
@@ -14956,6 +15187,10 @@ function openNiyyah(id, _mode = null) {
 
     container.querySelectorAll(".btn-del-situation").forEach(btn => {
       btn.onclick = (e) => {
+        if (isPublishedLocked) {
+          toast("This niyyah is published. Mark as draft to edit.", true);
+          return;
+        }
         const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
         if (reviewNow) return;
         const idx = +btn.dataset.delSit;
@@ -14985,6 +15220,10 @@ function openNiyyah(id, _mode = null) {
   const btnAddSit = $("#btn-add-situation");
   if (btnAddSit) {
     btnAddSit.onclick = () => {
+      if (isPublishedLocked) {
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
       if (reviewNow) return;
       if (curSituations.length >= 10) {
@@ -15004,7 +15243,13 @@ function openNiyyah(id, _mode = null) {
 
   const eventToggle = $("#n-event-toggle");
   if (eventToggle) {
-    eventToggle.onchange = () => {
+    eventToggle.onchange = (e) => {
+      if (isPublishedLocked) {
+        e.preventDefault();
+        eventToggle.checked = !eventToggle.checked;
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isEv = eventToggle.checked;
       const sec = $("#sec-niyyah-events");
       if (sec) sec.style.display = isEv ? "" : "none";
@@ -15015,6 +15260,10 @@ function openNiyyah(id, _mode = null) {
   const btnPickEvents = $("#btn-pick-events");
   if (btnPickEvents) {
     btnPickEvents.onclick = async () => {
+      if (isPublishedLocked) {
+        toast("This niyyah is published. Mark as draft to edit.", true);
+        return;
+      }
       const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
       const evOpts = [...events].sort(byOrder).map(e => ({
         value: e.id,
