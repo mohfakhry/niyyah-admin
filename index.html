@@ -3507,40 +3507,44 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: var(--ink);
   }
 
-  /* Compact settings block in Niyyah editor */
-  .editor-settings-block {
-    display: flex;
-    flex-direction: column;
+  /* Compact toggle grid & sections stack */
+  .editor-toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-top: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
-  .editor-toggle-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  @media (max-width: 300px) {
+    .editor-toggle-grid {
+      grid-template-columns: 1fr;
+    }
   }
-  .editor-settings-block .f-switches-row {
-    margin: 0 !important;
-    height: 36px;
-    min-height: 36px;
-    display: flex;
-    align-items: center;
+  @media (min-width: 721px) {
+    .editor-toggle-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .editor-toggle-tile {
     position: relative;
-  }
-  .editor-settings-block .switch-label {
-    position: relative;
-    margin: 0;
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 0 !important;
+    max-height: 40px;
+    padding: 4px 8px !important;
+    margin: 0 !important;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm, 6px);
     cursor: pointer;
-    font-weight: 500;
-    font-size: 14px;
-    color: var(--ink);
-    height: 36px;
+    user-select: none;
+    transition: background-color var(--trans-fast, 0.15s), border-color var(--trans-fast, 0.15s);
   }
-  .editor-settings-block .switch-label::before {
+  .editor-toggle-tile::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -3552,15 +3556,67 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     min-height: 44px;
     z-index: 1;
   }
-  .editor-settings-block .f {
+  .editor-toggle-tile input[type="checkbox"] {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .editor-toggle-tile:has(input:checked) {
+    background: var(--green-soft);
+    border-color: var(--green);
+  }
+  .editor-toggle-tile .editor-toggle-label {
+    position: relative;
+    z-index: 2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+
+  .editor-sections-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+  .editor-sections-stack .f {
     margin: 0 !important;
   }
-  .editor-settings-block .f-head {
+  .editor-sections-stack .f-head {
     margin-bottom: 2px !important;
   }
-  .editor-settings-block .picker-trigger-btn {
+  .editor-sections-stack .picker-trigger-btn {
     margin-top: 0 !important;
     min-height: 44px;
+  }
+
+  .editor-collapsible-section {
+    animation: sectionExpand 150ms ease-out;
+  }
+  @keyframes sectionExpand {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .editor-collapsible-section {
+      animation: none !important;
+      transition: none !important;
+    }
   }
 
   .situation-card {
@@ -5650,6 +5706,163 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .main-body {
     min-height: 0;
   }
+
+  /* Settings Speed Dial (Mobile) */
+  .settings-speed-dial {
+    position: fixed;
+    inset: 0;
+    z-index: 24;
+    pointer-events: none;
+  }
+  .settings-speed-dial:not([hidden]) {
+    pointer-events: auto;
+  }
+  .settings-speed-dial-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+  .settings-speed-dial:not([hidden]) .settings-speed-dial-backdrop {
+    opacity: 1;
+  }
+  .settings-speed-dial-menu {
+    position: fixed;
+    right: 18px;
+    bottom: calc(var(--bottom-bar-h, 60px) + env(safe-area-inset-bottom, 0px) + 82px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    z-index: 26;
+    transform: translateY(16px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 150ms cubic-bezier(0, 0, 0.2, 1), opacity 150ms ease;
+  }
+  .settings-speed-dial:not([hidden]) .settings-speed-dial-menu {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .speed-dial-pill {
+    height: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 18px 0 14px;
+    border-radius: 9999px;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    white-space: nowrap;
+    outline: none;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+  .speed-dial-pill:active {
+    transform: scale(0.96);
+  }
+  .speed-dial-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .fab-btn.is-active {
+    z-index: 27;
+    transform: rotate(45deg);
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Desktop Settings Add Popover */
+  .settings-top-row {
+    display: none;
+  }
+  .settings-add-wrap {
+    position: relative;
+    display: inline-block;
+  }
+  .settings-add-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+    min-width: 175px;
+    padding: 6px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .settings-add-popover[hidden] {
+    display: none !important;
+  }
+  .settings-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .settings-popover-item:hover,
+  .settings-popover-item:focus {
+    background: var(--bg-hover, var(--sheet-bg));
+  }
+  .popover-icon {
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  /* Marital card styling */
+  .card.marital-card {
+    min-height: 52px;
+  }
+  .card.marital-card .card-head {
+    align-items: center;
+  }
+
+  @media (min-width: 721px) {
+    .settings-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 6px;
+    }
+    .settings-speed-dial {
+      display: none !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .settings-speed-dial-backdrop,
+    .settings-speed-dial-menu,
+    .fab-btn.is-active,
+    .speed-dial-pill {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
 </style>
 </head>
 <body>
@@ -5828,6 +6041,19 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     </button>
   </nav>
   <button type="button" id="fab-create" class="fab-btn" aria-label="Add action" title="Add action">＋</button>
+  <div id="settings-speed-dial" class="settings-speed-dial" hidden>
+    <div id="settings-speed-dial-backdrop" class="settings-speed-dial-backdrop" aria-hidden="true"></div>
+    <div class="settings-speed-dial-menu" role="menu" aria-label="Add options">
+      <button type="button" class="speed-dial-pill" role="menuitem" data-act="settings-add-lang">
+        <span class="speed-dial-icon" aria-hidden="true">🌐</span>
+        <span>Language</span>
+      </button>
+      <button type="button" class="speed-dial-pill" role="menuitem" data-act="settings-add-marital">
+        <span class="speed-dial-icon" aria-hidden="true">💍</span>
+        <span>Marital status</span>
+      </button>
+    </div>
+  </div>
 </div>
 
 <input type="file" id="import-file" accept=".json,application/json" hidden>
@@ -5959,6 +6185,11 @@ const STRINGS = {
       title: "No professions yet",
       desc: "Add your first profession or load common roles.",
       btn: "Add starter jobs"
+    },
+    maritalStatuses: {
+      title: "No marital statuses yet",
+      desc: "Add marital statuses so niyyahs can target specific life stages.",
+      btn: "Add default list"
     },
     tips: {
       title: "No tips yet",
@@ -6129,7 +6360,7 @@ const COUNTRIES = [
 ];
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [], jobs = [], languages = [], tips = [], events = [];
+let actions = [], niyyahs = [], types = [], jobs = [], maritalStatuses = [], languages = [], tips = [], events = [];
 let listening = false;
 let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let calView = "cal", calSel = null, calRange = false, calCountry = "";
@@ -6162,7 +6393,7 @@ function getTabFilterChips(tab) {
   if (tab === "niyyahs") {
     if (s.status) chips.push({ key: "status", label: "Status", val: s.status.charAt(0).toUpperCase() + s.status.slice(1) });
     if (s.actionId) chips.push({ key: "actionId", label: "Action", val: actionLabel(s.actionId) });
-    if (s.scope) chips.push({ key: "scope", label: "Scope", val: s.scope === "general" ? "Fits any action" : (s.scope === "job" ? "Job specific" : "Linked to event") });
+    if (s.scope) chips.push({ key: "scope", label: "Scope", val: s.scope === "general" ? "Fits any action" : (s.scope === "job" ? "Job specific" : (s.scope === "marital" ? "Marital status" : "Linked to event")) });
   } else if (tab === "actions") {
     if (s.visible) chips.push({ key: "visible", label: "Visibility", val: s.visible === "inapp" ? "In app" : "Hidden" });
     if (s.restricted) chips.push({ key: "restricted", label: "Access", val: s.restricted === "jobonly" ? "Job-only" : "General" });
@@ -6447,6 +6678,10 @@ function popSheetHistoryIfNeeded() {
 window.addEventListener("popstate", (e) => {
   if (ignoringSheetPopstate) {
     ignoringSheetPopstate = false;
+    return;
+  }
+  if (isSettingsSpeedDialOpen()) {
+    closeSettingsSpeedDial(true);
     return;
   }
   if (dlgHelp && dlgHelp.open) {
@@ -7453,7 +7688,7 @@ function pickerSheet(options, config = {}) {
           <div class="picker-list" role="listbox" id="picker-list-box">
             ${filtered.length === 0 ? `
               <div style="padding: 32px 16px; text-align: center; color: var(--muted); font-size: 15px;">
-                No options match "${esc(searchQuery)}"
+                ${searchQuery.trim() ? `No options match "${esc(searchQuery)}"` : esc(config.emptyText || "No options available.")}
               </div>
             ` : filtered.map((opt, idx) => {
               const isSel = isMulti ? currentSelected.has(opt.value) : currentSelected === opt.value;
@@ -8489,6 +8724,7 @@ async function openFilterSheet(tab) {
           <button type="button" role="radio" aria-checked="${!state.scope}" class="seg-item ${!state.scope ? 'is-selected' : ''}" data-val="">All</button>
           <button type="button" role="radio" aria-checked="${state.scope === 'general'}" class="seg-item ${state.scope === 'general' ? 'is-selected' : ''}" data-val="general">Fits any action</button>
           <button type="button" role="radio" aria-checked="${state.scope === 'job'}" class="seg-item ${state.scope === 'job' ? 'is-selected' : ''}" data-val="job">Job specific</button>
+          <button type="button" role="radio" aria-checked="${state.scope === 'marital'}" class="seg-item ${state.scope === 'marital' ? 'is-selected' : ''}" data-val="marital">Marital status</button>
           <button type="button" role="radio" aria-checked="${state.scope === 'has-event'}" class="seg-item ${state.scope === 'has-event' ? 'is-selected' : ''}" data-val="has-event">Linked to event</button>
         </div>
       </div>
@@ -9229,6 +9465,7 @@ function startListening() {
   watch("locationTypes", v => (types = v));
   watch("languages", v => (languages = v));
   watch("jobTypes", v => (jobs = v));
+  watch("maritalStatuses", v => (maritalStatuses = v));
   watch("tips", v => (tips = v));
   watch("events", v => (events = v));
   watch("locks", v => {
@@ -9256,6 +9493,123 @@ function startListening() {
 /* ============================================================
    3. PHONE-FIRST & DESKTOP SHELL LOGIC
    ============================================================ */
+
+/* ============================================================
+   SETTINGS SPEED DIAL & DESKTOP POPOVER HELPERS
+   ============================================================ */
+let speedDialHistoryActive = false;
+
+function isSettingsSpeedDialOpen() {
+  const sd = $("#settings-speed-dial");
+  return !!(sd && !sd.hidden);
+}
+
+function openSettingsSpeedDial() {
+  closeSettingsPopover();
+  const sd = $("#settings-speed-dial");
+  const fab = $("#fab-create");
+  if (!sd || !fab) return;
+  sd.hidden = false;
+  fab.classList.add("is-active");
+  fab.setAttribute("aria-expanded", "true");
+  if (!speedDialHistoryActive) {
+    try {
+      history.pushState({ speedDialOpen: true }, "");
+      speedDialHistoryActive = true;
+    } catch (_) {}
+  }
+}
+
+function closeSettingsSpeedDial(fromPopstate = false) {
+  const sd = $("#settings-speed-dial");
+  const fab = $("#fab-create");
+  if (!sd || sd.hidden) return;
+  sd.hidden = true;
+  if (fab) {
+    fab.classList.remove("is-active");
+    if (currentTab === "settings") {
+      fab.setAttribute("aria-expanded", "false");
+    }
+  }
+  if (!fromPopstate && speedDialHistoryActive) {
+    speedDialHistoryActive = false;
+    if (history.state && history.state.speedDialOpen) {
+      ignoringSheetPopstate = true;
+      history.back();
+    }
+  } else if (fromPopstate) {
+    speedDialHistoryActive = false;
+  }
+}
+
+function toggleSettingsSpeedDial() {
+  if (isSettingsSpeedDialOpen()) {
+    closeSettingsSpeedDial();
+  } else {
+    openSettingsSpeedDial();
+  }
+}
+
+function isSettingsPopoverOpen() {
+  const pop = $("#settings-add-popover");
+  return !!(pop && !pop.hidden);
+}
+
+function openSettingsPopover() {
+  closeSettingsSpeedDial();
+  const pop = $("#settings-add-popover");
+  const btn = $("#btn-settings-add");
+  if (!pop) return;
+  pop.hidden = false;
+  if (btn) btn.setAttribute("aria-expanded", "true");
+  const firstItem = pop.querySelector(".settings-popover-item");
+  if (firstItem) firstItem.focus();
+}
+
+function closeSettingsPopover() {
+  const pop = $("#settings-add-popover");
+  const btn = $("#btn-settings-add");
+  if (!pop || pop.hidden) return;
+  pop.hidden = true;
+  if (btn) {
+    btn.setAttribute("aria-expanded", "false");
+    btn.focus();
+  }
+}
+
+function toggleSettingsPopover() {
+  if (isSettingsPopoverOpen()) {
+    closeSettingsPopover();
+  } else {
+    openSettingsPopover();
+  }
+}
+
+function handlePopoverKeyDown(e) {
+  const pop = $("#settings-add-popover");
+  if (!pop || pop.hidden) return;
+  const items = Array.from(pop.querySelectorAll(".settings-popover-item"));
+  const activeIdx = items.indexOf(document.activeElement);
+
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    const nextIdx = (activeIdx + 1) % items.length;
+    items[nextIdx].focus();
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    const prevIdx = (activeIdx - 1 + items.length) % items.length;
+    items[prevIdx].focus();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    closeSettingsPopover();
+  } else if (e.key === "Enter" || e.key === " ") {
+    if (activeIdx !== -1) {
+      e.preventDefault();
+      items[activeIdx].click();
+    }
+  }
+}
+
 function applyTab(name) {
   currentTab = name;
   syncHeaderSearchUI(name);
@@ -9302,12 +9656,21 @@ function applyTab(name) {
       jobs: "Add job",
       tips: "Add tip",
       events: "Add event",
-      settings: "Add language"
+      settings: "Add"
     };
     const fl = fabLabels[name] || "Add item";
     fab.setAttribute("aria-label", fl);
     fab.setAttribute("title", fl);
+    if (name === "settings") {
+      fab.setAttribute("aria-expanded", isSettingsSpeedDialOpen() ? "true" : "false");
+      fab.setAttribute("aria-haspopup", "menu");
+    } else {
+      fab.removeAttribute("aria-expanded");
+      fab.removeAttribute("aria-haspopup");
+      closeSettingsSpeedDial();
+    }
   }
+  closeSettingsPopover();
 
   // Ensure main transforms are clear if not in swipe animation
   const mainEl = document.querySelector("main");
@@ -9921,7 +10284,14 @@ function handleNewItemShortcut() {
     case "jobs": openNamed("jobs"); break;
     case "tips": openTip(); break;
     case "events": openEvent(); break;
-    case "settings": openLanguage(); break;
+    case "settings": {
+      if (window.innerWidth >= 721) {
+        toggleSettingsPopover();
+      } else {
+        toggleSettingsSpeedDial();
+      }
+      break;
+    }
   }
 }
 
@@ -9934,6 +10304,7 @@ const GATE_COLLECTIONS = [
   "locationTypes",
   "languages",
   "jobTypes",
+  "maritalStatuses",
   "tips",
   "events",
   "locks",
@@ -10199,6 +10570,16 @@ window.addEventListener("keydown", e => {
   const isInput = tag === "input" || tag === "textarea" || tag === "select" || active?.isContentEditable;
 
   if (e.key === "Escape") {
+    if (isSettingsSpeedDialOpen()) {
+      closeSettingsSpeedDial();
+      e.preventDefault();
+      return;
+    }
+    if (isSettingsPopoverOpen()) {
+      closeSettingsPopover();
+      e.preventDefault();
+      return;
+    }
     if (dlgDiscard.open) {
       e.preventDefault();
       e.stopPropagation();
@@ -10263,6 +10644,20 @@ if (shortcutsBtn) shortcutsBtn.onclick = openShortcutsSheet;
 const shortcutsTopBtn = $("#btn-shortcuts-top");
 if (shortcutsTopBtn) shortcutsTopBtn.onclick = openShortcutsSheet;
 
+
+const speedDialBackdrop = $("#settings-speed-dial-backdrop");
+if (speedDialBackdrop) {
+  speedDialBackdrop.addEventListener("click", () => closeSettingsSpeedDial());
+}
+
+document.addEventListener("keydown", handlePopoverKeyDown);
+
+document.addEventListener("click", (e) => {
+  if (isSettingsPopoverOpen() && !e.target.closest(".settings-add-wrap")) {
+    closeSettingsPopover();
+  }
+});
+
 const fabBtn = $("#fab-create");
 if (fabBtn) {
   fabBtn.onclick = () => {
@@ -10282,6 +10677,7 @@ function collOf(type) {
   if (type === "niyyahs" || type === "niyyah") return "niyyahs";
   if (type === "types" || type === "type" || type === "locationTypes") return "locationTypes";
   if (type === "jobs" || type === "job" || type === "jobTypes") return "jobTypes";
+  if (type === "maritalStatuses" || type === "maritalStatus") return "maritalStatuses";
   if (type === "tips" || type === "tip") return "tips";
   if (type === "events" || type === "event") return "events";
   return type;
@@ -10325,6 +10721,7 @@ function canonicalColl(typeOrColl) {
   if (typeOrColl === "niyyahs" || typeOrColl === "niyyah") return "niyyahs";
   if (typeOrColl === "types" || typeOrColl === "type" || typeOrColl === "locationTypes") return "locationTypes";
   if (typeOrColl === "jobs" || typeOrColl === "job" || typeOrColl === "jobTypes") return "jobTypes";
+  if (typeOrColl === "maritalStatuses" || typeOrColl === "maritalStatus") return "maritalStatuses";
   if (typeOrColl === "tips" || typeOrColl === "tip") return "tips";
   if (typeOrColl === "events" || typeOrColl === "event") return "events";
   return typeOrColl;
@@ -10969,6 +11366,7 @@ function updateLocalItem(coll, id, data) {
                coll === "niyyahs" ? niyyahs :
                (coll === "types" || coll === "locationTypes") ? types :
                (coll === "jobs" || coll === "jobTypes") ? jobs :
+               (coll === "maritalStatuses" || coll === "maritalStatus") ? maritalStatuses :
                coll === "tips" ? tips :
                coll === "events" ? events : null;
   if (!list) return;
@@ -11170,6 +11568,9 @@ async function executeEditorCreateItem({ coll, data, extraWrites = null, revExtr
   data.updatedBy = userEmail;
   data.updatedByName = userName;
   data.updatedAt = serverTimestamp();
+  if (!data.createdAt) {
+    data.createdAt = serverTimestamp();
+  }
 
   const newDocRef = doc(collection(db, canonical));
   const revData = {
@@ -11483,7 +11884,7 @@ document.addEventListener("pointerdown", (e) => {
     return;
   }
 
-  const control = e.target.closest("input, textarea, select, .picker-trigger-btn, .switch-label, #lf-status-container, #l-status-container, #l-addsrc, #n-add-src, .src-del, [data-rm], #btn-add-situation, .btn-del-situation");
+  const control = e.target.closest("input, textarea, select, .picker-trigger-btn, .switch-label, .editor-toggle-tile, #lf-status-container, #l-status-container, #l-addsrc, #n-add-src, .src-del, [data-rm], #btn-add-situation, .btn-del-situation");
   if (control) {
     e.preventDefault();
     e.stopPropagation();
@@ -11504,7 +11905,7 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  const control = e.target.closest("input, textarea, select, .picker-trigger-btn, .switch-label, #lf-status-container, #l-status-container, #l-addsrc, #n-add-src, .src-del, [data-rm], #btn-add-situation, .btn-del-situation");
+  const control = e.target.closest("input, textarea, select, .picker-trigger-btn, .switch-label, .editor-toggle-tile, #lf-status-container, #l-status-container, #l-addsrc, #n-add-src, .src-del, [data-rm], #btn-add-situation, .btn-del-situation");
   if (control) {
     e.preventDefault();
     e.stopPropagation();
@@ -11889,6 +12290,7 @@ function getItem(type, id) {
   if (c === "niyyahs") return niyyahs.find(x => String(x.id) === String(id));
   if (c === "locationTypes") return types.find(x => String(x.id) === String(id));
   if (c === "jobTypes") return jobs.find(x => String(x.id) === String(id));
+  if (c === "maritalStatuses") return maritalStatuses.find(x => String(x.id) === String(id));
   if (c === "tips") return tips.find(x => String(x.id) === String(id));
   if (c === "events") return events.find(x => String(x.id) === String(id));
   if (c === "languages") return languages.find(x => String(x.id) === String(id));
@@ -12178,6 +12580,7 @@ function openCardEditor(type, id) {
   else if (type === "niyyahs") openNiyyah(id);
   else if (type === "types") openNamed("types", id);
   else if (type === "jobs") openNamed("jobs", id);
+  else if (type === "maritalStatuses" || type === "maritalStatus") openNamed("maritalStatus", id);
   else if (type === "tips") openTip(id);
   else if (type === "events") openEvent(id);
   else if (type === "languages") openLanguage(id);
@@ -12341,6 +12744,16 @@ async function deleteItemWithUndo(type, id) {
       toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
       return;
     }
+  } else if (type === "maritalStatuses" || type === "maritalStatus") {
+    const referencingNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
+    const lockedNiyyah = referencingNiyyahs.find(n => {
+      const l = lockOf("niyyahs", n.id);
+      return l && !l.isMine;
+    });
+    if (lockedNiyyah) {
+      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      return;
+    }
   } else if (type === "languages") {
     const lang = languages.find(x => String(x.id) === String(id));
     if (lang) {
@@ -12399,6 +12812,12 @@ async function deleteItemWithUndo(type, id) {
         if (x.jobIds) x.jobIds = x.jobIds.filter(jId => jId !== id);
       });
     }
+    else if (type === "maritalStatuses" || type === "maritalStatus") {
+      maritalStatuses = maritalStatuses.filter(x => x.id !== id);
+      niyyahs.forEach(x => {
+        if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
+      });
+    }
     else if (type === "tips") tips = tips.filter(x => x.id !== id);
     else if (type === "events") events = events.filter(x => x.id !== id);
     else if (type === "languages") languages = languages.filter(x => x.id !== id);
@@ -12406,7 +12825,7 @@ async function deleteItemWithUndo(type, id) {
   };
   const restoreToLocal = () => {
     const restored = { id, ...copy };
-    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : (type === "tips" ? tips : (type === "events" ? events : languages)))));
+    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : (type === "tips" ? tips : (type === "events" ? events : languages))))));
     if (!targetList.some(x => x.id === id)) {
       if (origIdx >= 0 && origIdx <= targetList.length) targetList.splice(origIdx, 0, restored);
       else targetList.push(restored);
@@ -12451,6 +12870,12 @@ async function deleteItemWithUndo(type, id) {
         niyyahs.filter(x => (x.jobIds || []).includes(id))
           .forEach(x => {
             batch.update(doc(db, "niyyahs", x.id), { jobIds: arrayRemove(id) });
+          });
+      } else if (type === "maritalStatuses" || type === "maritalStatus") {
+        batch.delete(doc(db, "maritalStatuses", id));
+        niyyahs.filter(x => (x.maritalStatusIds || []).includes(id))
+          .forEach(x => {
+            batch.update(doc(db, "niyyahs", x.id), { maritalStatusIds: arrayRemove(id) });
           });
       } else {
         batch.delete(doc(db, coll, id));
@@ -12863,6 +13288,7 @@ function renderNiyyahs() {
     if (ac && !(n.actionIds || []).includes(ac)) return false;
     if (sc === "general" && !n.general) return false;
     if (sc === "job" && !(n.jobIds || []).length) return false;
+    if (sc === "marital" && !(n.maritalStatusIds || []).length) return false;
     if (sc === "has-event" && !(n.eventIds || []).length) return false;
     if (q && !haystack(n).includes(q)) return false;
     return true;
@@ -12973,7 +13399,23 @@ const KINDS = {
     hint: "Actions that belong to this job", add: "new-job", edit: "edit-job", del: "del-job", seed: "seed-jobs",
     list: () => jobs, empty: "No jobs yet.", seedLabel: "Add starter jobs",
     starter: ["Teacher", "Doctor or nurse", "Engineer or IT", "Driver", "Shop owner or trader", "Farmer", "Craftsman or laborer",
-              "Office employee", "Business owner", "Freelancer", "Student", "Homemaker", "Caregiver", "Job seeker", "Retired"] }
+              "Office employee", "Business owner", "Freelancer", "Student", "Homemaker", "Caregiver", "Job seeker", "Retired"] },
+  maritalStatus: {
+    coll: "maritalStatuses",
+    one: "marital status",
+    many: "Marital statuses",
+    ph: "e.g. Single",
+    hasActions: false,
+    list: () => maritalStatuses
+  },
+  maritalStatuses: {
+    coll: "maritalStatuses",
+    one: "marital status",
+    many: "Marital statuses",
+    ph: "e.g. Single",
+    hasActions: false,
+    list: () => maritalStatuses
+  }
 };
 
 function renderNamed(key) {
@@ -13228,7 +13670,7 @@ document.addEventListener("click", e => {
     "del-action", "del-niyyah", "del-type", "del-job", "del-lang", "del-tip", "del-event",
     "seed-actions", "seed-types", "seed-jobs", "seed-langs", "seed-events",
     "card-sheet-edit", "card-sheet-duplicate", "card-sheet-move", "card-sheet-publish", "card-sheet-delete",
-    "reparent-action", "lang-up", "lang-down"
+    "reparent-action", "lang-up", "lang-down", "settings-add-lang", "settings-add-marital", "edit-marital-status", "del-marital-status", "seed-marital-statuses"
   ]);
   if (writeActs.has(act) && !checkWritePermission()) return;
   const id = b.dataset.id;
@@ -13247,6 +13689,9 @@ document.addEventListener("click", e => {
     "seed-types": () => seedNamed("types"),
     "new-job": () => openNamed("jobs"),
     "edit-job": () => openNamed("jobs", id),
+    "new-marital-status": () => openNamed("maritalStatus"),
+    "edit-marital-status": () => openNamed("maritalStatus", id),
+    "del-marital-status": () => deleteMaritalStatus(id),
     "del-job": () => delNamed("jobs", id),
     "seed-jobs": () => seedNamed("jobs"),
     "convert-names": openConvertNames,
@@ -13288,6 +13733,12 @@ document.addEventListener("click", e => {
     },
     "new-lang": () => openLanguage(),
     "edit-lang": () => openLanguage(id),
+    "toggle-settings-popover": toggleSettingsPopover,
+    "settings-add-lang": () => { closeSettingsSpeedDial(); closeSettingsPopover(); openLanguage(); },
+    "settings-add-marital": () => { closeSettingsSpeedDial(); closeSettingsPopover(); openMaritalStatus(); },
+    "edit-marital-status": () => openMaritalStatus(id),
+    "del-marital-status": () => deleteMaritalStatus(id),
+    "seed-marital-statuses": () => seedMaritalStatuses(),
     "del-lang": () => delLanguage(id),
     "lang-up": () => moveLang(id, -1),
     "lang-down": () => moveLang(id, 1),
@@ -13379,6 +13830,17 @@ const formatJobsLabel = (ids, emptyText = "Choose jobs…") => {
   return `${names.length} jobs`;
 };
 
+const formatMaritalLabel = (ids, emptyText = "Choose marital status…") => {
+  if (!ids || !ids.length) return emptyText;
+  const names = ids.map(x => {
+    const m = (typeof maritalStatuses !== "undefined" ? maritalStatuses : []).find(item => String(item.id) === String(x));
+    return m ? nm(m) : x;
+  }).filter(Boolean);
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]}, ${names[1]}`;
+  return `${names.length} selected`;
+};
+
 function openAction(id, presetParent = "", _mode = null) {
   if (!checkWritePermission()) return;
   if (id && _mode === null) {
@@ -13414,12 +13876,12 @@ function openAction(id, presetParent = "", _mode = null) {
     ${langFieldsHtml()}
     <div id="lf-status-container"></div>
   ` : `
-    <div class="f-switches-row" style="margin:4px 0 6px">
-      <label class="chk switch-label">
-        <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span>In app</span>
+    <div class="editor-toggle-grid" style="margin-top:4px;margin-bottom:8px">
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="a-visible" ${isActionVis ? "checked" : ""}> <span class="editor-toggle-label">Visible to users</span>
       </label>
-      <label class="chk switch-label">
-        <input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span>Job specific</span>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="a-restricted" ${a.restricted ? "checked" : ""}> <span class="editor-toggle-label">Restrict to specific jobs</span>
       </label>
     </div>
     <div class="f" id="sec-action-jobs" style="${a.restricted ? '' : 'display:none;'}margin:4px 0 12px">
@@ -13779,9 +14241,10 @@ function openNiyyah(id, _mode = null) {
   }
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, jobIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
+  const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
 
   let curJobIds = [...(n.jobIds || [])];
+  let curMaritalIds = [...(n.maritalStatusIds || [])];
   let curActionIds = [...(n.actionIds || [])];
   let curSituations;
   if (Array.isArray(n.situations) && n.situations.length > 0) {
@@ -13810,36 +14273,33 @@ function openNiyyah(id, _mode = null) {
   const title = id ? `${STRINGS.common.edit} niyyah` : `${STRINGS.common.add} niyyah`;
 
   const initJobOn = curJobIds.length > 0;
+  const initMaritalOn = curMaritalIds.length > 0;
   const initChainOn = curSituations.some(s => (s.beforeActionIds?.length || 0) > 0 || (s.afterActionIds?.length || 0) > 0);
   const initEventOn = curEventIds.length > 0;
 
   const bodyHtml = `
     <div class="lpanel" id="l-panel"></div>
 
-    <div class="editor-settings-block">
-      <div class="f-switches-row editor-toggle-row">
-        <label class="chk switch-label">
-          <input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> <span>Fits any action</span>
-        </label>
-      </div>
+    <div class="editor-toggle-grid">
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> <span class="editor-toggle-label">Fits any action</span>
+      </label>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-job-toggle" ${initJobOn ? "checked" : ""}> <span class="editor-toggle-label">Job specific</span>
+      </label>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-marital-toggle" ${initMaritalOn ? "checked" : ""}> <span class="editor-toggle-label">Marital status</span>
+      </label>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span class="editor-toggle-label">Chain niyyah</span>
+      </label>
+      <label class="chk switch-label editor-toggle-tile">
+        <input type="checkbox" id="n-event-toggle" ${initEventOn ? "checked" : ""}> <span class="editor-toggle-label">Event niyyah</span>
+      </label>
+    </div>
 
-      <div class="editor-toggle-group">
-        <div class="f-switches-row editor-toggle-row">
-          <label class="chk switch-label">
-            <input type="checkbox" id="n-job-toggle" ${initJobOn ? "checked" : ""}> <span>Job specific</span>
-          </label>
-        </div>
-        <div class="f" id="sec-niyyah-jobs" style="${initJobOn ? '' : 'display:none;'}">
-          <div class="f-head"><label class="f-label">Jobs</label></div>
-          <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog">
-            <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
-            <span class="picker-chevron" aria-hidden="true">▾</span>
-          </button>
-          <div class="inline-err" id="err-niyyah-jobs" style="display:none"></div>
-        </div>
-      </div>
-
-      <div class="f">
+    <div class="editor-sections-stack">
+      <div class="f editor-collapsible-section" id="sec-niyyah-actions">
         <div class="f-head"><label class="f-label">Actions for this niyyah</label></div>
         <button type="button" class="picker-trigger-btn" id="btn-pick-actions" aria-haspopup="dialog">
           <span class="picker-btn-label" id="lbl-pick-actions">${esc(formatActionsLabel(curActionIds, "Choose actions..."))}</span>
@@ -13847,33 +14307,37 @@ function openNiyyah(id, _mode = null) {
         </button>
       </div>
 
-      <div class="editor-toggle-group">
-        <div class="f-switches-row editor-toggle-row">
-          <label class="chk switch-label">
-            <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span>Chain niyyah</span>
-          </label>
-        </div>
-        <div id="sec-niyyah-chain" style="${initChainOn ? '' : 'display:none;'}">
-          <div id="situations-list"></div>
-          <button type="button" class="btn-icon btn-add-situation" id="btn-add-situation" aria-label="Add situation" title="Add situation">＋</button>
-          <div class="inline-err" id="err-niyyah-chain" style="display:none"></div>
-        </div>
+      <div class="f editor-collapsible-section" id="sec-niyyah-jobs" style="${initJobOn ? '' : 'display:none;'}">
+        <div class="f-head"><label class="f-label">Jobs</label></div>
+        <button type="button" class="picker-trigger-btn" id="btn-pick-jobs" aria-haspopup="dialog">
+          <span class="picker-btn-label" id="lbl-pick-jobs">${esc(formatJobsLabel(curJobIds))}</span>
+          <span class="picker-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="inline-err" id="err-niyyah-jobs" style="display:none"></div>
       </div>
 
-      <div class="editor-toggle-group">
-        <div class="f-switches-row editor-toggle-row">
-          <label class="chk switch-label">
-            <input type="checkbox" id="n-event-toggle" ${initEventOn ? "checked" : ""}> <span>Event niyyah</span>
-          </label>
-        </div>
-        <div class="f" id="sec-niyyah-events" style="${initEventOn ? '' : 'display:none;'}">
-          <div class="f-head"><label class="f-label">Events for this niyyah</label></div>
-          <button type="button" class="picker-trigger-btn" id="btn-pick-events" aria-haspopup="dialog">
-            <span class="picker-btn-label" id="lbl-pick-events">${esc(formatEventsLabel(curEventIds, "Choose events..."))}</span>
-            <span class="picker-chevron" aria-hidden="true">▾</span>
-          </button>
-          <div class="inline-err" id="err-niyyah-events" style="display:none"></div>
-        </div>
+      <div class="f editor-collapsible-section" id="sec-niyyah-marital" style="${initMaritalOn ? '' : 'display:none;'}">
+        <div class="f-head"><label class="f-label">Marital status</label></div>
+        <button type="button" class="picker-trigger-btn" id="btn-pick-marital" aria-haspopup="dialog">
+          <span class="picker-btn-label" id="lbl-pick-marital">${esc(formatMaritalLabel(curMaritalIds))}</span>
+          <span class="picker-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="inline-err" id="err-niyyah-marital" style="display:none"></div>
+      </div>
+
+      <div class="editor-collapsible-section" id="sec-niyyah-chain" style="${initChainOn ? '' : 'display:none;'}">
+        <div id="situations-list"></div>
+        <button type="button" class="btn-icon btn-add-situation" id="btn-add-situation" aria-label="Add situation" title="Add situation">＋</button>
+        <div class="inline-err" id="err-niyyah-chain" style="display:none"></div>
+      </div>
+
+      <div class="f editor-collapsible-section" id="sec-niyyah-events" style="${initEventOn ? '' : 'display:none;'}">
+        <div class="f-head"><label class="f-label">Events for this niyyah</label></div>
+        <button type="button" class="picker-trigger-btn" id="btn-pick-events" aria-haspopup="dialog">
+          <span class="picker-btn-label" id="lbl-pick-events">${esc(formatEventsLabel(curEventIds, "Choose events..."))}</span>
+          <span class="picker-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div class="inline-err" id="err-niyyah-events" style="display:none"></div>
       </div>
     </div>
 
@@ -13905,6 +14369,7 @@ function openNiyyah(id, _mode = null) {
     const hasText = L.some(l => draft[l.code]?.text?.trim()?.length > 0);
     if (!hasText) {
       setInlineErr("#err-niyyah-jobs", "");
+      setInlineErr("#err-niyyah-marital", "");
       setInlineErr("#err-niyyah-chain", "");
       setInlineErr("#err-niyyah-events", "");
       setSaveValidity(STRINGS.validation.niyyahTextRequired);
@@ -13918,6 +14383,15 @@ function openNiyyah(id, _mode = null) {
       return false;
     } else {
       setInlineErr("#err-niyyah-jobs", "");
+    }
+
+    const isMarital = $("#n-marital-toggle")?.checked;
+    if (isMarital && (!curMaritalIds || !curMaritalIds.length)) {
+      setInlineErr("#err-niyyah-marital", "Please choose at least one marital status, or turn off Marital status.");
+      setSaveValidity("Please select at least one marital status for a marital-specific niyyah.");
+      return false;
+    } else {
+      setInlineErr("#err-niyyah-marital", "");
     }
 
     const isChain = $("#n-chain-toggle")?.checked;
@@ -14336,6 +14810,44 @@ function openNiyyah(id, _mode = null) {
     };
   }
 
+  const maritalToggle = $("#n-marital-toggle");
+  if (maritalToggle) {
+    maritalToggle.onchange = () => {
+      const isMarital = maritalToggle.checked;
+      const sec = $("#sec-niyyah-marital");
+      if (sec) sec.style.display = isMarital ? "" : "none";
+      onFieldChange();
+    };
+  }
+
+  const btnPickMarital = $("#btn-pick-marital");
+  if (btnPickMarital) {
+    btnPickMarital.onclick = async () => {
+      const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
+      const sortedMarital = [...(typeof maritalStatuses !== "undefined" ? maritalStatuses : [])].sort(compareByDisplayName);
+      const maritalOpts = sortedMarital.map(m => ({
+        value: m.id,
+        label: getItemDisplayName(m)
+      }));
+      const picked = await pickerSheet(maritalOpts, {
+        multi: true,
+        search: maritalOpts.length > 8,
+        selected: curMaritalIds,
+        title: "Marital status",
+        anchorEl: btnPickMarital,
+        readOnly: isReview,
+        emptyText: "No marital statuses yet. Add them in Settings.",
+        ...getPickerContext()
+      });
+      if (picked !== null && picked !== undefined) {
+        curMaritalIds = Array.isArray(picked) ? picked : [];
+        $("#lbl-pick-marital").textContent = formatMaritalLabel(curMaritalIds);
+        dlgDirty = true;
+        onFieldChange();
+      }
+    };
+  }
+
   $("#btn-pick-actions").onclick = async () => {
     const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
     const picked = await treePickerSheet({
@@ -14534,6 +15046,15 @@ function openNiyyah(id, _mode = null) {
     const jLbl = $("#lbl-pick-jobs");
     if (jLbl) jLbl.textContent = formatJobsLabel(curJobIds);
 
+    curMaritalIds = Array.isArray(rev.maritalStatusIds) ? [...rev.maritalStatusIds] : [];
+    const hasMarital = curMaritalIds.length > 0;
+    const mChk = $("#n-marital-toggle");
+    if (mChk) mChk.checked = hasMarital;
+    const mSec = $("#sec-niyyah-marital");
+    if (mSec) mSec.style.display = hasMarital ? "" : "none";
+    const mLbl = $("#lbl-pick-marital");
+    if (mLbl) mLbl.textContent = formatMaritalLabel(curMaritalIds);
+
     if (rev.actionIds) {
       curActionIds = [...rev.actionIds];
       $("#lbl-pick-actions").textContent = formatActionsLabel(curActionIds);
@@ -14597,10 +15118,12 @@ function openNiyyah(id, _mode = null) {
     if (!filled.length) return toast("Write the niyyah in at least one language.", true);
     const general = $("#n-gen").checked;
     const isJob = $("#n-job-toggle").checked;
+    const isMarital = $("#n-marital-toggle")?.checked;
     const isChain = $("#n-chain-toggle").checked;
     const isEv = $("#n-event-toggle").checked;
 
     const jobIds = isJob ? curJobIds : [];
+    const maritalStatusIds = isMarital ? curMaritalIds : [];
     const actionIds = curActionIds;
     const situations = isChain
       ? curSituations.map(s => ({
@@ -14619,6 +15142,7 @@ function openNiyyah(id, _mode = null) {
       translations,
       general,
       jobIds,
+      maritalStatusIds,
       actionIds,
       situations,
       beforeActionIds,
@@ -14693,6 +15217,7 @@ async function delNiyyah(id) {
 function openNamed(key, id, _mode = null) {
   if (!checkWritePermission()) return;
   const K = KINDS[key];
+  if (!K) return;
   if (id && _mode === null) {
     requestOpenEditor(K.coll, id, { key }, (m) => openNamed(key, id, m));
     return;
@@ -14704,22 +15229,24 @@ function openNamed(key, id, _mode = null) {
   }
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const x = id ? K.list().find(y => String(y.id) === String(id)) : { actionIds: [] };
+  const x = id ? K.list().find(y => String(y.id) === String(id)) : (K.hasActions !== false ? { actionIds: [] } : {});
   const names = nameMap(x);
   const initial = {};
   L.forEach(l => (initial[l.code] = { name: names[l.code] || "" }));
-  let curActionIds = [...(x.actionIds || [])];
+  const hasActions = K.hasActions !== false;
+  let curActionIds = hasActions ? [...(x.actionIds || [])] : [];
 
   const title = `${id ? STRINGS.common.edit : STRINGS.common.add} ${K.one}`;
   const bodyHtml = `
     ${langFieldsHtml()}
+    ${hasActions ? `
     <div class="f">
       <div class="f-head"><label class="f-label">Linked actions</label></div>
       <button type="button" class="picker-trigger-btn" id="btn-pick-named-actions" aria-haspopup="dialog" style="margin-top:2px">
         <span class="picker-btn-label" id="lbl-pick-named-actions">${esc(formatActionsLabel(curActionIds, "Link actions..."))}</span>
         <span class="picker-chevron" aria-hidden="true">▾</span>
       </button>
-    </div>
+    </div>` : ""}
     <div id="lf-status-container"></div>
   `;
 
@@ -14749,10 +15276,11 @@ function openNamed(key, id, _mode = null) {
     return true;
   };
 
-  const getFormData = () => ({
-    names: lf.values(),
-    actionIds: curActionIds
-  });
+  const getFormData = () => {
+    const data = { names: lf.values() };
+    if (hasActions) data.actionIds = curActionIds;
+    return data;
+  };
 
   const onFieldChange = () => {
     dlgDirty = true;
@@ -14762,26 +15290,31 @@ function openNamed(key, id, _mode = null) {
   const lf = langFields(L, [{
     key: "name",
     label: "Name",
-    ph: key === "types" ? STRINGS.placeholders.locationName : STRINGS.placeholders.jobName,
+    ph: K.ph || (key === "types" ? STRINGS.placeholders.locationName : STRINGS.placeholders.jobName),
     required: true
   }], initial, onFieldChange, statusInit(x, L, names));
 
   validate();
 
-  $("#btn-pick-named-actions").onclick = async () => {
-    const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
-    const picked = await treePickerSheet({
-      selected: curActionIds,
-      title: `Link Actions to ${K.one}`,
-      readOnly: isReview
-    });
-    if (picked !== null && picked !== undefined) {
-      curActionIds = picked;
-      $("#lbl-pick-named-actions").textContent = formatActionsLabel(curActionIds, "Link actions...");
-      dlgDirty = true;
-      onFieldChange();
+  if (hasActions) {
+    const btnPick = $("#btn-pick-named-actions");
+    if (btnPick) {
+      btnPick.onclick = async () => {
+        const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
+        const picked = await treePickerSheet({
+          selected: curActionIds,
+          title: `Link Actions to ${K.one}`,
+          readOnly: isReview
+        });
+        if (picked !== null && picked !== undefined) {
+          curActionIds = picked;
+          $("#lbl-pick-named-actions").textContent = formatActionsLabel(curActionIds, "Link actions...");
+          dlgDirty = true;
+          onFieldChange();
+        }
+      };
     }
-  };
+  }
 
   activeEditorLockState.restoreData = (rev) => {
     if (rev.names) {
@@ -14791,7 +15324,7 @@ function openNamed(key, id, _mode = null) {
       });
       lf.setValues(lfVals);
     }
-    if (rev.actionIds) {
+    if (hasActions && rev.actionIds) {
       curActionIds = [...rev.actionIds];
       const lbl = $("#lbl-pick-named-actions");
       if (lbl) lbl.textContent = formatActionsLabel(curActionIds, "Link actions...");
@@ -14806,7 +15339,15 @@ function openNamed(key, id, _mode = null) {
     L.forEach(l => { const s = v[l.code].name.trim(); if (s) out[l.code] = s; });
     keepUnknown(names, out);
     if (!Object.keys(out).length) return toast("Enter a name in at least one language.", true);
-    const data = { names: out, name: pickName(out), statuses: statusOut(x, L, out, lf), actionIds: curActionIds, updatedAt: serverTimestamp() };
+    const data = {
+      names: out,
+      name: pickName(out),
+      statuses: statusOut(x, L, out, lf),
+      updatedAt: serverTimestamp()
+    };
+    if (hasActions) {
+      data.actionIds = curActionIds;
+    }
     await handleEditorSave({
       btn: $("#d-save"),
       successToast: "Saved.",
@@ -14817,7 +15358,19 @@ function openNamed(key, id, _mode = null) {
             if (!sRes.ok) return false;
           } else {
             data.order = K.list().length;
-            await addDoc(collection(db, K.coll), data);
+            data.createdAt = serverTimestamp();
+            const cRes = await executeEditorCreateItem({ coll: K.coll, data });
+            if (!cRes.ok) return false;
+          }
+        } else {
+          if (id) {
+            updateLocalItem(K.coll, id, data);
+          } else {
+            const newId = (key === "maritalStatus" || key === "maritalStatuses" ? "ms_" : "it_") + Math.random().toString(36).slice(2, 8);
+            data.id = newId;
+            data.createdAt = new Date();
+            data.order = K.list().length;
+            updateLocalItem(K.coll, newId, data);
           }
         }
         return true;
@@ -14829,6 +15382,165 @@ function openNamed(key, id, _mode = null) {
     applyEditorReviewMode(true, null);
   } else {
     $("#lf-name")?.focus();
+  }
+}
+
+function openMaritalStatus(id, mode = null) {
+  return openNamed("maritalStatus", id, mode);
+}
+
+async function seedMaritalStatuses() {
+  if (!checkWritePermission()) return { created: 0, skipped: 6 };
+  const defaultNames = ["Single", "Engaged", "Married", "Divorced", "Widowed", "Prefer not to say"];
+  const L = langs();
+  const enLang = L.find(l => l.code === "en") || L[0];
+  const langCode = enLang ? enLang.code : "en";
+
+  const existingNames = new Set(maritalStatuses.flatMap(x => [
+    x.name,
+    ...(x.names ? Object.values(x.names) : [])
+  ].filter(Boolean).map(s => String(s).trim().toLowerCase())));
+
+  const toCreate = defaultNames.filter(name => !existingNames.has(name.trim().toLowerCase()));
+  if (toCreate.length === 0) {
+    toast("All marital statuses already exist.");
+    return { created: 0, skipped: defaultNames.length };
+  }
+
+  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const userEmail = user?.email || "";
+  const userName = getLockDisplayName(user);
+
+  if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
+    const createdDocs = [];
+    toCreate.forEach((name, i) => {
+      const id = "ms_" + Math.random().toString(36).slice(2, 9);
+      const docData = {
+        id,
+        names: { [langCode]: name },
+        name,
+        statuses: { [langCode]: "published" },
+        order: maritalStatuses.length + i,
+        revSeq: 1,
+        updatedBy: userEmail,
+        updatedByName: userName,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      maritalStatuses.push(docData);
+      createdDocs.push(docData);
+    });
+    renderAll();
+    toast(`Added ${toCreate.length} marital status(es).`);
+    return { created: toCreate.length, skipped: defaultNames.length - toCreate.length, docs: createdDocs };
+  }
+
+  try {
+    const batch = writeBatch(db);
+    toCreate.forEach((name, i) => {
+      const docRef = doc(collection(db, "maritalStatuses"));
+      const docData = {
+        names: { [langCode]: name },
+        name,
+        statuses: { [langCode]: "published" },
+        order: maritalStatuses.length + i,
+        revSeq: 1,
+        updatedBy: userEmail,
+        updatedByName: userName,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+      batch.set(docRef, docData);
+      batch.set(doc(db, "maritalStatuses", docRef.id, "revisions", "1"), {
+        ...docData,
+        savedBy: userEmail,
+        savedByName: userName,
+        savedAt: serverTimestamp(),
+        revSeq: 1
+      });
+    });
+    await batch.commit();
+    toast(`Added ${toCreate.length} marital status(es).`);
+    return { created: toCreate.length, skipped: defaultNames.length - toCreate.length };
+  } catch (err) {
+    fail(err);
+    return { created: 0, error: err };
+  }
+}
+
+async function deleteMaritalStatus(id) {
+  if (!checkWritePermission()) return false;
+  const lock = lockOf("maritalStatuses", id);
+  if (lock && !lock.isMine) {
+    const holder = getFirstName(lock.name || lock.email || "another user");
+    toast(`Locked by ${holder}`, true);
+    return false;
+  }
+  const referencingNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
+  const lockedNiyyah = referencingNiyyahs.find(n => {
+    const l = lockOf("niyyahs", n.id);
+    return l && !l.isMine;
+  });
+  if (lockedNiyyah) {
+    toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+    return false;
+  }
+
+  const count = referencingNiyyahs.length;
+  const item = getItem("maritalStatuses", id);
+  const name = item ? (getItemDisplayName(item, viewCode()) || "Marital Status") : "Marital Status";
+  const msg = `Are you sure you want to delete "${name}"?\nUsed by ${count} ${count === 1 ? "niyyah" : "niyyahs"}.`;
+  const ok = await confirmSheet({
+    title: "🗑️ Delete",
+    message: msg,
+    confirmText: "Delete",
+    danger: true
+  });
+  if (!ok) return false;
+
+  // Optimistic local update
+  maritalStatuses = maritalStatuses.filter(x => x.id !== id);
+  niyyahs.forEach(x => {
+    if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
+  });
+  renderAll();
+
+  if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
+    toast(`Deleted "${name}"`);
+    return true;
+  }
+
+  try {
+    // 1. Remove id from maritalStatusIds in referencing niyyahs in batches of at most 400
+    for (let i = 0; i < referencingNiyyahs.length; i += 400) {
+      const chunk = referencingNiyyahs.slice(i, i + 400);
+      const batch = writeBatch(db);
+      for (const n of chunk) {
+        batch.update(doc(db, "niyyahs", n.id), { maritalStatusIds: arrayRemove(id) });
+      }
+      await batch.commit();
+    }
+
+    // 2. Delete maritalStatus doc, its lock, its viewers, and its revisions
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "maritalStatuses", id));
+    batch.delete(doc(db, "locks", `maritalStatuses__${id}`));
+
+    const prefix = `maritalStatuses__${id}__`;
+    for (const [vKey, v] of viewersCache.entries()) {
+      if (vKey.startsWith(prefix) || (v.collection === "maritalStatuses" && String(v.itemId) === String(id))) {
+        batch.delete(doc(db, "viewers", vKey));
+      }
+    }
+    for (let s = 0; s < 50; s++) {
+      batch.delete(doc(db, "maritalStatuses", id, "revisions", String(s)));
+    }
+    await batch.commit();
+    toast(`Deleted "${name}"`);
+    return true;
+  } catch (err) {
+    fail(err);
+    return false;
   }
 }
 
@@ -15793,15 +16505,17 @@ function getLanguageCounts(code) {
 
   const nTypes = types.filter(t => (nameMap(t)[c] || "").trim().length > 0).length;
   const nJobs = jobs.filter(j => (nameMap(j)[c] || "").trim().length > 0).length;
+  const nMarital = maritalStatuses.filter(m => (nameMap(m)[c] || "").trim().length > 0).length;
   const nTips = tips.filter(t => ((t.texts || {})[c] || "").trim().length > 0).length;
   const nEvents = events.filter(e => (nameMap(e)[c] || "").trim().length > 0).length;
 
-  const total = nNiyyahs + nActions + nTypes + nJobs + nTips + nEvents;
+  const total = nNiyyahs + nActions + nTypes + nJobs + nMarital + nTips + nEvents;
   const parts = [];
   if (nNiyyahs) parts.push(`${nNiyyahs} niyyah${nNiyyahs === 1 ? "" : "s"}`);
   if (nActions) parts.push(`${nActions} action${nActions === 1 ? "" : "s"}`);
   if (nTypes) parts.push(`${nTypes} location${nTypes === 1 ? "" : "s"}`);
   if (nJobs) parts.push(`${nJobs} job${nJobs === 1 ? "" : "s"}`);
+  if (nMarital) parts.push(`${nMarital} marital status${nMarital === 1 ? "" : "es"}`);
   if (nTips) parts.push(`${nTips} tip${nTips === 1 ? "" : "s"}`);
   if (nEvents) parts.push(`${nEvents} event${nEvents === 1 ? "" : "s"}`);
 
@@ -15811,6 +16525,7 @@ function getLanguageCounts(code) {
     actions: nActions,
     types: nTypes,
     jobs: nJobs,
+    maritalStatuses: nMarital,
     tips: nTips,
     events: nEvents,
     summary: parts.length ? parts.join(" · ") : "0 items in use"
@@ -15819,56 +16534,169 @@ function getLanguageCounts(code) {
 
 function renderSettings() {
   const L = langs();
-  let html = `<h2 class="sr-only">Settings</h2>
-    <div class="bar" style="margin-top:0;margin-bottom:var(--space-sm)">
-      <h3>Languages</h3>
-      <button type="button" class="btn primary hdr-add-btn" data-act="new-lang">Add language</button>
-    </div>
-    <p class="muted" style="margin-top:0;margin-bottom:var(--space-md)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>`;
-  const sortedLangs = [...L].sort(compareByDisplayName);
-  if (!L.length) {
-    html += renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs");
-  } else {
-    html += `<div class="lang-cards-grid">` +
-      sortedLangs.map(l => {
-        const counts = getLanguageCounts(l.code);
-        const isGuarded = counts.total > 0 || languages.length <= 1;
-        const deleteTooltip = counts.total > 0
-          ? `Cannot delete: in use by ${counts.total} item(s) (${counts.summary})`
-          : (languages.length <= 1 ? "Cannot delete the only language" : `Delete ${esc(l.name)}`);
-        const catRtl = isArabic(l.name) || l.rtl;
+  const langsCollapsed = !expandedGroups.has("settings_languages");
+  const maritalCollapsed = !expandedGroups.has("settings_marital");
 
-        return `
-          <div class="card lang-card" data-type="languages" data-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(l.name)} language card">
-            <div class="card-main" style="width:100%">
-              <div class="card-head" style="align-items:flex-start">
-                <div class="card-title-wrap" style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:6px;min-width:0">
-                    <span class="cat-icon" aria-hidden="true" style="font-size:18px;line-height:1;flex-shrink:0">🌐</span>
-                    <h3 class="card-title ${catRtl ? "rtl" : ""}" dir="${catRtl ? "rtl" : "auto"}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${esc(l.name)}</h3>
-                  </div>
-                  <div class="chips" style="margin-top:4px">
-                    <span class="chip" style="font-family:monospace;font-weight:600">${esc(l.code)}</span>
-                    ${l.rtl ? `<span class="chip">right to left</span>` : ""}
-                    ${counts.total > 0
-                      ? `<span class="chip" style="background:var(--green-soft);color:var(--green);font-weight:600">${counts.total} in use</span>`
-                      : `<span class="chip" style="background:var(--st-empty-bg);color:var(--st-empty-text)">0 in use</span>`}
-                  </div>
-                  <div class="card-preview muted" style="margin-top:3px;font-size:13px;line-height:1.3">
-                    ${esc(counts.summary)}
+  const sortedLangs = [...L].sort(compareByDisplayName);
+  const sortedMarital = [...maritalStatuses].sort(compareByDisplayName);
+
+  let html = `<h2 class="sr-only">Settings</h2>
+    <div class="tab-top-row settings-top-row">
+      <div class="settings-add-wrap">
+        <button type="button" id="btn-settings-add" class="btn-icon primary hdr-add-btn" data-act="toggle-settings-popover" aria-label="Add" title="Add" aria-haspopup="menu" aria-expanded="false">＋</button>
+        <div id="settings-add-popover" class="settings-add-popover" role="menu" aria-label="Add options" hidden>
+          <button type="button" class="settings-popover-item" role="menuitem" tabindex="-1" data-act="settings-add-lang">
+            <span class="popover-icon" aria-hidden="true">🌐</span>
+            <span>Language</span>
+          </button>
+          <button type="button" class="settings-popover-item" role="menuitem" tabindex="-1" data-act="settings-add-marital">
+            <span class="popover-icon" aria-hidden="true">💍</span>
+            <span>Marital status</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. Languages Group -->
+    <div class="sticky-group ${langsCollapsed ? "collapsed" : ""}" id="group-settings-languages">
+      <div class="sticky-group-head" role="region" aria-label="Languages header">
+        <div class="g-title">
+          <span aria-hidden="true">🌐</span>
+          <span>Languages</span>
+          <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${L.length})</span>
+        </div>
+        <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="settings_languages" aria-label="${langsCollapsed ? "Expand group" : "Collapse group"}" aria-expanded="${!langsCollapsed}">
+          <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+      </div>
+      <div class="g-body">
+        <p class="muted" style="margin-top:0;margin-bottom:var(--space-md)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>
+        ${!L.length
+          ? renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
+          : `<div class="lang-cards-grid">` +
+            sortedLangs.map(l => {
+              const counts = getLanguageCounts(l.code);
+              const isGuarded = counts.total > 0 || languages.length <= 1;
+              const deleteTooltip = counts.total > 0
+                ? `Cannot delete: in use by ${counts.total} item(s) (${counts.summary})`
+                : (languages.length <= 1 ? "Cannot delete the only language" : `Delete ${esc(l.name)}`);
+              const catRtl = isArabic(l.name) || l.rtl;
+
+              return `
+                <div class="card lang-card" data-type="languages" data-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(l.name)} language card">
+                  <div class="card-main" style="width:100%">
+                    <div class="card-head" style="align-items:flex-start">
+                      <div class="card-title-wrap" style="flex:1;min-width:0">
+                        <div style="display:flex;align-items:center;gap:6px;min-width:0">
+                          <span class="cat-icon" aria-hidden="true" style="font-size:18px;line-height:1;flex-shrink:0">🌐</span>
+                          <h3 class="card-title ${catRtl ? "rtl" : ""}" dir="${catRtl ? "rtl" : "auto"}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${esc(l.name)}</h3>
+                        </div>
+                        <div class="chips" style="margin-top:4px">
+                          <span class="chip" style="font-family:monospace;font-weight:600">${esc(l.code)}</span>
+                          ${l.rtl ? `<span class="chip">right to left</span>` : ""}
+                          ${counts.total > 0
+                            ? `<span class="chip" style="background:var(--green-soft);color:var(--green);font-weight:600">${counts.total} in use</span>`
+                            : `<span class="chip" style="background:var(--st-empty-bg);color:var(--st-empty-text)">0 in use</span>`}
+                        </div>
+                        <div class="card-preview muted" style="margin-top:3px;font-size:13px;line-height:1.3">
+                          ${esc(counts.summary)}
+                        </div>
+                      </div>
+                      <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
+                        <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
+                        <button type="button" class="btn-icon danger ${isGuarded ? "is-disabled" : ""}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}">🗑️</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
-                  <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
-                  <button type="button" class="btn-icon danger ${isGuarded ? "is-disabled" : ""}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}">🗑️</button>
+              `;
+            }).join("") +
+          `</div>`
+        }
+      </div>
+    </div>
+
+    <!-- 2. Marital Status Group -->
+    <div class="sticky-group ${maritalCollapsed ? "collapsed" : ""}" id="group-settings-marital">
+      <div class="sticky-group-head" role="region" aria-label="Marital status header">
+        <div class="g-title">
+          <span aria-hidden="true">💍</span>
+          <span>Marital status</span>
+          <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${maritalStatuses.length})</span>
+        </div>
+        <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="settings_marital" aria-label="${maritalCollapsed ? "Expand group" : "Collapse group"}" aria-expanded="${!maritalCollapsed}">
+          <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+        </button>
+      </div>
+      <div class="g-body">
+        ${!maritalStatuses.length
+          ? renderEmptyState("💍", STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
+          : `<div class="lang-cards-grid">` +
+            sortedMarital.map(m => {
+              const displayName = getItemDisplayName(m, viewCode()) || getItemDisplayName(m, "en") || firstOf(nameMap(m)) || "(no name)";
+              const isRtl = isArabic(displayName);
+              const lock = lockOf("maritalStatuses", m.id);
+              const isLockedByOther = !!(lock && !lock.isMine);
+
+              let lockBadgeHtml = "";
+              if (lock) {
+                let lockLabel = "";
+                let lockClass = "";
+                if (lock.isMine) {
+                  lockLabel = "🔒 You";
+                  lockClass = "is-mine";
+                } else if (lock.isMineOtherSession) {
+                  lockLabel = "🔒 You (other device)";
+                  lockClass = "is-mine-other";
+                } else {
+                  const fn = getFirstName(lock.name || lock.email);
+                  lockLabel = `🔒 ${fn}`;
+                  lockClass = "is-other";
+                }
+                lockBadgeHtml = `
+                  <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
+                    <span class="badge-text">${esc(lockLabel)}</span>
+                  </button>
+                `;
+              }
+
+              const viewers = viewersOf("maritalStatuses", m.id).filter(v => !v.isMine);
+              let viewerBadgeHtml = "";
+              if (viewers.length > 0) {
+                const viewerLabel = viewers.length > 1 ? `👁 ${viewers.length}` : "👁";
+                viewerBadgeHtml = `
+                  <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
+                    <span class="badge-text">${esc(viewerLabel)}</span>
+                  </button>
+                `;
+              }
+
+              const deleteTooltip = isLockedByOther
+                ? "Locked by another user"
+                : `Delete ${esc(displayName)}`;
+
+              return `
+                <div class="card lang-card marital-card" data-type="maritalStatuses" data-id="${esc(m.id)}" role="button" tabindex="0" aria-label="${esc(displayName)} marital status card">
+                  ${lockBadgeHtml}
+                  ${viewerBadgeHtml}
+                  <div class="card-main" style="width:100%">
+                    <div class="card-head" style="align-items:center">
+                      <div class="card-title-wrap" style="flex:1;min-width:0">
+                        <h3 class="card-title ${isRtl ? "rtl" : ""}" dir="${isRtl ? "rtl" : "auto"}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(displayName)}</h3>
+                      </div>
+                      <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                        <button type="button" class="btn-icon ${isLockedByOther ? "is-disabled" : ""}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? "Locked by another user" : "Edit"}" ${isLockedByOther ? "disabled" : ""}>✏️</button>
+                        <button type="button" class="btn-icon danger ${isLockedByOther ? "is-disabled" : ""}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? "disabled" : ""}>🗑️</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join("") +
-    `</div>`;
-  }
+              `;
+            }).join("") +
+          `</div>`
+        }
+      </div>
+    </div>`;
 
   // Publish all names button (secondary button)
   html += `<div class="bar" style="margin-top:24px"><h3>Names & Publishing</h3>
@@ -15961,7 +16789,8 @@ function openPublishAllNames() {
   const aDocs = needs(actions).map(x => ({ coll: "actions", doc: x }));
   const jDocs = needs(jobs).map(x => ({ coll: "jobTypes", doc: x }));
   const tDocs = needs(types).map(x => ({ coll: "locationTypes", doc: x }));
-  const targets = [...aDocs, ...jDocs, ...tDocs];
+  const mDocs = needs(maritalStatuses).map(x => ({ coll: "maritalStatuses", doc: x }));
+  const targets = [...aDocs, ...jDocs, ...tDocs, ...mDocs];
 
   if (!targets.length) {
     return toast("All actions, jobs, and locations already have language statuses.");
@@ -16370,15 +17199,25 @@ function buildImportPlan(json) {
   if (!json || typeof json !== "object") throw new Error("This file is not in the expected format (an object or array of items).");
   const items = [], codes = new Set();
   const unknownJobIds = new Set();
+  const unknownMaritalStatusIds = new Set();
   const unknownActionIds = new Set();
 
-  const filterUnknowns = (rawJobs, rawSituations, rawBeforeActions, rawAfterActions) => {
+  const filterUnknowns = (rawJobs, rawMaritals, rawSituations, rawBeforeActions, rawAfterActions) => {
     const validJobIds = [];
     (rawJobs || []).forEach(jid => {
       if (jobs.some(j => String(j.id) === String(jid))) {
         validJobIds.push(String(jid));
       } else {
         unknownJobIds.add(String(jid));
+      }
+    });
+
+    const validMaritalStatusIds = [];
+    (rawMaritals || []).forEach(mid => {
+      if ((typeof maritalStatuses !== "undefined" ? maritalStatuses : []).some(m => String(m.id) === String(mid))) {
+        validMaritalStatusIds.push(String(mid));
+      } else {
+        unknownMaritalStatusIds.add(String(mid));
       }
     });
 
@@ -16415,14 +17254,15 @@ function buildImportPlan(json) {
     const validBeforeActionIds = [...new Set(cleanSituations.flatMap(s => s.beforeActionIds))];
     const validAfterActionIds = [...new Set(cleanSituations.flatMap(s => s.afterActionIds))];
 
-    return { validJobIds, cleanSituations, validBeforeActionIds, validAfterActionIds };
+    return { validJobIds, validMaritalStatusIds, cleanSituations, validBeforeActionIds, validAfterActionIds };
   };
 
   if (Array.isArray(json)) {
     json.forEach((it, idx) => {
       const id = it.id || it.importId || String(idx + 1);
-      const { validJobIds, cleanSituations, validBeforeActionIds, validAfterActionIds } = filterUnknowns(
+      const { validJobIds, validMaritalStatusIds, cleanSituations, validBeforeActionIds, validAfterActionIds } = filterUnknowns(
         asArray(it.jobIds),
+        asArray(it.maritalStatusIds),
         asArray(it.situations),
         asArray(it.beforeActionIds),
         asArray(it.afterActionIds)
@@ -16440,6 +17280,7 @@ function buildImportPlan(json) {
         importIndex: idx,
         translations,
         jobIds: validJobIds,
+        maritalStatusIds: validMaritalStatusIds,
         situations: cleanSituations,
         beforeActionIds: validBeforeActionIds,
         afterActionIds: validAfterActionIds,
@@ -16453,17 +17294,19 @@ function buildImportPlan(json) {
       if (!rawVal || typeof rawVal !== "object") continue;
 
       const rawJobIds = asArray(rawVal.jobIds);
+      const rawMaritalStatusIds = asArray(rawVal.maritalStatusIds);
       const rawSituations = asArray(rawVal.situations);
       const rawBeforeActionIds = asArray(rawVal.beforeActionIds);
       const rawAfterActionIds = asArray(rawVal.afterActionIds);
-      const { validJobIds, cleanSituations, validBeforeActionIds, validAfterActionIds } = filterUnknowns(
+      const { validJobIds, validMaritalStatusIds, cleanSituations, validBeforeActionIds, validAfterActionIds } = filterUnknowns(
         rawJobIds,
+        rawMaritalStatusIds,
         rawSituations,
         rawBeforeActionIds,
         rawAfterActionIds
       );
 
-      const langEntries = Object.entries(rawVal).filter(([k, v]) => v && typeof v === "object" && !Array.isArray(v) && k !== "translations" && k !== "jobIds" && k !== "situations" && k !== "beforeActionIds" && k !== "afterActionIds");
+      const langEntries = Object.entries(rawVal).filter(([k, v]) => v && typeof v === "object" && !Array.isArray(v) && k !== "translations" && k !== "jobIds" && k !== "maritalStatusIds" && k !== "situations" && k !== "beforeActionIds" && k !== "afterActionIds");
       if (rawVal.translations && typeof rawVal.translations === "object") {
         Object.entries(rawVal.translations).forEach(([c, tr]) => {
           if (!langEntries.some(([existC]) => existC === c)) langEntries.push([c, tr]);
@@ -16483,6 +17326,7 @@ function buildImportPlan(json) {
           importIndex: i,
           translations,
           jobIds: validJobIds,
+          maritalStatusIds: validMaritalStatusIds,
           situations: cleanSituations,
           beforeActionIds: validBeforeActionIds,
           afterActionIds: validAfterActionIds,
@@ -16496,6 +17340,7 @@ function buildImportPlan(json) {
     items,
     codes: [...codes],
     unknownJobIds: [...unknownJobIds],
+    unknownMaritalStatusIds: [...unknownMaritalStatusIds],
     unknownActionIds: [...unknownActionIds]
   };
 }
@@ -16511,6 +17356,7 @@ function openImport(plan, fileName) {
     <p class="muted" style="margin:0">All texts are added as draft, with no actions yet. A language with no text for a niyyah shows red.</p>
     ${missing.length ? `<p style="margin:0;color:var(--danger)">Not in Settings yet: ${missing.map(esc).join(", ")}. Their texts are still saved and appear once you add that language.</p>` : ""}
     ${plan.unknownJobIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown job IDs dropped: ${plan.unknownJobIds.map(esc).join(", ")}.</p>` : ""}
+    ${plan.unknownMaritalStatusIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown marital status IDs dropped: ${plan.unknownMaritalStatusIds.map(esc).join(", ")}.</p>` : ""}
     ${plan.unknownActionIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown action IDs dropped: ${plan.unknownActionIds.map(esc).join(", ")}.</p>` : ""}
     <div class="imp-list">${plan.items.map(it => `<div class="imp-row ${it.skip ? "skip" : ""}">
         <span class="id">#${esc(it.importId)}.${it.importIndex + 1}</span>
@@ -16546,6 +17392,7 @@ function openImport(plan, fileName) {
               translations: it.translations,
               general: false,
               jobIds: it.jobIds || [],
+              maritalStatusIds: it.maritalStatusIds || [],
               actionIds: [],
               situations: it.situations || [],
               beforeActionIds: it.beforeActionIds || [],
@@ -16568,6 +17415,7 @@ function openImport(plan, fileName) {
               translations: it.translations,
               general: false,
               jobIds: it.jobIds || [],
+              maritalStatusIds: it.maritalStatusIds || [],
               actionIds: [],
               situations: it.situations || [],
               beforeActionIds: it.beforeActionIds || [],
@@ -16602,6 +17450,7 @@ window.__ADMIN__ = {
   get niyyahs() { return niyyahs; }, set niyyahs(v) { niyyahs = v; },
   get types() { return types; }, set types(v) { types = v; },
   get jobs() { return jobs; }, set jobs(v) { jobs = v; },
+  get maritalStatuses() { return maritalStatuses; }, set maritalStatuses(v) { maritalStatuses = v; },
   get languages() { return languages; }, set languages(v) { languages = v; },
   get tips() { return tips; }, set tips(v) { tips = v; },
   get events() { return events; }, set events(v) { events = v; },
@@ -16612,7 +17461,7 @@ window.__ADMIN__ = {
   get expandedGroups() { return expandedGroups; },
   get tabFilterState() { return tabFilterState; },
   TAB_TITLES,
-  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
+  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport,
   handleSearchTrigger, handleNewItemShortcut,
@@ -16625,7 +17474,7 @@ window.__ADMIN__ = {
   get activeCompactPreview() { return activeCompactPreview; },
   get dlgDirty() { return dlgDirty; }, set dlgDirty(v) { dlgDirty = v; },
   pendingDeletes,
-  tabFilterState, openFilterSheet, openCalSettingsSheet, renderTab, pickDay, openCleanupActions, formatJobsLabel,
+  tabFilterState, openFilterSheet, openCalSettingsSheet, renderTab, pickDay, openCleanupActions, formatJobsLabel, formatMaritalLabel,
   STRINGS, formatError, openHelpSheet, renderEmptyState,
   startListening, delAction, childrenOf,
   // Lock & Viewer system exports
