@@ -1968,6 +1968,13 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .lp-seg.st-empty { background: var(--st-empty); }
 
   /* Round circle style shared by .card-more-btn and .g-collapse-btn */
+  .card-btns {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .card-edit-btn,
   .card-more-btn,
   .g-collapse-btn {
     width: 38px;
@@ -1994,8 +2001,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: relative;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   }
-  .card-more-btn::before,
-  .g-collapse-btn::before {
+  .card-edit-btn::before, .card-more-btn::before, .g-collapse-btn::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -2006,23 +2012,20 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     min-width: 44px;
     min-height: 44px;
   }
-  .card-more-btn:hover,
-  .g-collapse-btn:hover {
+  .card-edit-btn:hover, .card-more-btn:hover, .g-collapse-btn:hover {
     background: var(--card);
     border-color: var(--muted);
   }
-  .card-more-btn:active,
-  .g-collapse-btn:active {
+  .card-edit-btn:active, .card-more-btn:active, .g-collapse-btn:active {
     transform: scale(0.94);
   }
 
   /* Desktop hover reveal for more options */
   @media (min-width: 721px) {
-    .card .card-more-btn {
+    .card .card-edit-btn, .card .card-more-btn {
       opacity: 0.7;
     }
-    .card:hover .card-more-btn,
-    .card:focus-within .card-more-btn {
+    .card:hover .card-edit-btn, .card:hover .card-more-btn, .card:focus-within .card-edit-btn, .card:focus-within .card-more-btn {
       opacity: 1;
     }
   }
@@ -9353,6 +9356,26 @@ async function promptMainSettingsUnlock(opts = {}) {
   });
 }
 
+async function promptLanguageUnlock(langName = "this") {
+  return await confirmSheet({
+    title: "🔓 Unlock " + langName + " translation?",
+    message: "The " + langName + " translation is currently published in the app.\n\nUnlocking allows you to edit its text. Other languages and main settings will remain protected.\n\nDo you want to unlock " + langName + " for editing?",
+    confirmText: "Unlock",
+    cancelText: "Keep locked",
+    danger: false
+  });
+}
+
+async function promptLanguageDraft(langName = "this") {
+  return await confirmSheet({
+    title: "⚠️ Change " + langName + " to Draft?",
+    message: "The " + langName + " translation is currently published. Setting it to Draft will unpublish the " + langName + " translation in the app.\n\nOther languages and main settings will remain unaffected.\n\nDo you want to continue?",
+    confirmText: "Change to Draft",
+    cancelText: "Keep published",
+    danger: true
+  });
+}
+
 const langSt = (x, code, text) => {
   if (!String(text || "").trim() || !langOk(code, text)) return "empty";
   const s = (x.statuses || {})[code];
@@ -9425,6 +9448,7 @@ const langFieldsHtml = () => `
 `;
 function langFields(L, fields, initial, onChange = () => {}, initialStatus = {}, editorContext = {}) {
   const draft = {}, status = {};
+  const unlockedLangs = new Set();
   L.forEach(l => (status[l.code] = STATUSES.includes(initialStatus[l.code]) ? initialStatus[l.code] : "draft"));
   L.forEach(l => { draft[l.code] = {}; fields.forEach(f => (draft[l.code][f.key] = initial?.[l.code]?.[f.key] ?? "")); });
   let cur = L[0].code;
@@ -9466,9 +9490,10 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
   const paintPanel = () => {
     const l = L.find(x => x.code === cur), d = draft[cur];
     const isReview = activeEditorLockState.mode === "review";
-    const isLangPublishedLocked = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
+    const isLangPublished = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
+    const isLangLocked = isLangPublished && !unlockedLangs.has(cur);
 
-    let html = fields.map(f => {
+    let fieldsHtml = fields.map(f => {
       const val = d[f.key] || "";
       const len = val.length;
       const cInfo = formatCharCounter(len, f.maxChars);
@@ -9489,15 +9514,47 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
                  autocomplete="off"
                  autocapitalize="sentences"
                  enterkeyhint="next"
-                 ${(isReview || isLangPublishedLocked) ? "readonly" : ""}>
+                 ${(isReview || isLangLocked) ? "readonly" : ""}>
           <small class="lwarn" id="lw-${f.key}" hidden></small>
         </div>
       `;
     }).join("");
 
+    const lockBannerHtml = isLangPublished ? `
+      <div class="lang-lock-row" style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button type="button" class="editor-settings-lock-btn ${isLangLocked ? 'is-locked' : 'is-unlocked'}"
+                id="lf-lang-lock-btn"
+                aria-label="${isLangLocked ? 'Unlock ' + esc(l.name) + ' for editing' : esc(l.name) + ' is unlocked'}">
+          <span class="lock-emoji" aria-hidden="true">${isLangLocked ? "🔒" : "🔓"}</span>
+          <span class="lock-label">${esc(l.name)} ${isLangLocked ? "Locked" : "Unlocked"}</span>
+        </button>
+      </div>
+    ` : "";
+
     const p = $("#lf-panel");
     if (!p) return;
-    p.innerHTML = html;
+    p.innerHTML = lockBannerHtml + fieldsHtml;
+
+    const langLockBtn = $("#lf-lang-lock-btn");
+    if (langLockBtn) {
+      langLockBtn.onclick = async () => {
+        if (isLangLocked) {
+          const ok = await promptLanguageUnlock(l.name);
+          if (ok) {
+            unlockedLangs.add(cur);
+            dlgDirty = true;
+            paintPanel();
+            paintStatus();
+            onChange();
+          }
+        } else {
+          unlockedLangs.delete(cur);
+          paintPanel();
+          paintStatus();
+          onChange();
+        }
+      };
+    }
 
     fields.forEach(f => {
       const inp = $("#lf-" + f.key);
@@ -9532,9 +9589,11 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
       el.appendChild(statusDiv);
       el = statusDiv;
     }
+    const l = L.find(x => x.code === cur);
     const curSt = status[cur] || "";
     const isReview = activeEditorLockState && activeEditorLockState.mode === "review";
-    const isLangPublishedLocked = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
+    const isLangPublished = Boolean(editorContext && editorContext.isPublished && status[cur] === "published");
+    const isLangLocked = isLangPublished && !unlockedLangs.has(cur);
     el.innerHTML = `
       <div class="editor-status-block">
         <div class="editor-status-title">
@@ -9547,7 +9606,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
               <button type="button" role="radio" aria-checked="${isSel}"
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
-                      ${(isReview || isLangPublishedLocked) ? 'aria-disabled="true"' : ""}>
+                      ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
                 ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
@@ -9558,16 +9617,20 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
     `;
     const ctrl = $("#lf-status-ctrl");
     if (ctrl) {
-      const applyStatus = newSt => {
-        if (isLangPublishedLocked && newSt === "published") {
-          return;
-        }
+      const applyStatus = async newSt => {
+        if (isLangLocked) return;
         if (activeEditorLockState && activeEditorLockState.mode === "review") return;
         if (status[cur] === newSt) return;
+        if (status[cur] === "published" && newSt !== "published") {
+          const ok = await promptLanguageDraft(l ? l.name : cur);
+          if (!ok) return;
+        }
         status[cur] = newSt;
+        if (newSt !== "published") unlockedLangs.delete(cur);
         dlgDirty = true;
         capture();
         paintTabs();
+        paintPanel();
         paintStatus();
         onChange();
       };
@@ -10732,10 +10795,15 @@ function openFreshnessGate(mode = "launch") {
   if (syncState.gateTimer) clearTimeout(syncState.gateTimer);
   syncState.gateTimer = setTimeout(() => {
     if (syncState.gateOpen) {
-      console.warn("Freshness gate timed out after 6s. Entering offline state.");
-      enterOfflineMode();
+      if (navigator.onLine) {
+        console.log("Freshness gate timeout reached while online. Unblocking UI with current data.");
+        closeFreshnessGate();
+      } else {
+        console.warn("Freshness gate timed out while offline.");
+        enterOfflineMode();
+      }
     }
-  }, 6000);
+  }, 4000);
 }
 
 function closeFreshnessGate() {
@@ -10751,10 +10819,12 @@ function closeFreshnessGate() {
   if (overlay) overlay.hidden = true;
   document.body.classList.remove("sync-gate-active");
 
-  const offlineBanner = $("#offline-banner");
-  if (offlineBanner) offlineBanner.hidden = true;
-  syncState.isOffline = false;
-  document.body.classList.remove("sync-offline");
+  if (navigator.onLine) {
+    syncState.isOffline = false;
+    const offlineBanner = $("#offline-banner");
+    if (offlineBanner) offlineBanner.hidden = true;
+    document.body.classList.remove("sync-offline");
+  }
 
   updateSyncStatusDot();
 }
@@ -10799,6 +10869,13 @@ function handleResume() {
     enterOfflineMode();
     return;
   }
+  if (hasCompletedInitialSync && !syncState.isOffline) {
+    const offlineBanner = $("#offline-banner");
+    if (offlineBanner) offlineBanner.hidden = true;
+    document.body.classList.remove("sync-offline");
+    updateSyncStatusDot();
+    return;
+  }
   openFreshnessGate("reconnecting");
 }
 
@@ -10815,6 +10892,14 @@ function handleCollectionSnapshot(name, snap) {
     }
   }
   syncState.pendingDocsByColl[name] = pendingCount;
+
+  if (navigator.onLine && syncState.isOffline) {
+    syncState.isOffline = false;
+    const offlineBanner = $("#offline-banner");
+    if (offlineBanner) offlineBanner.hidden = true;
+    document.body.classList.remove("sync-offline");
+    updateSyncStatusDot();
+  }
 
   if (!isFromCache) {
     syncState.lastServerUpdate = new Date();
@@ -12792,7 +12877,10 @@ function renderCard({
         </div>
         <div class="card-niyyah-bottom" dir="${previewRtl ? 'rtl' : 'ltr'}">
           ${progHtml}
-          <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="niyyahs" data-id="${esc(id)}" aria-label="Edit / options for Niyyah ${esc(numDisplay)}" title="Edit / options">✏️</button>
+          <div class="card-btns">
+            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="niyyahs" data-id="${esc(id)}" aria-label="Edit Niyyah ${esc(numDisplay)}" title="Edit">✏️</button>
+            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="niyyahs" data-id="${esc(id)}" aria-label="More options for Niyyah ${esc(numDisplay)}" title="More options">⋯</button>
+          </div>
         </div>
         ${trayHtml}
       </div>
@@ -12811,7 +12899,10 @@ function renderCard({
         <div class="card-named-row" dir="${isRtl ? 'rtl' : 'ltr'}">
           <h3 class="card-title card-named-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           ${progHtml}
-          <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit / options for ${esc(title)}" title="Edit / options">✏️</button>
+          <div class="card-btns">
+            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
+            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="More options" title="More options">⋯</button>
+          </div>
         </div>
         ${trayHtml}
       </div>
@@ -12833,7 +12924,10 @@ function renderCard({
           </div>
           <div class="card-head-tools">
             ${progHtml}
-            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit / options for ${esc(title)}" title="Edit / options">✏️</button>
+            <div class="card-btns">
+              <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
+              <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="More options" title="More options">⋯</button>
+            </div>
           </div>
         </div>
         ${preview ? `
@@ -12886,7 +12980,7 @@ function openCardMoreSheet(type, id) {
       <h2>${esc(title)}</h2>
       <p class="muted" style="margin:0 0 var(--space-sm)">Choose an action for this item.</p>
       <div class="more-sheet-menu">
-        <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-edit" data-type="${esc(type)}" data-id="${esc(id)}">
+        <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-edit", "card-sheet-edit" data-type="${esc(type)}" data-id="${esc(id)}">
           <span class="m-icon" aria-hidden="true">✏️</span>
           <div class="m-text">
             <span class="m-title">Edit</span>
@@ -13444,7 +13538,10 @@ function renderActions() {
                 </div>
                 <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
                   ${renderLangProgress(c, L, "actions")}
-                  <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Edit / options for ${esc(nm(c))}" title="Edit / options">✏️</button>
+                  <div class="card-btns">
+                    <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="actions" data-id="${c.id}" aria-label="Edit ${esc(nm(c))}" title="Edit">✏️</button>
+                    <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="More options" title="More options">⋯</button>
+                  </div>
                   <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
                     <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
@@ -14127,6 +14224,7 @@ document.addEventListener("click", e => {
       renderAll();
     },
     "toggle-tray": () => toggleLangTray(b.dataset.type, b.dataset.id),
+    "card-edit": () => openCardEditor(b.dataset.type, b.dataset.id),
     "card-more": () => openCardMoreSheet(b.dataset.type, b.dataset.id),
     "show-lock-info": () => openLockInfoPopup(b.dataset.type, b.dataset.id),
     "show-viewer-info": () => openViewerInfoPopup(b.dataset.type, b.dataset.id),
@@ -14660,6 +14758,7 @@ function openNiyyah(id, _mode = null) {
 
   const isPublished = isItemPublished("niyyahs", n);
   let isMainSettingsLocked = isPublished;
+  const unlockedLangs = new Set();
 
   let curJobIds = [...(n.jobIds || [])];
   let curMaritalIds = [...(n.maritalStatusIds || [])];
@@ -14696,19 +14795,7 @@ function openNiyyah(id, _mode = null) {
   const initEventOn = curEventIds.length > 0;
 
   const bodyHtml = `
-    <div class="editor-published-banner" id="d-published-banner" ${isPublished ? "" : "style=\"display:none;\""} role="alert">
-      <div class="published-warning-main">
-        <span class="warning-icon" aria-hidden="true">⚠️</span>
-        <div class="warning-copy">
-          <strong class="warning-title">Published Niyyah</strong>
-          <span class="warning-desc">Card has published translations. Main settings and published text are protected. Draft translations remain editable.</span>
-        </div>
-      </div>
-      <div class="published-warning-actions">
-        <button type="button" class="btn small primary" id="btn-mark-draft">Mark all as draft</button>
-        <button type="button" class="btn small" id="btn-published-cancel">Cancel</button>
-      </div>
-    </div>
+
 
     ${renderMainSettingsCard({
       id: "niyyah-main-settings",
@@ -14983,13 +15070,25 @@ function openNiyyah(id, _mode = null) {
   const paintPanel = () => {
     const l = L.find(x => x.code === cur), d = draft[cur];
     const isReview = activeEditorLockState.mode === "review";
+    const isLangPublished = Boolean(isPublished && d.status === "published");
+    const isLangLocked = isLangPublished && !unlockedLangs.has(cur);
     const textLen = (d.text || "").length;
 
     let html = `
       <div class="f">
         <div class="f-head">
           <label for="l-text" class="f-label">Niyyah text</label>
-          <span class="char-count" id="cc-niyyah-text">${textLen} chars</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="char-count" id="cc-niyyah-text">${textLen} chars</span>
+            ${isLangPublished ? `
+              <button type="button" class="editor-settings-lock-btn ${isLangLocked ? 'is-locked' : 'is-unlocked'}"
+                      id="n-lang-lock-btn"
+                      aria-label="${isLangLocked ? 'Unlock ' + esc(l.name) + ' for editing' : esc(l.name) + ' is unlocked'}">
+                <span class="lock-emoji" aria-hidden="true">${isLangLocked ? "🔒" : "🔓"}</span>
+                <span class="lock-label">${esc(l.name)} ${isLangLocked ? "Locked" : "Unlocked"}</span>
+              </button>
+            ` : ""}
+          </div>
         </div>
         <textarea id="l-text"
                   class="${l.rtl ? "rtl" : ""}"
@@ -14999,14 +15098,14 @@ function openNiyyah(id, _mode = null) {
                   autocomplete="off"
                   autocapitalize="sentences"
                   enterkeyhint="next"
-                  ${(isReview || (isPublished && d.status === "published")) ? "readonly" : ""}>${esc(d.text)}</textarea>
+                  ${(isReview || isLangLocked) ? "readonly" : ""}>${esc(d.text)}</textarea>
         <small class="lwarn" id="l-warn" hidden></small>
       </div>
 
       <div class="f">
         <div class="f-head" style="align-items:center !important">
           <label class="f-label">Sources</label>
-          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${(isReview || (isPublished && d.status === "published")) ? "disabled style='display:none;'" : ""}>＋</button>
+          <button type="button" class="btn-icon" id="l-addsrc" aria-label="Add source" title="Add source" ${(isReview || isLangLocked) ? "disabled style='display:none;'" : ""}>＋</button>
         </div>
         ${d.sources.map((s, i) => {
           const hideDel = d.sources.length === 1 && !s.trim();
@@ -15020,8 +15119,8 @@ function openNiyyah(id, _mode = null) {
                       autocomplete="off"
                       enterkeyhint="next"
                       data-idx="${i}"
-                      ${(isReview || (isPublished && d.status === "published")) ? "readonly" : ""}>${esc(s)}</textarea>
-            ${(isReview || (isPublished && d.status === "published")) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
+                      ${(isReview || isLangLocked) ? "readonly" : ""}>${esc(s)}</textarea>
+            ${(isReview || isLangLocked) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
           </div>
         `;
         }).join("")}
@@ -15031,6 +15130,27 @@ function openNiyyah(id, _mode = null) {
     const p = $("#l-panel");
     if (!p) return;
     p.innerHTML = html;
+
+    const langLockBtn = $("#n-lang-lock-btn");
+    if (langLockBtn) {
+      langLockBtn.onclick = async () => {
+        if (isLangLocked) {
+          const ok = await promptLanguageUnlock(l.name);
+          if (ok) {
+            unlockedLangs.add(cur);
+            dlgDirty = true;
+            paintPanel();
+            paintStatus();
+            onFieldChange();
+          }
+        } else {
+          unlockedLangs.delete(cur);
+          paintPanel();
+          paintStatus();
+          onFieldChange();
+        }
+      };
+    }
 
     const autoGrow = (el, minH = 44) => {
       if (!el) return;
@@ -15068,7 +15188,9 @@ function openNiyyah(id, _mode = null) {
     }
 
     const addSrcBtn = $("#l-addsrc");
-    if (addSrcBtn && !isReview && !(isPublished && d.status === "published")) {
+    const isLangPublishedNow = Boolean(isPublished && d.status === "published");
+    const isLangLockedNow = isLangPublishedNow && !unlockedLangs.has(cur);
+    if (addSrcBtn && !isReview && !isLangLockedNow) {
       addSrcBtn.onclick = () => {
         capture();
         draft[cur].sources.push("");
@@ -15136,8 +15258,11 @@ function openNiyyah(id, _mode = null) {
   const paintStatus = () => {
     let el = $("#l-status-container");
     if (!el) return;
+    const l = L.find(x => x.code === cur);
     const curSt = (draft[cur] && draft[cur].status) || "";
     const isReview = activeEditorLockState && activeEditorLockState.mode === "review";
+    const isLangPublished = Boolean(isPublished && curSt === "published");
+    const isLangLocked = isLangPublished && !unlockedLangs.has(cur);
     el.innerHTML = `
       <div class="editor-status-block">
         <div class="editor-status-title">
@@ -15150,7 +15275,7 @@ function openNiyyah(id, _mode = null) {
               <button type="button" role="radio" aria-checked="${isSel}"
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
-                      ${isReview ? 'aria-disabled="true"' : ""}>
+                      ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
                 ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
@@ -15161,11 +15286,18 @@ function openNiyyah(id, _mode = null) {
     `;
     const sCtrl = $("#l-status-ctrl");
     if (sCtrl) {
-      const applyStatus = newSt => {
+      const applyStatus = async newSt => {
+        if (isLangLocked) return;
         if (activeEditorLockState && activeEditorLockState.mode === "review") return;
         if (draft[cur].status === newSt) return;
+        if (draft[cur].status === "published" && newSt !== "published") {
+          const ok = await promptLanguageDraft(l ? l.name : cur);
+          if (!ok) return;
+        }
         draft[cur].status = newSt;
+        if (newSt !== "published") unlockedLangs.delete(cur);
         paintTabs();
+        paintPanel();
         paintStatus();
         onFieldChange();
       };
@@ -15246,30 +15378,7 @@ function openNiyyah(id, _mode = null) {
     };
   }
 
-  // Wire published banner buttons
-  const btnMarkDraft = $("#btn-mark-draft");
-  if (btnMarkDraft) {
-    btnMarkDraft.onclick = () => {
-      L.forEach(l => {
-        if (draft[l.code].status === "published") {
-          draft[l.code].status = "draft";
-        }
-      });
-      dlgDirty = true;
-      paintTabs();
-      paintPanel();
-      paintStatus();
-      validate();
-      toast("Marked all translations as draft.", { type: "info" });
-    };
-  }
 
-  const btnPubCancel = $("#btn-published-cancel");
-  if (btnPubCancel) {
-    btnPubCancel.onclick = () => {
-      requestClose();
-    };
-  }
 
   paintTabs();
   paintPanel();
