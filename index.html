@@ -12877,10 +12877,7 @@ function renderCard({
         </div>
         <div class="card-niyyah-bottom" dir="${previewRtl ? 'rtl' : 'ltr'}">
           ${progHtml}
-          <div class="card-btns">
-            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="niyyahs" data-id="${esc(id)}" aria-label="Edit Niyyah ${esc(numDisplay)}" title="Edit">✏️</button>
-            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="niyyahs" data-id="${esc(id)}" aria-label="More options for Niyyah ${esc(numDisplay)}" title="More options">⋯</button>
-          </div>
+          <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="niyyahs" data-id="${esc(id)}" aria-label="Edit Niyyah ${esc(numDisplay)}" title="Edit">✏️</button>
         </div>
         ${trayHtml}
       </div>
@@ -12899,10 +12896,7 @@ function renderCard({
         <div class="card-named-row" dir="${isRtl ? 'rtl' : 'ltr'}">
           <h3 class="card-title card-named-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           ${progHtml}
-          <div class="card-btns">
-            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
-            <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="More options" title="More options">⋯</button>
-          </div>
+          <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
         </div>
         ${trayHtml}
       </div>
@@ -12924,10 +12918,7 @@ function renderCard({
           </div>
           <div class="card-head-tools">
             ${progHtml}
-            <div class="card-btns">
-              <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
-              <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="More options" title="More options">⋯</button>
-            </div>
+            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
           </div>
         </div>
         ${preview ? `
@@ -13538,10 +13529,7 @@ function renderActions() {
                 </div>
                 <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
                   ${renderLangProgress(c, L, "actions")}
-                  <div class="card-btns">
-                    <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="actions" data-id="${c.id}" aria-label="Edit ${esc(nm(c))}" title="Edit">✏️</button>
-                    <button type="button" class="btn-icon card-more-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="More options" title="More options">⋯</button>
-                  </div>
+                  <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="actions" data-id="${c.id}" aria-label="Edit ${esc(nm(c))}" title="Edit">✏️</button>
                   <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
                     <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
