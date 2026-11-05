@@ -1976,7 +1976,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .card-edit-btn,
   .card-more-btn,
-  .g-collapse-btn {
+  .g-collapse-btn,
+  .btn-add-mini {
     width: 38px;
     height: 38px;
     min-width: 38px;
@@ -2001,7 +2002,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: relative;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
   }
-  .card-edit-btn::before, .card-more-btn::before, .g-collapse-btn::before {
+  .btn-add-mini {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .card-edit-btn::before, .card-more-btn::before, .g-collapse-btn::before, .btn-add-mini::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -2012,25 +2017,308 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     min-width: 44px;
     min-height: 44px;
   }
-  .card-edit-btn:hover, .card-more-btn:hover, .g-collapse-btn:hover {
+  .card-edit-btn:hover, .card-more-btn:hover, .g-collapse-btn:hover, .btn-add-mini:hover {
     background: var(--card);
     border-color: var(--muted);
   }
-  .card-edit-btn:active, .card-more-btn:active, .g-collapse-btn:active {
+  .card-edit-btn:active, .card-more-btn:active, .g-collapse-btn:active, .btn-add-mini:active {
     transform: scale(0.94);
+  }
+  .btn-add-mini:disabled, .btn-add-mini[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 
   /* Desktop hover reveal for more options */
   @media (min-width: 721px) {
-    .card .card-edit-btn, .card .card-more-btn {
-      opacity: 0.7;
+    .card .card-edit-btn, .card .card-more-btn, .card .btn-add-mini {
+      opacity: 0.85;
     }
-    .card:hover .card-edit-btn, .card:hover .card-more-btn, .card:focus-within .card-edit-btn, .card:focus-within .card-more-btn {
+    .card:hover .card-edit-btn, .card:hover .card-more-btn, .card:hover .btn-add-mini,
+    .card:focus-within .card-edit-btn, .card:focus-within .card-more-btn, .card:focus-within .btn-add-mini {
       opacity: 1;
     }
   }
 
-  /* Collapsible per-language status tray */
+  /* Compact Centered Popup Menu (dialog#dlg-popup) */
+  dialog#dlg-popup {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 6px;
+    width: min(280px, 86vw);
+    max-height: min(280px, 88vh);
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    box-sizing: border-box;
+    margin: auto;
+    position: fixed;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: popupFadeScale 140ms ease-out;
+  }
+  dialog#dlg-popup[open] {
+    display: flex;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    dialog#dlg-popup {
+      animation: none;
+    }
+  }
+  @keyframes popupFadeScale {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  dialog#dlg-popup::backdrop {
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  @supports not (backdrop-filter: blur(6px)) {
+    dialog#dlg-popup::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  .popup-menu-header {
+    padding: 6px 10px 4px;
+    flex-shrink: 0;
+  }
+  .popup-menu-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+  }
+  .popup-menu-title.rtl {
+    direction: rtl;
+    text-align: right;
+  }
+  .popup-menu-list {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: calc(280px - 32px);
+    -webkit-overflow-scrolling: touch;
+  }
+  .popup-menu-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 3px 6px;
+    flex-shrink: 0;
+  }
+  .popup-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 8px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    box-sizing: border-box;
+    text-align: start;
+    user-select: none;
+    touch-action: manipulation;
+    flex-shrink: 0;
+    transition: background-color 0.1s ease;
+  }
+  .popup-menu-item:hover:not(:disabled) {
+    background: var(--sand);
+  }
+  .popup-menu-item:focus-visible {
+    outline: 2px solid var(--focus-ring, var(--green));
+    outline-offset: -2px;
+    background: var(--sand);
+  }
+  .popup-menu-item.danger .pmi-label {
+    color: var(--danger);
+    font-weight: 600;
+  }
+  .popup-menu-item:disabled,
+  .popup-menu-item.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .popup-menu-item .pmi-icon {
+    font-size: 17px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .popup-menu-item .pmi-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .popup-menu-item .pmi-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.15;
+  }
+  .popup-menu-item .pmi-sub {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
+  /* Compact chips for Actions page & mobile-first no-wrap */
+  .chip-compact {
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .chip-inapp {
+    background: var(--sand);
+    color: var(--ink);
+  }
+  .chip-hidden {
+    background: #fce8e6;
+    color: var(--danger);
+  }
+  .chip-jobonly {
+    background: #e3efec;
+    color: var(--green);
+  }
+  .chip-count {
+    background: var(--sand);
+    color: var(--ink);
+  }
+  @media (prefers-color-scheme: dark) {
+    .chip-hidden {
+      background: #42161b;
+      color: var(--st-empty-text);
+    }
+    .chip-jobonly {
+      background: var(--green-soft);
+      color: var(--st-published-text);
+    }
+  }
+  [data-theme="dark"] .chip-hidden {
+    background: #42161b;
+    color: var(--st-empty-text);
+  }
+  [data-theme="dark"] .chip-jobonly {
+    background: var(--green-soft);
+    color: var(--st-published-text);
+  }
+  @media (max-width: 359px) {
+    .chip-count .chip-count-label {
+      display: none !important;
+    }
+  }
+
+  /* Parent card 2-row layout */
+  .parent-card-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  .parent-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+  .parent-title-wrap .cat-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .parent-title-wrap .card-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+  .parent-row1-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .parent-card-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    min-width: 0;
+  }
+  .parent-chips-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  .parent-row2-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* Sub-action card bottom row layout */
+  .card-action-bottom {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  .card-action-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
   .card-lang-tray {
     margin-top: var(--space-sm);
     padding-top: var(--space-xs);
@@ -3967,6 +4255,10 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     justify-content: flex-end;
     gap: var(--space-sm);
   }
+  .editor-del-btn {
+    margin-inline-end: auto;
+    flex-shrink: 0;
+  }
   .editor-save-actions .btn {
     min-height: 48px;
     min-width: 110px;
@@ -3975,6 +4267,21 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .editor-save-actions .btn {
       flex: 1;
     }
+  }
+  .discard-popup-title {
+    font-size: 16.5px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .discard-popup-sub {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--muted);
+    line-height: 1.4;
+    text-align: center;
+    white-space: pre-line;
   }
 
   /* Fixed Language Strip under Header (flex child, 0 empty space, solid background) */
@@ -4958,66 +5265,54 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tab-top-actions {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: 8px;
     flex-shrink: 0;
     margin-left: auto;
     flex-wrap: nowrap;
   }
-  .btn-import-json {
+  .btn-import-json,
+  .btn-export-json {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: var(--radius-full);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    min-height: 36px;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: var(--radius-full);
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
     border: 1px solid var(--line);
     background: var(--card);
     color: var(--ink);
-    font-size: 13.5px;
-    font-weight: 600;
     cursor: pointer;
     touch-action: manipulation;
     box-sizing: border-box;
     flex-shrink: 0;
-    line-height: 1;
     position: relative;
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
   }
-  .btn-import-json::before {
+  .btn-import-json::before,
+  .btn-export-json::before {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 100%;
+    width: 44px;
     height: 44px;
+    min-width: 44px;
     min-height: 44px;
   }
-  .btn-import-json .btn-import-icon {
-    font-size: 15px;
-    line-height: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  .btn-import-json:hover,
+  .btn-export-json:hover {
+    background: var(--sand);
+    border-color: var(--muted);
   }
-  .btn-import-json .btn-import-label {
-    display: inline;
-  }
-  @media (max-width: 400px) {
-    .btn-import-json {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
-      min-height: 36px;
-      padding: 0;
-      border-radius: var(--radius-full);
-      justify-content: center;
-    }
-    .btn-import-json .btn-import-label {
-      display: none !important;
-    }
+  .btn-import-json:active,
+  .btn-export-json:active {
+    transform: scale(0.94);
   }
   .btn-add-niyyah-circle {
     display: none !important;
@@ -5594,8 +5889,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     /* All clickable elements meet >= 48px tap target on mobile */
     .btn { min-height: var(--tap, 48px); padding: 11px 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
     .btn.small { min-height: var(--tap, 48px); padding: 10px 14px; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
-    .search-filter-bar .filter-trigger-btn,
-    .search-filter-bar .btn-import-json {
+    .search-filter-bar .filter-trigger-btn {
       min-height: 36px !important;
       height: 36px !important;
       padding-top: 0 !important;
@@ -5613,9 +5907,25 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .nhead { min-height: var(--tap, 48px); padding: 14px 16px; }
 
     /* Dialogs become bottom sheets with a sticky action bar (except full-screen editor-mode, discard popup, and picker) */
-    dialog:not(.editor-mode):not(#dlg-discard):not(#dlg-inactivity-warning):not(#dlg-lock-info):not(#dlg-lock-prompt):not(#dlg-history):not(#dlg-picker) { width: 100%; max-width: 100vw; margin: auto 0 0; max-height: 94dvh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
-    dialog:not(#dlg-discard):not(#dlg-inactivity-warning):not(#dlg-lock-info):not(#dlg-lock-prompt):not(#dlg-help):not(#dlg-picker):not(.editor-mode):not(#dlg-history) { height: 94dvh; }
+    dialog:not(.editor-mode):not(#dlg-discard):not(#dlg-inactivity-warning):not(#dlg-lock-info):not(#dlg-lock-prompt):not(#dlg-history):not(#dlg-picker):not(#dlg-popup) { width: 100%; max-width: 100vw; margin: auto 0 0; max-height: 94dvh; border-radius: var(--radius-xl) var(--radius-xl) 0 0; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; }
+    dialog:not(#dlg-discard):not(#dlg-inactivity-warning):not(#dlg-lock-info):not(#dlg-lock-prompt):not(#dlg-help):not(#dlg-picker):not(.editor-mode):not(#dlg-history):not(#dlg-popup) { height: 94dvh; }
     #dlg-help { width: 100%; max-width: 100vw; height: auto; }
+    dialog#dlg-popup {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      bottom: auto !important;
+      right: auto !important;
+      transform: translate(-50%, -50%) !important;
+      margin: 0 !important;
+      width: min(280px, 86vw) !important;
+      max-width: 280px !important;
+      height: auto !important;
+      max-height: min(280px, 88vh) !important;
+      border-radius: 14px !important;
+      padding: 6px !important;
+      overflow: hidden !important;
+    }
     dialog#dlg-discard,
     dialog#dlg-inactivity-warning,
     dialog#dlg-lock-info,
@@ -6327,6 +6637,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 <dialog id="dlg-history"></dialog>
 <dialog id="dlg-picker"></dialog>
 <dialog id="dlg-help"></dialog>
+  <dialog id="dlg-popup"></dialog>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
 <script type="module">
@@ -6691,10 +7002,8 @@ function renderSearchFilterSection(tab) {
   if (tab === "niyyahs") {
     actionsHtml = `
       <div class="tab-top-actions">
-        <button type="button" class="btn small btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">
-          <span class="btn-import-icon" aria-hidden="true">📥</span>
-          <span class="btn-import-label">Import JSON</span>
-        </button>
+        <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">📥</button>
+        <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">📤</button>
         <button type="button" class="btn-icon primary hdr-add-btn btn-add-niyyah-circle" data-act="new-niyyah" aria-label="Add niyyah" title="Add niyyah">+</button>
       </div>
     `;
@@ -7417,9 +7726,13 @@ function setupEditorCompactPreview(editorPageEl) {
 }
 
 function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.common.save, saveDisabledReason = "" }) {
-  const isReview = activeEditorLockState.mode === "review" && activeEditorLockState.id === id;
-  const isMineLock = activeEditorLockState.mode === "edit" && activeEditorLockState.id === id && (currentActiveLock || activeEditorLockState.lockInfo?.isMine);
+  const isReview = (activeEditorLockState.mode === "review" && activeEditorLockState.id === id) || Boolean(dlg?.querySelector(".editor-page.review-mode"));
+  const isMineLock = !isReview && (currentActiveLock || activeEditorLockState.lockInfo?.isMine || activeEditorLockState.mode === "edit");
   const isNiyyah = type === "niyyah" || type === "niyyahs";
+  const isExistingItem = !!id;
+  const isWritable = checkWritePermissionSilently();
+  const showEditorDelete = isExistingItem && isMineLock && !isReview;
+  const deleteDisabled = !isWritable;
 
   const item = id ? getItem(type, id) : null;
   let lastEditedText = "";
@@ -7505,6 +7818,9 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
       <footer class="editor-save-bar" id="d-save-bar">
         <div class="editor-save-reason" id="d-save-reason" ${saveDisabledReason ? "" : "hidden"} aria-live="polite">${esc(saveDisabledReason)}</div>
         <div class="editor-save-actions">
+          ${showEditorDelete ? `
+            <button type="button" class="btn-icon danger editor-del-btn" id="d-delete" aria-label="Delete" title="${deleteDisabled ? "Offline" : "Delete"}" ${deleteDisabled ? "disabled" : ""}>🗑️</button>
+          ` : ""}
           <button type="button" class="btn" id="d-cancel">${esc(isReview ? (STRINGS?.common?.close || "Close") : (STRINGS?.common?.cancel || "Cancel"))}</button>
           <button type="button" class="btn primary" id="d-save" ${isReview ? "hidden" : (saveDisabledReason ? "disabled" : "")}>${esc(saveLabel)}</button>
         </div>
@@ -7546,6 +7862,15 @@ function showDlg() {
     if (closeX) closeX.onclick = requestClose;
     const cancelBtn = $("#d-cancel", dlg);
     if (cancelBtn) cancelBtn.onclick = requestClose;
+    const delBtn = $("#d-delete", dlg);
+    if (delBtn) {
+      delBtn.onclick = () => {
+        const ed = dlg.querySelector(".editor-page");
+        if (ed && ed.dataset.type && ed.dataset.id) {
+          handleEditorDelete(ed.dataset.type, ed.dataset.id);
+        }
+      };
+    }
     const historyBtn = $("#d-history-btn", dlg);
     if (historyBtn) {
       historyBtn.onclick = () => {
@@ -12745,12 +13070,14 @@ function getItem(type, id) {
 
 function getItemTitle(type, item) {
   if (!item) return "Item";
-  if (type === "niyyahs") {
+  const c = typeof canonicalColl === "function" ? canonicalColl(type) : type;
+  if (c === "niyyahs" || c === "niyyah") {
+    if (typeof item.number === "number") return `Niyyah #${item.number}`;
     const trs = langs().map(l => ({ l, t: trOf(item, l.code) }));
     const pick = trs.find(x => x.l.code === viewCode() && x.t.text) || trs.find(x => x.t.text);
-    return (item.actionIds || []).map(actionLabel).join(", ") || (pick ? pick.t.text.slice(0, 45) : "Niyyah");
+    return pick ? pick.t.text.slice(0, 45) : "Niyyah";
   }
-  if (type === "tips") {
+  if (c === "tips" || c === "tip") {
     const t = (item.texts || {})[viewCode()] || firstOf(item.texts || {}) || "Tip";
     return t.slice(0, 45);
   }
@@ -12877,7 +13204,7 @@ function renderCard({
         </div>
         <div class="card-niyyah-bottom" dir="${previewRtl ? 'rtl' : 'ltr'}">
           ${progHtml}
-          <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="niyyahs" data-id="${esc(id)}" aria-label="Edit Niyyah ${esc(numDisplay)}" title="Edit">✏️</button>
+          <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="niyyahs" data-id="${esc(id)}" aria-label="Options for Niyyah ${esc(numDisplay)}" title="Edit / options">✏️</button>
         </div>
         ${trayHtml}
       </div>
@@ -12896,7 +13223,41 @@ function renderCard({
         <div class="card-named-row" dir="${isRtl ? 'rtl' : 'ltr'}">
           <h3 class="card-title card-named-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           ${progHtml}
-          <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
+          <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
+        </div>
+        ${trayHtml}
+      </div>
+    </div>
+    `;
+  }
+
+  if (type === "actions") {
+    const isVis = item ? (item.inAppVisibility ?? item.visible ?? true) : true;
+    const isRestricted = !!(item && item.restricted);
+    const nCount = niyyahCount(id);
+
+    return `
+    <div class="card card-action"
+         data-type="actions" data-id="${esc(id)}"
+         role="button" tabindex="0">
+      ${lockBadgeHtml}
+      ${viewerBadgeHtml}
+      <div class="card-main">
+        <div class="card-head">
+          <div class="card-title-wrap">
+            <h3 class="card-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
+          </div>
+          <div class="card-head-tools">
+            ${progHtml}
+            <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
+          </div>
+        </div>
+        <div class="card-action-bottom" dir="${isRtl ? 'rtl' : 'ltr'}">
+          <div class="card-action-chips">
+            ${!isVis ? '<span class="chip chip-compact chip-hidden">Hidden</span>' : '<span class="chip chip-compact chip-inapp">In app</span>'}
+            ${isRestricted ? '<span class="chip chip-compact chip-jobonly">Job-only</span>' : ''}
+            <span class="chip chip-compact chip-count"><span class="chip-count-num">${nCount}</span><span class="chip-count-label"> niyyah${nCount === 1 ? '' : 's'}</span></span>
+          </div>
         </div>
         ${trayHtml}
       </div>
@@ -12918,7 +13279,7 @@ function renderCard({
           </div>
           <div class="card-head-tools">
             ${progHtml}
-            <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Edit ${esc(title)}" title="Edit">✏️</button>
+            <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
           </div>
         </div>
         ${preview ? `
@@ -12957,67 +13318,209 @@ function renderSkeletons(count = 4) {
   `;
 }
 
-function openCardMoreSheet(type, id) {
+let popupTriggerBtn = null;
+let currentPopupActions = {};
+
+function openPopupMenu({ title, isArabicTitle, items, triggerEl }) {
+  popupTriggerBtn = triggerEl || document.activeElement;
+  const dlgPopup = document.getElementById("dlg-popup");
+  if (!dlgPopup) return;
+
+  const titleRtl = !!isArabicTitle;
+  dlgPopup.innerHTML = `
+    <div class="popup-menu-header" dir="${titleRtl ? 'rtl' : 'ltr'}">
+      <span class="popup-menu-title ${titleRtl ? 'rtl' : ''}" dir="${titleRtl ? 'rtl' : 'auto'}">${esc(title)}</span>
+    </div>
+    <div class="popup-menu-list" role="menu">
+      ${items.map(it => {
+        if (it.divider) return '<div class="popup-menu-divider" role="separator"></div>';
+        const isDis = !!it.disabled;
+        return `
+          <button type="button" role="menuitem" class="popup-menu-item ${it.danger ? 'danger' : ''} ${isDis ? 'is-disabled' : ''}"
+                  data-act="${esc(it.act || '')}" ${isDis ? 'disabled aria-disabled="true"' : ''}>
+            <span class="pmi-icon" aria-hidden="true">${it.icon}</span>
+            ${it.sub ? `
+              <div class="pmi-text">
+                <span class="pmi-label">${esc(it.label)}</span>
+                <span class="pmi-sub">${esc(it.sub)}</span>
+              </div>
+            ` : `
+              <span class="pmi-label">${esc(it.label)}</span>
+            `}
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  dlgPopup.showModal();
+
+  // Focus first enabled item
+  const firstEnabled = dlgPopup.querySelector('.popup-menu-item:not(:disabled)');
+  if (firstEnabled) firstEnabled.focus();
+}
+
+function closePopupMenu() {
+  const dlgPopup = document.getElementById("dlg-popup");
+  if (dlgPopup && dlgPopup.open) {
+    dlgPopup.close();
+  }
+}
+
+// Global popup listeners (set up once)
+if (typeof window !== "undefined") {
+  window.addEventListener("DOMContentLoaded", setupPopupMenuListeners);
+}
+function setupPopupMenuListeners() {
+  const dlgPopup = document.getElementById("dlg-popup");
+  if (!dlgPopup || dlgPopup.__hasListeners) return;
+  dlgPopup.__hasListeners = true;
+
+  dlgPopup.addEventListener("click", e => {
+    if (e.target === dlgPopup) {
+      closePopupMenu();
+      return;
+    }
+    const btn = e.target.closest(".popup-menu-item");
+    if (!btn || btn.disabled) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const act = btn.dataset.act;
+    closePopupMenu();
+    if (act && currentPopupActions[act]) {
+      currentPopupActions[act]();
+    }
+  });
+
+  dlgPopup.addEventListener("close", () => {
+    if (popupTriggerBtn && typeof popupTriggerBtn.focus === "function" && popupTriggerBtn.isConnected) {
+      try { popupTriggerBtn.focus(); } catch (e) {}
+    }
+    popupTriggerBtn = null;
+  });
+
+  dlgPopup.addEventListener("keydown", e => {
+    const items = [...dlgPopup.querySelectorAll('.popup-menu-item:not(:disabled)')];
+    if (!items.length) return;
+    const currentIdx = items.indexOf(document.activeElement);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const nextIdx = (currentIdx + 1) % items.length;
+      items[nextIdx].focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prevIdx = (currentIdx - 1 + items.length) % items.length;
+      items[prevIdx].focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      items[0].focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      items[items.length - 1].focus();
+    }
+  });
+}
+
+function checkWritePermissionSilently() {
+  if (syncState.gateOpen) return false;
+  if (syncState.isOffline || (typeof navigator !== "undefined" && !navigator.onLine)) return false;
+  return true;
+}
+
+function openCardMoreSheet(type, id, triggerEl = null) {
+  setupPopupMenuListeners();
   const item = getItem(type, id);
   if (!item) return;
-  const title = getItemTitle(type, item);
+
+  let title = "";
+  if (type === "niyyahs") {
+    title = (item && typeof item.number === "number") ? `Niyyah #${item.number}` : "Niyyah #–";
+  } else if (type === "tips") {
+    const t = (item.texts || {})[viewCode()] || firstOf(item.texts || {}) || "Tip";
+    title = t.slice(0, 45);
+  } else {
+    title = nm(item) || "Item";
+  }
+
   const lock = lockOf(type, id);
   const isLockedByOther = !!(lock && !lock.isMine);
   const holderName = isLockedByOther ? getFirstName(lock.name || lock.email) : "";
   const lockNote = `Locked by ${holderName}`;
+  const isWritable = checkWritePermissionSilently();
+  const writeNote = !isWritable ? (syncState.gateOpen ? "Updating" : "Offline") : "";
+  const disabledReason = isLockedByOther ? lockNote : writeNote;
+  const editDisabled = isLockedByOther || !isWritable;
 
-  const content = `
-    <div class="dlg card-more-sheet" data-noguard>
-      <h2>${esc(title)}</h2>
-      <p class="muted" style="margin:0 0 var(--space-sm)">Choose an action for this item.</p>
-      <div class="more-sheet-menu">
-        <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-edit", "card-sheet-edit" data-type="${esc(type)}" data-id="${esc(id)}">
-          <span class="m-icon" aria-hidden="true">✏️</span>
-          <div class="m-text">
-            <span class="m-title">Edit</span>
-            <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Modify details and translations'}</span>
-          </div>
-        </button>
-        ${(type === "actions" && !item.parentId) ? '' : `
-        <button type="button" class="more-item" data-act="card-sheet-duplicate" data-type="${esc(type)}" data-id="${esc(id)}">
-          <span class="m-icon" aria-hidden="true">📋</span>
-          <div class="m-text">
-            <span class="m-title">Duplicate</span>
-            <span class="m-desc">Create a duplicate clone</span>
-          </div>
-        </button>
-        `}
-        ${(type === "actions" && item.parentId) ? `
-          <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-move" data-type="${esc(type)}" data-id="${esc(id)}">
-            <span class="m-icon" aria-hidden="true">📁</span>
-            <div class="m-text">
-              <span class="m-title">Move to Action Parent…</span>
-              <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Change Action Parent'}</span>
-            </div>
-          </button>
-        ` : ''}
-        <button type="button" class="more-item ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-publish" data-type="${esc(type)}" data-id="${esc(id)}">
-          <span class="m-icon" aria-hidden="true">🚀</span>
-          <div class="m-text">
-            <span class="m-title">Publish</span>
-            <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Mark all languages published'}</span>
-          </div>
-        </button>
-        <div class="more-divider"></div>
-        <button type="button" class="more-item danger ${isLockedByOther ? 'disabled' : ''}" ${isLockedByOther ? 'disabled aria-disabled="true"' : ''} data-act="card-sheet-delete" data-type="${esc(type)}" data-id="${esc(id)}">
-          <span class="m-icon" aria-hidden="true">🗑️</span>
-          <div class="m-text">
-            <span class="m-title" style="color:var(--danger)">Delete</span>
-            <span class="m-desc">${isLockedByOther ? esc(lockNote) : 'Remove item (with 6s Undo)'}</span>
-          </div>
-        </button>
-      </div>
-      <div class="actions">
-        <button type="button" class="btn" id="d-cancel">Cancel</button>
-      </div>
-    </div>
-  `;
-  openSheet(content);
+  const items = [];
+
+  // 1. Edit
+  items.push({
+    act: "edit",
+    icon: "✏️",
+    label: "Edit",
+    disabled: editDisabled,
+    sub: editDisabled ? disabledReason : ""
+  });
+
+  // 2. Duplicate (hidden for parent actions)
+  if (!(type === "actions" && !item.parentId)) {
+    items.push({
+      act: "duplicate",
+      icon: "📋",
+      label: "Duplicate",
+      disabled: editDisabled,
+      sub: editDisabled ? disabledReason : ""
+    });
+  }
+
+  // 3. Move to Action Parent… (only for sub-actions)
+  if (type === "actions" && item.parentId) {
+    items.push({
+      act: "move",
+      icon: "📁",
+      label: "Move to parent…",
+      disabled: editDisabled,
+      sub: editDisabled ? disabledReason : ""
+    });
+  }
+
+  // 4. Publish
+  items.push({
+    act: "publish",
+    icon: "🚀",
+    label: "Publish",
+    disabled: editDisabled,
+    sub: editDisabled ? disabledReason : ""
+  });
+
+  // 5. Divider
+  items.push({ divider: true });
+
+  // 6. Delete
+  items.push({
+    act: "delete",
+    icon: "🗑️",
+    label: "Delete",
+    danger: true,
+    disabled: editDisabled,
+    sub: editDisabled ? disabledReason : ""
+  });
+
+  currentPopupActions = {
+    edit: () => openCardEditor(type, id),
+    duplicate: () => duplicateItem(type, id),
+    move: () => openMovePicker(type, id),
+    publish: () => publishItem(type, id),
+    delete: () => requestDelete(type, id)
+  };
+
+  openPopupMenu({
+    title,
+    isArabicTitle: isArabic(title),
+    items,
+    triggerEl: triggerEl || document.activeElement
+  });
 }
 
 function openCardEditor(type, id) {
@@ -13155,6 +13658,258 @@ async function publishItem(type, id) {
   } catch (err) { fail(err); }
 }
 
+function showDependentsPopup({ title, message, isParentBlock, onShowSubs, onConfirm }) {
+  if (isParentBlock) {
+    dlgDiscard.innerHTML = `
+      <div class="discard-popup" data-noguard>
+        <div class="discard-popup-text">
+          <div class="discard-popup-title">${esc(title)}</div>
+          <div class="discard-popup-sub">${esc(message)}</div>
+        </div>
+        <div class="discard-popup-actions">
+          <button type="button" class="btn" id="del-close">Close</button>
+          <button type="button" class="btn primary" id="del-show-subs">Show sub-actions</button>
+        </div>
+      </div>
+    `;
+    const finish = (showSubs) => {
+      dlgDiscard.close();
+      if (showSubs && onShowSubs) onShowSubs();
+    };
+    $("#del-close", dlgDiscard).onclick = () => finish(false);
+    $("#del-show-subs", dlgDiscard).onclick = () => finish(true);
+    dlgDiscard.oncancel = (e) => { e.preventDefault(); finish(false); };
+  } else {
+    dlgDiscard.innerHTML = `
+      <div class="discard-popup" data-noguard>
+        <div class="discard-popup-text">
+          <div class="discard-popup-title">${esc(title)}</div>
+          <div class="discard-popup-sub">${esc(message)}</div>
+        </div>
+        <div class="discard-popup-actions">
+          <button type="button" class="btn" id="del-cancel">Cancel</button>
+          <button type="button" class="btn danger" id="del-confirm">🗑️ Delete</button>
+        </div>
+      </div>
+    `;
+    const finish = (confirmed) => {
+      dlgDiscard.close();
+      if (confirmed && onConfirm) onConfirm();
+    };
+    $("#del-cancel", dlgDiscard).onclick = () => finish(false);
+    $("#del-confirm", dlgDiscard).onclick = () => finish(true);
+    dlgDiscard.oncancel = (e) => { e.preventDefault(); finish(false); };
+  }
+  dlgDiscard.showModal();
+  trapFocus(dlgDiscard);
+  setTimeout(() => {
+    const focusTarget = isParentBlock ? $("#del-show-subs", dlgDiscard) : $("#del-cancel", dlgDiscard);
+    focusTarget?.focus();
+  }, 10);
+}
+
+function getDependentsMessage(type, id, item) {
+  const c = canonicalColl(type);
+  if (c === "actions") {
+    const depNiyyahs = niyyahs.filter(x =>
+      (x.actionIds || []).includes(id) ||
+      (x.afterActionIds || []).includes(id) ||
+      (x.beforeActionIds || []).includes(id) ||
+      (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
+    );
+    const depTypes = types.filter(x => (x.actionIds || []).includes(id));
+    const depJobs = jobs.filter(x => (x.actionIds || []).includes(id));
+    if (depNiyyahs.length > 0) {
+      const n = depNiyyahs.length;
+      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+    }
+    if (depJobs.length > 0) {
+      const n = depJobs.length;
+      return `Used by ${n} ${n === 1 ? "job" : "jobs"}. It will be removed from them.`;
+    }
+    if (depTypes.length > 0) {
+      const n = depTypes.length;
+      return `Used by ${n} ${n === 1 ? "location" : "locations"}. It will be removed from them.`;
+    }
+  } else if (c === "jobTypes") {
+    const depNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
+    if (depNiyyahs.length > 0) {
+      const n = depNiyyahs.length;
+      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+    }
+  } else if (c === "maritalStatuses") {
+    const depNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
+    if (depNiyyahs.length > 0) {
+      const n = depNiyyahs.length;
+      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+    }
+  } else if (c === "events") {
+    const depNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
+    if (depNiyyahs.length > 0) {
+      const n = depNiyyahs.length;
+      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+    }
+  } else if (c === "niyyahs") {
+    const hasPublished = langs().some(l => trOf(item, l.code).status === "published") ||
+      (item.translations && Object.values(item.translations).some(t => t.status === "published"));
+    if (hasPublished) {
+      const num = typeof item.number === "number" ? item.number : "–";
+      return `Niyyah #${num} has a published text.`;
+    }
+  }
+  return "";
+}
+
+async function executeDelete(type, id) {
+  const c = canonicalColl(type);
+  if (c === "actions") await delAction(id);
+  else if (c === "niyyahs") await delNiyyah(id);
+  else if (c === "locationTypes") await delNamed("types", id);
+  else if (c === "jobTypes") await delNamed("jobs", id);
+  else if (c === "tips") await delTip(id);
+  else if (c === "events") await delEvent(id);
+  else if (c === "maritalStatuses") await deleteItemWithUndo("maritalStatuses", id);
+  else await deleteItemWithUndo(type, id);
+}
+
+async function requestDelete(type, id) {
+  if (!checkWritePermission()) return;
+  if (syncState.isOffline || (typeof navigator !== "undefined" && !navigator.onLine)) {
+    toast("Offline: changes cannot be made", true);
+    return;
+  }
+  const lock = lockOf(type, id);
+  if (lock && !lock.isMine) {
+    const holder = getFirstName(lock.name || lock.email);
+    toast(`Locked by ${holder}`, true);
+    return;
+  }
+  const item = getItem(type, id);
+  if (!item) return;
+
+  const title = getItemTitle(type, item);
+
+  // Parent action with sub-actions check
+  if (type === "actions" && !item.parentId) {
+    const subs = childrenOf(id);
+    if (subs.length > 0) {
+      const N = subs.length;
+      const subWord = N === 1 ? "1 sub-action" : `${N} sub-actions`;
+      const msg = `This parent has ${subWord}. Move or delete them first.`;
+      showDependentsPopup({
+        title: `Delete "${title}"?`,
+        message: msg,
+        isParentBlock: true,
+        onShowSubs: () => {
+          expandedGroups.add("cat_" + id);
+          if (activeTab !== "actions") goTab("actions");
+          renderAll();
+        }
+      });
+      return;
+    }
+  }
+
+  // Check dependents
+  const depMessage = getDependentsMessage(type, id, item);
+  if (depMessage) {
+    showDependentsPopup({
+      title: `Delete "${title}"?`,
+      message: depMessage,
+      onConfirm: async () => {
+        await executeDelete(type, id);
+      }
+    });
+    return;
+  }
+
+  // No dependents: delete immediately with 6s Undo toast
+  await executeDelete(type, id);
+}
+
+async function handleEditorDelete(type, id) {
+  if (!checkWritePermission()) return;
+  if (syncState.isOffline || (typeof navigator !== "undefined" && !navigator.onLine)) {
+    toast("Offline: changes cannot be made", true);
+    return;
+  }
+  const lock = lockOf(type, id);
+  if (lock && !lock.isMine) {
+    const holder = getFirstName(lock.name || lock.email);
+    toast(`Locked by ${holder}`, true);
+    return;
+  }
+  const item = getItem(type, id);
+  if (!item) return;
+
+  const title = getItemTitle(type, item);
+
+  // Parent action with sub-actions check
+  if (type === "actions" && !item.parentId) {
+    const subs = childrenOf(id);
+    if (subs.length > 0) {
+      const N = subs.length;
+      const subWord = N === 1 ? "1 sub-action" : `${N} sub-actions`;
+      const msg = `This parent has ${subWord}. Move or delete them first.`;
+      showDependentsPopup({
+        title: `Delete "${title}"?`,
+        message: msg,
+        isParentBlock: true,
+        onShowSubs: () => {
+          dlgDirty = false;
+          editorJustSaved = false;
+          dlg.close();
+          dlg.classList.remove("editor-mode");
+          cleanupEditorViewport();
+          if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
+          expandedGroups.add("cat_" + id);
+          if (activeTab !== "actions") goTab("actions");
+          renderAll();
+        }
+      });
+      return;
+    }
+  }
+
+  const depMessage = getDependentsMessage(type, id, item);
+  const hasUnsaved = !!dlgDirty;
+
+  if (depMessage || hasUnsaved) {
+    let confirmMsg = "";
+    if (depMessage && hasUnsaved) {
+      confirmMsg = `${depMessage}\nYour unsaved changes will be lost.`;
+    } else if (depMessage) {
+      confirmMsg = depMessage;
+    } else {
+      confirmMsg = "Your unsaved changes will be lost.";
+    }
+
+    showDependentsPopup({
+      title: `Delete "${title}"?`,
+      message: confirmMsg,
+      onConfirm: async () => {
+        dlgDirty = false;
+        editorJustSaved = false;
+        dlg.close();
+        dlg.classList.remove("editor-mode");
+        cleanupEditorViewport();
+        if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
+        await executeDelete(type, id);
+      }
+    });
+    return;
+  }
+
+  // No dependents AND no unsaved changes: close editor directly and delete immediately
+  dlgDirty = false;
+  editorJustSaved = false;
+  dlg.close();
+  dlg.classList.remove("editor-mode");
+  cleanupEditorViewport();
+  if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
+  await executeDelete(type, id);
+}
+
 const pendingDeletes = new Map();
 
 async function deleteItemWithUndo(type, id) {
@@ -13200,6 +13955,16 @@ async function deleteItemWithUndo(type, id) {
       toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
       return;
     }
+  } else if (type === "events") {
+    const referencingNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
+    const lockedNiyyah = referencingNiyyahs.find(n => {
+      const l = lockOf("niyyahs", n.id);
+      return l && !l.isMine;
+    });
+    if (lockedNiyyah) {
+      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      return;
+    }
   } else if (type === "languages") {
     const lang = languages.find(x => String(x.id) === String(id));
     if (lang) {
@@ -13231,6 +13996,57 @@ async function deleteItemWithUndo(type, id) {
   const list = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : (type === "tips" ? tips : (type === "events" ? events : languages)))));
   const origIdx = list.findIndex(x => x.id === id);
 
+  // Snapshot affected items for Undo restoration
+  const affectedNiyyahs = [];
+  const affectedTypes = [];
+  const affectedJobs = [];
+
+  if (type === "actions") {
+    niyyahs.forEach(x => {
+      const hasAct = (x.actionIds || []).includes(id) ||
+        (x.beforeActionIds || []).includes(id) ||
+        (x.afterActionIds || []).includes(id) ||
+        (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id));
+      if (hasAct) {
+        affectedNiyyahs.push({
+          item: x,
+          actionIds: x.actionIds ? [...x.actionIds] : [],
+          beforeActionIds: x.beforeActionIds ? [...x.beforeActionIds] : [],
+          afterActionIds: x.afterActionIds ? [...x.afterActionIds] : [],
+          situations: x.situations ? JSON.parse(JSON.stringify(x.situations)) : []
+        });
+      }
+    });
+    types.forEach(t => {
+      if ((t.actionIds || []).includes(id)) {
+        affectedTypes.push({ item: t, actionIds: [...t.actionIds] });
+      }
+    });
+    jobs.forEach(j => {
+      if ((j.actionIds || []).includes(id)) {
+        affectedJobs.push({ item: j, actionIds: [...j.actionIds] });
+      }
+    });
+  } else if (type === "jobs") {
+    niyyahs.forEach(x => {
+      if ((x.jobIds || []).includes(id)) {
+        affectedNiyyahs.push({ item: x, jobIds: [...x.jobIds] });
+      }
+    });
+  } else if (type === "maritalStatuses" || type === "maritalStatus") {
+    niyyahs.forEach(x => {
+      if ((x.maritalStatusIds || []).includes(id)) {
+        affectedNiyyahs.push({ item: x, maritalStatusIds: [...x.maritalStatusIds] });
+      }
+    });
+  } else if (type === "events") {
+    niyyahs.forEach(x => {
+      if ((x.eventIds || []).includes(id)) {
+        affectedNiyyahs.push({ item: x, eventIds: [...x.eventIds] });
+      }
+    });
+  }
+
   const removeFromLocal = () => {
     if (type === "actions") {
       actions = actions.filter(x => x.id !== id);
@@ -13249,6 +14065,12 @@ async function deleteItemWithUndo(type, id) {
           if (x.beforeActionIds) x.beforeActionIds = x.beforeActionIds.filter(aId => aId !== id);
         }
       });
+      types.forEach(t => {
+        if (t.actionIds) t.actionIds = t.actionIds.filter(aId => aId !== id);
+      });
+      jobs.forEach(j => {
+        if (j.actionIds) j.actionIds = j.actionIds.filter(aId => aId !== id);
+      });
     }
     else if (type === "niyyahs") niyyahs = niyyahs.filter(x => x.id !== id);
     else if (type === "types") types = types.filter(x => x.id !== id);
@@ -13265,18 +14087,40 @@ async function deleteItemWithUndo(type, id) {
       });
     }
     else if (type === "tips") tips = tips.filter(x => x.id !== id);
-    else if (type === "events") events = events.filter(x => x.id !== id);
+    else if (type === "events") {
+      events = events.filter(x => x.id !== id);
+      niyyahs.forEach(x => {
+        if (x.eventIds) x.eventIds = x.eventIds.filter(eId => eId !== id);
+      });
+    }
     else if (type === "languages") languages = languages.filter(x => x.id !== id);
     renderAll();
   };
+
   const restoreToLocal = () => {
     const restored = { id, ...copy };
     const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : (type === "tips" ? tips : (type === "events" ? events : languages))))));
     if (!targetList.some(x => x.id === id)) {
       if (origIdx >= 0 && origIdx <= targetList.length) targetList.splice(origIdx, 0, restored);
       else targetList.push(restored);
-      renderAll();
     }
+    // Restore referenced arrays
+    affectedNiyyahs.forEach(snap => {
+      if (snap.actionIds) snap.item.actionIds = [...snap.actionIds];
+      if (snap.beforeActionIds) snap.item.beforeActionIds = [...snap.beforeActionIds];
+      if (snap.afterActionIds) snap.item.afterActionIds = [...snap.afterActionIds];
+      if (snap.situations) snap.item.situations = JSON.parse(JSON.stringify(snap.situations));
+      if (snap.jobIds) snap.item.jobIds = [...snap.jobIds];
+      if (snap.maritalStatusIds) snap.item.maritalStatusIds = [...snap.maritalStatusIds];
+      if (snap.eventIds) snap.item.eventIds = [...snap.eventIds];
+    });
+    affectedTypes.forEach(snap => {
+      if (snap.actionIds) snap.item.actionIds = [...snap.actionIds];
+    });
+    affectedJobs.forEach(snap => {
+      if (snap.actionIds) snap.item.actionIds = [...snap.actionIds];
+    });
+    renderAll();
   };
 
   removeFromLocal();
@@ -13286,9 +14130,10 @@ async function deleteItemWithUndo(type, id) {
     if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) return;
     try {
       const canonical = canonicalColl(coll);
-      const batch = writeBatch(db);
+      const updates = [];
+
       if (type === "actions") {
-        batch.delete(doc(db, "actions", id));
+        updates.push(b => b.delete(doc(db, "actions", id)));
         niyyahs.filter(x =>
           (x.actionIds || []).includes(id) ||
           (x.afterActionIds || []).includes(id) ||
@@ -13305,38 +14150,46 @@ async function deleteItemWithUndo(type, id) {
             if ((x.afterActionIds || []).includes(id)) upd.afterActionIds = arrayRemove(id);
             if ((x.beforeActionIds || []).includes(id)) upd.beforeActionIds = arrayRemove(id);
           }
-          batch.update(doc(db, "niyyahs", x.id), upd);
+          updates.push(b => b.update(doc(db, "niyyahs", x.id), upd));
         });
         types.filter(x => (x.actionIds || []).includes(id))
-          .forEach(x => batch.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) }));
+          .forEach(x => updates.push(b => b.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) })));
         jobs.filter(x => (x.actionIds || []).includes(id))
-          .forEach(x => batch.update(doc(db, "jobTypes", x.id), { actionIds: arrayRemove(id) }));
+          .forEach(x => updates.push(b => b.update(doc(db, "jobTypes", x.id), { actionIds: arrayRemove(id) })));
       } else if (type === "jobs") {
-        batch.delete(doc(db, "jobTypes", id));
+        updates.push(b => b.delete(doc(db, "jobTypes", id)));
         niyyahs.filter(x => (x.jobIds || []).includes(id))
-          .forEach(x => {
-            batch.update(doc(db, "niyyahs", x.id), { jobIds: arrayRemove(id) });
-          });
+          .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { jobIds: arrayRemove(id) })));
       } else if (type === "maritalStatuses" || type === "maritalStatus") {
-        batch.delete(doc(db, "maritalStatuses", id));
+        updates.push(b => b.delete(doc(db, "maritalStatuses", id)));
         niyyahs.filter(x => (x.maritalStatusIds || []).includes(id))
-          .forEach(x => {
-            batch.update(doc(db, "niyyahs", x.id), { maritalStatusIds: arrayRemove(id) });
-          });
+          .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { maritalStatusIds: arrayRemove(id) })));
+      } else if (type === "events") {
+        updates.push(b => b.delete(doc(db, "events", id)));
+        niyyahs.filter(x => (x.eventIds || []).includes(id))
+          .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { eventIds: arrayRemove(id) })));
       } else {
-        batch.delete(doc(db, coll, id));
+        updates.push(b => b.delete(doc(db, coll, id)));
       }
-      batch.delete(doc(db, "locks", `${canonical}__${id}`));
+
+      updates.push(b => b.delete(doc(db, "locks", `${canonical}__${id}`)));
       const prefix = `${canonical}__${id}__`;
       for (const [vKey, v] of viewersCache.entries()) {
         if (vKey.startsWith(prefix) || (v.collection === canonical && String(v.itemId) === String(id))) {
-          batch.delete(doc(db, "viewers", vKey));
+          updates.push(b => b.delete(doc(db, "viewers", vKey)));
         }
       }
       for (let s = 0; s < 10; s++) {
-        batch.delete(doc(db, canonical, id, "revisions", String(s)));
+        updates.push(b => b.delete(doc(db, canonical, id, "revisions", String(s))));
       }
-      await batch.commit();
+
+      // Execute in batches of at most 400
+      for (let i = 0; i < updates.length; i += 400) {
+        const chunk = updates.slice(i, i + 400);
+        const batch = writeBatch(db);
+        chunk.forEach(op => op(batch));
+        await batch.commit();
+      }
     } catch (err) { fail(err); }
   };
 
@@ -13508,31 +14361,35 @@ function renderActions() {
         `;
       }
 
+      const cVis = c.inAppVisibility ?? c.visible ?? true;
+      const canAdd = !syncState.gateOpen && !syncState.isOffline && (typeof navigator === "undefined" || navigator.onLine);
+
       matchingContentHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-cat-${c.id}">
           <div class="sticky-group-head" role="button" tabindex="0" aria-label="Category header" data-type="actions" data-id="${c.id}">
             ${catLockBadgeHtml}
             ${catViewerBadgeHtml}
             <div class="card-main" style="width:100%">
-              <div class="card-head" style="align-items:flex-start">
-                <div class="card-title-wrap" style="flex:1;min-width:0">
-                  <div style="display:flex;align-items:center;gap:6px;min-width:0">
-                    <span class="cat-icon" aria-hidden="true" style="font-size:18px;line-height:1;flex-shrink:0">📁</span>
-                    <h3 class="card-title ${catRtl ? 'rtl' : ''}" dir="${catRtl ? 'rtl' : 'auto'}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${esc(nm(c))}</h3>
-                  </div>
-                  <div class="chips" style="margin-top:4px">
-                    ${actionChips(c)}
-                  </div>
-                  <div class="card-preview muted" style="margin-top:3px;font-size:13px;line-height:1.3">
-                    ${filteredKids.length} action${filteredKids.length === 1 ? '' : 's'}
-                  </div>
+              <div class="parent-card-row1" dir="${catRtl ? 'rtl' : 'ltr'}">
+                <div class="parent-title-wrap">
+                  <span class="cat-icon" aria-hidden="true">📁</span>
+                  <h3 class="card-title ${catRtl ? 'rtl' : ''}" dir="${catRtl ? 'rtl' : 'auto'}">${esc(nm(c))}</h3>
                 </div>
-                <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
-                  ${renderLangProgress(c, L, "actions")}
-                  <button type="button" class="btn-icon card-edit-btn" data-act="card-edit" data-type="actions" data-id="${c.id}" aria-label="Edit ${esc(nm(c))}" title="Edit">✏️</button>
+                <div class="parent-row1-tools">
+                  <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Options for ${esc(nm(c))}" title="Edit / options">✏️</button>
                   <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
                     <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
                   </button>
+                </div>
+              </div>
+              <div class="parent-card-row2" dir="${catRtl ? 'rtl' : 'ltr'}">
+                <div class="parent-chips-wrap">
+                  ${!cVis ? '<span class="chip chip-compact chip-hidden">Hidden</span>' : '<span class="chip chip-compact chip-inapp">In app</span>'}
+                  <span class="chip chip-compact chip-count"><span class="chip-count-num">${filteredKids.length}</span><span class="chip-count-label"> action${filteredKids.length === 1 ? '' : 's'}</span></span>
+                </div>
+                <div class="parent-row2-tools">
+                  ${renderLangProgress(c, L, "actions")}
+                  <button type="button" class="btn-icon btn-add-mini" data-act="new-mini" data-id="${c.id}" aria-label="Add sub-action" title="Add sub-action" ${canAdd ? "" : 'disabled aria-disabled="true"'}>+</button>
                 </div>
               </div>
               ${renderLangTray(c, L, "actions")}
@@ -13540,14 +14397,11 @@ function renderActions() {
           </div>
           <div class="g-body cards-grid actions-tree-body">
             ${filteredKids.length ? filteredKids.map(k => {
-              const kVis = k.inAppVisibility ?? k.visible ?? true;
               return renderCard({
                 type: "actions",
                 id: k.id,
                 title: nm(k),
                 isRtl: isArabic(nm(k)),
-                preview: `${niyyahCount(k.id)} niyyahs${k.restricted ? ' · Job-only' : ''}${!kVis ? ' · Hidden' : ''}`,
-                chips: actionChips(k),
                 item: k,
                 L
               });
@@ -13781,10 +14635,8 @@ function renderNiyyahs() {
     if (!$(".tab-top-actions", existingSec)) {
       $(".search-filter-bar", existingSec)?.insertAdjacentHTML("beforeend", `
         <div class="tab-top-actions">
-          <button type="button" class="btn small btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">
-            <span class="btn-import-icon" aria-hidden="true">📥</span>
-            <span class="btn-import-label">Import JSON</span>
-          </button>
+          <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">📥</button>
+          <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">📤</button>
           <button type="button" class="btn-icon primary hdr-add-btn btn-add-niyyah-circle" data-act="new-niyyah" aria-label="Add niyyah" title="Add niyyah">+</button>
         </div>
       `);
@@ -14124,21 +14976,18 @@ document.addEventListener("click", e => {
     "new-cat": () => openAction(null, ""),
     "new-mini": () => openAction(null, id),
     "edit-action": () => openAction(id),
-    "del-action": () => delAction(id),
+    "del-action": () => requestDelete("actions", id),
     "seed-actions": seedActions,
     "new-niyyah": () => openNiyyah(),
     "edit-niyyah": () => openNiyyah(id),
-    "del-niyyah": () => delNiyyah(id),
+    "del-niyyah": () => requestDelete("niyyahs", id),
     "new-type": () => openNamed("types"),
     "edit-type": () => openNamed("types", id),
-    "del-type": () => delNamed("types", id),
+    "del-type": () => requestDelete("types", id),
     "seed-types": () => seedNamed("types"),
     "new-job": () => openNamed("jobs"),
     "edit-job": () => openNamed("jobs", id),
-    "new-marital-status": () => openNamed("maritalStatus"),
-    "edit-marital-status": () => openNamed("maritalStatus", id),
-    "del-marital-status": () => deleteMaritalStatus(id),
-    "del-job": () => delNamed("jobs", id),
+    "del-job": () => requestDelete("jobs", id),
     "seed-jobs": () => seedNamed("jobs"),
     "convert-names": openConvertNames,
     "cleanup-actions": openCleanupActions,
@@ -14146,6 +14995,7 @@ document.addEventListener("click", e => {
     "view-lang": () => setViewLang(id),
     "go-settings": () => goTab("settings"),
     "import-json": () => $("#import-file").click(),
+    "export-json": () => exportNiyyahs(),
     "toggle-niyyah": () => toggleN(id),
     "expand-all": () => {
       if (currentTab === "niyyahs") {
@@ -14181,6 +15031,7 @@ document.addEventListener("click", e => {
     "edit-lang": () => openLanguage(id),
     "toggle-settings-popover": toggleSettingsPopover,
     "settings-add-lang": () => { closeSettingsSpeedDial(); closeSettingsPopover(); openLanguage(); },
+    "new-marital-status": () => { closeSettingsSpeedDial(); closeSettingsPopover(); openMaritalStatus(); },
     "settings-add-marital": () => { closeSettingsSpeedDial(); closeSettingsPopover(); openMaritalStatus(); },
     "edit-marital-status": () => openMaritalStatus(id),
     "del-marital-status": () => deleteMaritalStatus(id),
@@ -14191,10 +15042,10 @@ document.addEventListener("click", e => {
     "seed-langs": seedLanguages,
     "new-tip": () => openTip(),
     "edit-tip": () => openTip(id),
-    "del-tip": () => delTip(id),
+    "del-tip": () => requestDelete("tips", id),
     "new-event": () => openEvent(),
     "edit-event": () => openEvent(id),
-    "del-event": () => delEvent(id),
+    "del-event": () => requestDelete("events", id),
     "seed-events": seedEvents,
     "cal-prev": () => { calMonth.setMonth(calMonth.getMonth() - 1); renderEvents(); },
     "cal-next": () => { calMonth.setMonth(calMonth.getMonth() + 1); renderEvents(); },
@@ -14213,7 +15064,7 @@ document.addEventListener("click", e => {
     },
     "toggle-tray": () => toggleLangTray(b.dataset.type, b.dataset.id),
     "card-edit": () => openCardEditor(b.dataset.type, b.dataset.id),
-    "card-more": () => openCardMoreSheet(b.dataset.type, b.dataset.id),
+    "card-more": () => openCardMoreSheet(b.dataset.type, b.dataset.id, b),
     "show-lock-info": () => openLockInfoPopup(b.dataset.type, b.dataset.id),
     "show-viewer-info": () => openViewerInfoPopup(b.dataset.type, b.dataset.id),
     "close-lock-info": () => {
@@ -14224,7 +15075,7 @@ document.addEventListener("click", e => {
     "card-sheet-duplicate": () => { closeSheet(); duplicateItem(b.dataset.type, b.dataset.id); },
     "card-sheet-move": () => { openMovePicker(b.dataset.type, b.dataset.id); },
     "card-sheet-publish": () => { closeSheet(); publishItem(b.dataset.type, b.dataset.id); },
-    "card-sheet-delete": () => { closeSheet(); deleteItemWithUndo(b.dataset.type, b.dataset.id); },
+    "card-sheet-delete": () => { closeSheet(); requestDelete(b.dataset.type, b.dataset.id); },
     "reparent-action": () => reparentAction(b.dataset.id, b.dataset.cat),
     "open-filter-sheet": () => openFilterSheet(b.dataset.tab),
     "open-cal-settings": () => openCalSettingsSheet(),
@@ -18282,6 +19133,164 @@ function openImport(plan, fileName) {
   showDlg();
 }
 
+
+function promptExportScope(allCount, filteredCount) {
+  return new Promise(resolve => {
+    dlgDiscard.innerHTML = `
+      <div class="dlg" style="padding: 20px 16px; text-align: center;">
+        <h2 data-noguard style="margin: 0 0 8px; font-size: 18px;">Export Niyyahs</h2>
+        <p class="muted" style="margin: 0 0 16px; font-size: 14px;">A filter is currently active. Choose which niyyahs to export:</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button type="button" class="btn primary" id="btn-exp-all" style="width: 100%;">All niyyahs (${allCount})</button>
+          <button type="button" class="btn" id="btn-exp-filtered" style="width: 100%;">Filtered (${filteredCount})</button>
+          <button type="button" class="btn" id="btn-exp-cancel" style="width: 100%; margin-top: 4px; border: none; background: transparent; color: var(--muted);">Cancel</button>
+        </div>
+      </div>
+    `;
+    let settled = false;
+    const finish = (choice) => {
+      if (!settled) {
+        settled = true;
+        dlgDiscard.close();
+        resolve(choice);
+      }
+    };
+    $("#btn-exp-all", dlgDiscard).onclick = () => finish("all");
+    $("#btn-exp-filtered", dlgDiscard).onclick = () => finish("filtered");
+    $("#btn-exp-cancel", dlgDiscard).onclick = () => finish(null);
+    dlgDiscard.oncancel = (e) => { e.preventDefault(); finish(null); };
+
+    pushSheetHistory();
+    dlgDiscard.showModal();
+    trapFocus(dlgDiscard);
+  });
+}
+
+async function exportNiyyahs() {
+  if (syncState.gateOpen) {
+    toast("Updating, one moment", false);
+    return;
+  }
+
+  const state = tabFilterState.niyyahs || {};
+  const q = (state.q || "").toLowerCase().trim();
+  const st = state.status || "";
+  const ac = state.actionId || "";
+  const sc = state.scope || "";
+  const isFilterActive = Boolean(q || st || ac || sc);
+
+  const L = langs();
+  const haystack = n => {
+    const textAndSources = L.map(l => { const t = trOf(n, l.code); return `${t.text} ${t.sources.join(" ")}`; }).join(" ");
+    const numPart = (n.number != null && typeof n.number === "number") ? `#${n.number} ${n.number}` : "";
+    return `${numPart} ${textAndSources}`.toLowerCase();
+  };
+
+  const filteredList = niyyahs.filter(n => {
+    if (st && !hasStatus(n, st)) return false;
+    if (ac && !(n.actionIds || []).includes(ac)) return false;
+    if (sc === "general" && !n.general) return false;
+    if (sc === "job" && !(n.jobIds || []).length) return false;
+    if (sc === "marital" && !(n.maritalStatusIds || []).length) return false;
+    if (sc === "has-event" && !(n.eventIds || []).length) return false;
+    if (q && !haystack(n).includes(q)) return false;
+    return true;
+  });
+
+  let targetList = niyyahs;
+
+  if (isFilterActive && filteredList.length !== niyyahs.length) {
+    const choice = await promptExportScope(niyyahs.length, filteredList.length);
+    if (!choice) return;
+    targetList = (choice === "filtered") ? filteredList : niyyahs;
+  }
+
+  if (!targetList || !targetList.length) {
+    toast("No niyyahs to export", true);
+    return;
+  }
+
+  const cleanList = targetList.map(n => {
+    const cleanTranslations = {};
+    if (n.translations && typeof n.translations === "object") {
+      for (const [code, t] of Object.entries(n.translations)) {
+        if (!t) continue;
+        cleanTranslations[code] = {
+          text: typeof t.text === "string" ? t.text : "",
+          sources: Array.isArray(t.sources) ? [...t.sources] : (t.source ? [t.source] : []),
+          status: t.status || "draft"
+        };
+      }
+    }
+
+    let situations = [];
+    if (Array.isArray(n.situations)) {
+      situations = n.situations.map(s => ({
+        beforeActionIds: Array.isArray(s.beforeActionIds) ? [...s.beforeActionIds] : [],
+        afterActionIds: Array.isArray(s.afterActionIds) ? [...s.afterActionIds] : []
+      }));
+    } else if ((n.beforeActionIds && n.beforeActionIds.length) || (n.afterActionIds && n.afterActionIds.length)) {
+      situations = [{
+        beforeActionIds: Array.isArray(n.beforeActionIds) ? [...n.beforeActionIds] : [],
+        afterActionIds: Array.isArray(n.afterActionIds) ? [...n.afterActionIds] : []
+      }];
+    }
+
+    return {
+      number: (typeof n.number === "number") ? n.number : null,
+      general: Boolean(n.general),
+      hasChildren: Boolean(n.hasChildren),
+      actionIds: Array.isArray(n.actionIds) ? [...n.actionIds] : [],
+      jobIds: Array.isArray(n.jobIds) ? [...n.jobIds] : [],
+      maritalStatusIds: Array.isArray(n.maritalStatusIds) ? [...n.maritalStatusIds] : [],
+      situations,
+      eventIds: Array.isArray(n.eventIds) ? [...n.eventIds] : [],
+      translations: cleanTranslations
+    };
+  });
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const filename = `niyyahs-${y}-${m}-${d}.json`;
+
+  const jsonStr = JSON.stringify(cleanList, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+
+  let shared = false;
+  if (navigator.canShare && navigator.share && typeof File !== "undefined") {
+    try {
+      const file = new File([blob], filename, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Niyyahs Export",
+          text: `Export of ${cleanList.length} niyyahs`
+        });
+        shared = true;
+      }
+    } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
+      shared = false;
+    }
+  }
+
+  if (!shared) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  toast(`Exported ${cleanList.length} niyyahs`);
+}
 $("#import-file").onchange = async e => {
   const f = e.target.files[0];
   e.target.value = "";
@@ -18308,11 +19317,12 @@ window.__ADMIN__ = {
   TAB_TITLES,
   renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
-  openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport,
+  openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
   handleSearchTrigger, handleNewItemShortcut,
   GATE_COLLECTIONS, syncState, openFreshnessGate, closeFreshnessGate, enterOfflineMode, handleResume, handleCollectionSnapshot, openSyncStatusSheet, updateSyncStatusDot, checkWritePermission,
   expandSearch, collapseSearch, isSearchExpanded, syncHeaderSearchUI,
-  openCardMoreSheet, openMovePicker, duplicateItem, publishItem, deleteItemWithUndo, reparentAction,
+  openPopupMenu, closePopupMenu, openCardMoreSheet, openMovePicker, duplicateItem, publishItem, deleteItemWithUndo, reparentAction,
+  requestDelete, handleEditorDelete,
   openLockInfoPopup, openViewerInfoPopup,
   pickerSheet,
   requestClose, handleEditorSave, setSaveValidity, setupEditorCompactPreview,
