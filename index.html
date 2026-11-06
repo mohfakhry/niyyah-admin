@@ -151,6 +151,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     --space-3xl: 1.5rem;   /* 24px */
     --space-4xl: 2rem;     /* 32px */
 
+    /* Card, group & top spacing tokens */
+    --gap-card: 8px;
+    --gap-group: 12px;
+    --gap-top: 8px;
+
     /* Radius scale */
     --radius-xs: 4px;
     --radius-sm: 6px;
@@ -1492,14 +1497,14 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .cards-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px;
-    margin-bottom: var(--space-lg);
+    gap: var(--gap-card);
+    margin-bottom: var(--gap-group);
     padding-top: 11px; /* Room for overlapping badges (lock & eye) on top corners so they are readable and not clipped */
   }
   @media (min-width: 721px) {
     .cards-grid {
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 12px;
+      gap: var(--gap-card);
       padding-top: 11px;
     }
   }
@@ -1819,14 +1824,14 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .cards-grid-compact {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 6px;
-    margin-bottom: var(--space-lg);
+    gap: var(--gap-card);
+    margin-bottom: var(--gap-group);
     padding-top: 11px; /* Smallest extra space showing lock & eye badges (-10px) without clipping */
   }
   @media (min-width: 721px) {
     .cards-grid-compact {
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 6px;
+      gap: var(--gap-card);
       padding-top: 11px;
     }
   }
@@ -2436,7 +2441,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   /* Sticky group headers (parent folder cards) */
   .sticky-group {
-    margin-bottom: var(--space-base);
+    margin-bottom: var(--gap-group);
+  }
+  .sticky-group .cards-grid,
+  .sticky-group .lang-cards-grid {
+    margin-bottom: 0;
   }
   .sticky-group-head {
     position: sticky;
@@ -2446,8 +2455,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: 12px 14px 10px;
-    margin-top: 10px;
-    margin-bottom: 6px;
+    margin-top: 0;
+    margin-bottom: var(--gap-card);
     display: flex;
     flex-direction: column;
     box-shadow: 0 2px 6px rgba(0,0,0,.03);
@@ -2455,10 +2464,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     touch-action: manipulation;
     box-sizing: border-box;
   }
-  /* Spacing: tight 6px gap under filter row across all tabs */
-  .tab-top-row,
-  .search-filter-section {
-    margin-bottom: 6px;
+  /* Unified top spacing across all tabs */
+  .tab-top-row {
+    margin-bottom: var(--gap-top);
+  }
+  .tab-top-bar {
+    margin-bottom: var(--gap-top);
   }
   .cards-grid > .card,
   .cards-grid > .item,
@@ -2517,12 +2528,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     position: relative;
     display: flex !important;
     flex-direction: column !important;
-    gap: 5px !important;
+    gap: var(--gap-card) !important;
     padding-inline-start: 22px;
     padding-inline-end: 0;
     padding-top: 4px;
     padding-bottom: 8px;
-    margin-bottom: var(--space-base);
+    margin-bottom: 0;
   }
   @media (min-width: 721px) {
     .actions-tree-body {
@@ -5041,12 +5052,36 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   #dlg-discard,
   #dlg-inactivity-warning,
   #dlg-lock-info,
-  
+  #dlg-lock-prompt {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    bottom: auto;
+    right: auto;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: calc(100vw - 48px);
+    max-width: 320px;
+    height: auto;
+    max-height: none;
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    box-sizing: border-box;
+    z-index: var(--z-modal, 1000);
+  }
+
   /* Red Warning Popups (deletes, discard, draft-change, inactivity) */
-  dialog:has(.warn-popup) {
-    border: 2px solid var(--danger);
+  dialog:has(.warn-popup),
+  dialog.warn-popup {
+    border: 2px solid var(--danger) !important;
   }
   .warn-popup .discard-popup-title,
+  .warn-popup .discard-popup-text,
   .warn-popup h2 {
     color: var(--danger);
   }
@@ -5091,29 +5126,6 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .warn-popup .actions .btn:not(.danger):not(.primary):focus-visible {
     outline: 2px solid var(--danger);
     outline-offset: 2px;
-  }
-
-  #dlg-lock-prompt {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    bottom: auto;
-    right: auto;
-    transform: translate(-50%, -50%);
-    margin: 0;
-    padding: 0;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    width: calc(100vw - 48px);
-    max-width: 320px;
-    height: auto;
-    max-height: none;
-    background: var(--card);
-    color: var(--ink);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12);
-    overflow: hidden;
-    box-sizing: border-box;
-    z-index: var(--z-modal, 1000);
   }
   #dlg-discard[open],
   #dlg-inactivity-warning[open],
@@ -5229,8 +5241,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .lang-cards-grid {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: var(--space-md);
+    gap: var(--gap-card);
+    margin-bottom: var(--gap-group);
   }
   .lang-card {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
@@ -5404,8 +5416,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .search-filter-section {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 6px;
+    gap: var(--gap-top);
+    margin-bottom: 0;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -5414,7 +5426,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-xs);
+    gap: var(--gap-top);
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -5423,7 +5435,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tab-top-actions {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--gap-top);
     flex-shrink: 0;
     margin-left: auto;
     flex-wrap: nowrap;
@@ -5576,11 +5588,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .active-filter-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--gap-top);
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 2px;
+    margin-top: 0;
   }
   .active-filter-chips:empty {
     display: none !important;
@@ -5593,8 +5605,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: var(--space-sm);
-      margin-bottom: 6px;
+      gap: var(--gap-top);
+      margin-bottom: var(--gap-top);
     }
     .tab-top-row .tab-top-bar {
       order: 2;
@@ -6567,7 +6579,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      margin-bottom: 6px;
+      margin-bottom: var(--gap-top);
     }
     .settings-speed-dial {
       display: none !important;
@@ -8076,10 +8088,10 @@ function requestClose() {
   const discardTitle = STRINGS?.common?.discardChanges || "Discard your changes?";
   const keepText = STRINGS?.common?.keepEditing || "Keep editing";
   const discardText = STRINGS?.common?.discard || "Discard";
-  dlgDiscard.innerHTML = `<div class="discard-popup" data-noguard>
+  dlgDiscard.innerHTML = `<div class="discard-popup warn-popup" data-noguard>
     <div class="discard-popup-text">${esc(discardTitle)}</div>
     <div class="discard-popup-actions">
-      <button type="button" class="btn primary" id="dd-keep" autofocus>${esc(keepText)}</button>
+      <button type="button" class="btn" id="dd-keep" autofocus>${esc(keepText)}</button>
       <button type="button" class="btn danger" id="dd-discard">${esc(discardText)}</button>
     </div>
   </div>`;
@@ -13880,7 +13892,7 @@ function showDependentsPopup({ title, message, isParentBlock, onShowSubs, onConf
     dlgDiscard.oncancel = (e) => { e.preventDefault(); finish(false); };
   } else {
     dlgDiscard.innerHTML = `
-      <div class="discard-popup" data-noguard>
+      <div class="discard-popup warn-popup" data-noguard>
         <div class="discard-popup-text">
           <div class="discard-popup-title">${esc(title)}</div>
           <div class="discard-popup-sub">${esc(message)}</div>
@@ -14006,14 +14018,18 @@ async function requestDelete(type, id) {
         }
       });
       return;
-    } else {
-      showDependentsPopup({
-        title: `Delete "${title}"?`,
-        message: "This folder is empty.",
-        onConfirm: async () => {
-          await executeDelete(type, id);
-        }
-      });
+    }
+  }
+
+  // Language blocked checks
+  if (type === "languages") {
+    const counts = getLanguageCounts(item.code);
+    if (counts.total > 0) {
+      toast(`Cannot delete "${item.name}": in use by ${counts.total} item(s). Remove or reassign text first.`, true);
+      return;
+    }
+    if (languages.length <= 1) {
+      toast("Cannot delete the only language. Add another language first.", true);
       return;
     }
   }
@@ -14031,8 +14047,14 @@ async function requestDelete(type, id) {
     return;
   }
 
-  // No dependents: delete immediately with 6s Undo toast
-  await executeDelete(type, id);
+  // No dependents: show red confirm popup (no deletion without confirm)
+  showDependentsPopup({
+    title: `Delete "${title}"?`,
+    message: "This can't be undone after 6 seconds.",
+    onConfirm: async () => {
+      await executeDelete(type, id);
+    }
+  });
 }
 
 async function handleEditorDelete(type, id) {
@@ -14079,6 +14101,19 @@ async function handleEditorDelete(type, id) {
     }
   }
 
+  // Language blocked checks
+  if (type === "languages") {
+    const counts = getLanguageCounts(item.code);
+    if (counts.total > 0) {
+      toast(`Cannot delete "${item.name}": in use by ${counts.total} item(s). Remove or reassign text first.`, true);
+      return;
+    }
+    if (languages.length <= 1) {
+      toast("Cannot delete the only language. Add another language first.", true);
+      return;
+    }
+  }
+
   const depMessage = getDependentsMessage(type, id, item);
   const hasUnsaved = !!dlgDirty;
 
@@ -14108,14 +14143,20 @@ async function handleEditorDelete(type, id) {
     return;
   }
 
-  // No dependents AND no unsaved changes: close editor directly and delete immediately
-  dlgDirty = false;
-  editorJustSaved = false;
-  dlg.close();
-  dlg.classList.remove("editor-mode");
-  cleanupEditorViewport();
-  if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
-  await executeDelete(type, id);
+  // No dependents AND no unsaved changes: show red confirm popup before closing & deleting
+  showDependentsPopup({
+    title: `Delete "${title}"?`,
+    message: "This can't be undone after 6 seconds.",
+    onConfirm: async () => {
+      dlgDirty = false;
+      editorJustSaved = false;
+      dlg.close();
+      dlg.classList.remove("editor-mode");
+      cleanupEditorViewport();
+      if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
+      await executeDelete(type, id);
+    }
+  });
 }
 
 const pendingDeletes = new Map();
@@ -18633,7 +18674,7 @@ function renderSettings() {
   // Publish all names button (secondary button)
   html += `<div class="bar" style="margin-top:24px"><h3>Names &amp; Publishing</h3>
     <button type="button" class="btn" data-act="publish-all-names">Publish all names</button></div>
-    <p class="muted" style="margin-top:0">Sets status = "published" for all actions, jobs, and locations that have a name but no language status yet.</p>`;
+    <p class="muted" style="margin-top:0">Sets status = "published" for all actions, jobs, locations, and marital statuses that have a name but no language status yet.</p>`;
 
   const legacyN = [...actions, ...types].filter(isLegacyDoc).length;
   if (L.length && legacyN) html += `<div class="bar" style="margin-top:16px"><h3>Convert legacy names</h3>
@@ -18725,16 +18766,17 @@ function openPublishAllNames() {
   const targets = [...aDocs, ...jDocs, ...tDocs, ...mDocs];
 
   if (!targets.length) {
-    return toast("All actions, jobs, and locations already have language statuses.");
+    return toast("All actions, jobs, locations, and marital statuses already have language statuses.");
   }
 
   dlg.innerHTML = `<div class="dlg">
     <h2 data-noguard>Publish all names</h2>
     <p style="margin:0">Found <b>${targets.length} document(s)</b> without language statuses:</p>
     <ul style="margin:0;padding-left:20px;font-size:14px" class="muted">
-      <li>${aDocs.length} action(s)</li>
-      <li>${jDocs.length} job(s)</li>
-      <li>${tDocs.length} location(s)</li>
+      ${aDocs.length ? `<li>${aDocs.length} action(s)</li>` : ""}
+      ${jDocs.length ? `<li>${jDocs.length} job(s)</li>` : ""}
+      ${tDocs.length ? `<li>${tDocs.length} location(s)</li>` : ""}
+      ${mDocs.length ? `<li>${mDocs.length} marital status(es)</li>` : ""}
     </ul>
     <p style="margin:0" class="muted">For each document, every language that has a name will be set to status = "published".</p>
     <div class="actions">
@@ -18934,7 +18976,7 @@ function openConvertNames() {
   const isFew = L.length <= 4;
   dlg.innerHTML = `<div class="dlg">
     <h2 data-noguard>Convert names</h2>
-    <p style="margin:0">${todo.length} name(s) will be moved into the new per-language format. Nothing is deleted.</p>
+    <p style="margin:0">${todo.length} name(s) will be moved into the new per-language format. Nothing is deleted. Names will stay unpublished until you run Publish all names.</p>
     <div class="f">
       <label>The existing names are written in</label>
       <input type="hidden" id="c-lang" value="${esc(curLang)}">
@@ -19030,7 +19072,7 @@ function openCleanupActions() {
   });
 
   dlg.innerHTML = `
-    <div class="dlg" data-noguard>
+    <div class="dlg ${targets.length > 0 ? 'warn-popup' : ''}" data-noguard>
       <h2>Clean up actions</h2>
       <p style="margin:0 0 var(--space-sm)">Removes obsolete notification templates, legacy visibility fields, and restriction fields on Action Parents in chunks of 400 without modifying last-edited information.</p>
       ${targets.length === 0 ? `
@@ -19041,17 +19083,19 @@ function openCleanupActions() {
           <button type="button" class="btn primary" id="d-cancel">Done</button>
         </div>
       ` : `
-        <ul style="margin:0 0 16px;padding-left:20px;font-size:14px" class="muted">
+        <ul style="margin:0 0 12px;padding-left:20px;font-size:14px" class="muted">
           <li><b>${targets.length}</b> total document(s) to clean up</li>
           <li><b>${templateCount}</b> with obsolete notification template fields</li>
           <li><b>${visibleCount}</b> with legacy "visible" field</li>
           <li><b>${parentRestrictedCount}</b> Action Parent(s) with obsolete "restricted" field</li>
         </ul>
+        <p style="margin:0 0 16px;color:var(--danger);font-weight:600">Permanently removes obsolete fields. This can't be undone.</p>
         <div class="actions">
           <button type="button" class="btn" id="d-cancel">Cancel</button>
-          <button type="button" class="btn" id="btn-cleanup-dryrun">Dry run (log only)</button>
-          <button type="button" class="btn primary" id="d-save">Clean up ${targets.length} actions</button>
+          <button type="button" class="btn" id="btn-cleanup-dryrun" style="color:var(--ink);border-color:var(--line)">Dry run (log only)</button>
+          <button type="button" class="btn danger" id="d-save">Clean up ${targets.length} actions</button>
         </div>
+        <div id="cleanup-dryrun-list" style="margin-top:var(--space-md);max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px" hidden></div>
       `}
     </div>
   `;
@@ -19061,6 +19105,13 @@ function openCleanupActions() {
   if (dryBtn) {
     dryBtn.onclick = () => {
       console.log(`[Clean up actions DRY RUN] ${targets.length} doc(s) would be updated:`, targets.map(t => ({ id: t.id, name: nm(t), parentId: t.parentId })));
+      const listEl = $("#cleanup-dryrun-list");
+      if (listEl) {
+        listEl.hidden = false;
+        listEl.innerHTML = `<b>Affected actions (${targets.length}):</b><ul style="margin:4px 0 0;padding-left:18px">` +
+          targets.map(t => `<li>${esc(nm(t) || t.id)}${t.parentId ? '' : ' <i>(parent)</i>'}</li>`).join("") +
+          `</ul>`;
+      }
       toast(`Dry run: ${targets.length} document(s) would be cleaned up (no changes written).`);
     };
   }
