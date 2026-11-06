@@ -2211,57 +2211,118 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     margin-top: 2px;
   }
 
-  /* Compact chips for Actions page & mobile-first no-wrap */
+  /* Unified chip system (single source of truth) */
+  .chip,
   .chip-compact {
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    padding: 0 8px;
     font-size: 12px;
-    line-height: 1.2;
-    padding: 2px 7px;
+    line-height: 1;
+    font-weight: 500;
     border-radius: var(--radius-full);
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    gap: 4px;
     white-space: nowrap;
-    font-weight: 500;
     direction: ltr;
     unicode-bidi: isolate;
-  }
-  .chip-inapp {
+    box-sizing: border-box;
+    max-width: 100%;
     background: var(--sand);
     color: var(--ink);
+    border: 1px solid transparent;
   }
-  .chip-hidden {
-    background: #fce8e6;
-    color: var(--danger);
+  .chips,
+  .card-action-chips,
+  .parent-chips-wrap,
+  .lang-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    align-items: center;
   }
-  .chip-jobonly {
-    background: #e3efec;
-    color: var(--green);
+  .chips[dir="rtl"],
+  .card-action-chips[dir="rtl"],
+  .parent-chips-wrap[dir="rtl"],
+  .lang-card-chips[dir="rtl"] {
+    direction: rtl;
   }
+  .chips[dir="ltr"],
+  .card-action-chips[dir="ltr"],
+  .parent-chips-wrap[dir="ltr"],
+  .lang-card-chips[dir="ltr"] {
+    direction: ltr;
+  }
+
+  /* Semantic variants (AA contrast in light & dark mode) */
+  .chip-neutral,
   .chip-count {
     background: var(--sand);
     color: var(--ink);
   }
-  @media (prefers-color-scheme: dark) {
-    .chip-hidden {
-      background: #42161b;
-      color: var(--st-empty-text);
-    }
-    .chip-jobonly {
-      background: var(--green-soft);
-      color: var(--st-published-text);
-    }
-  }
-  [data-theme="dark"] .chip-hidden {
-    background: #42161b;
-    color: var(--st-empty-text);
-  }
-  [data-theme="dark"] .chip-jobonly {
-    background: var(--green-soft);
+  .chip-good,
+  .chip-status-good,
+  .chip-inapp,
+  .chip-inuse-green {
+    background: var(--st-published-bg);
     color: var(--st-published-text);
   }
-  @media (max-width: 359px) {
-    .chip-count .chip-count-label {
-      display: none !important;
-    }
+  .chip-warn,
+  .chip-status-warn {
+    background: var(--st-draft-bg);
+    color: var(--st-draft-text);
+  }
+  .chip-bad,
+  .chip-status-bad,
+  .chip-hidden {
+    background: var(--st-empty-bg);
+    color: var(--st-empty-text);
+  }
+  .chip-info,
+  .chip-jobonly,
+  .chip-source {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+  body.dark .chip-info,
+  body.dark .chip-jobonly,
+  body.dark .chip-source,
+  [data-theme="dark"] .chip-info,
+  [data-theme="dark"] .chip-jobonly,
+  [data-theme="dark"] .chip-source {
+    color: var(--st-published-text);
+  }
+  .chip-muted,
+  .chip-inuse-muted {
+    background: var(--line);
+    color: var(--muted);
+  }
+  .chip-code {
+    background: var(--sand);
+    color: var(--ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11.5px;
+  }
+  .chip-emoji {
+    font-size: 1em;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  }
+  .chip-source .chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
   }
 
   /* Parent card 2-row layout */
@@ -2315,8 +2376,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
     flex-shrink: 1;
     min-width: 0;
   }
@@ -2345,8 +2405,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap;
+    min-width: 0;
   }
 
   .card-lang-tray {
@@ -2553,10 +2613,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
 
   /* Chips, badges & status colors */
-  .chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
   .chips[dir="rtl"] { direction: rtl; }
   .chips[dir="ltr"] { direction: ltr; }
-  .chip { background: var(--sand); border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
   .badge { border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; direction: ltr; unicode-bidi: isolate; }
   /* Status colours: empty = red, draft = pink, reviewed = yellow, published = green */
   .st-empty { background: var(--st-empty-bg); color: var(--st-empty-text); border-color: var(--st-empty); }
@@ -5152,26 +5211,13 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
 
   /* Settings language card styling (matches action parent card) */
-    /* Language card info chips (row 2) */
-  .chip-inuse-green {
-    background: var(--green-soft, #e6f4ea);
-    color: var(--green, #137333);
-    border-color: transparent;
-  }
-  .chip-inuse-muted {
-    background: var(--line, #e2e8e5);
-    color: var(--muted, #5f6368);
-    border-color: transparent;
-  }
-  .chip-code {
-    font-family: monospace;
-  }
   .lang-card-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 6px;
     align-items: center;
     margin-top: 6px;
+    min-width: 0;
   }
 
   .lang-cards-grid {
@@ -9299,17 +9345,37 @@ function actionLabel(id) {
 }
 const niyyahCount = id => niyyahs.filter(n => Array.isArray(n.actionIds) ? n.actionIds.includes(id) : Object.values(n.actionIds || {}).includes(id)).length;
 
-/* ---------- chips for actions (visible / restricted) ---------- */
+/* ---------- count chips & action chips ---------- */
+const CHIP_KINDS = {
+  niyyahs: { emoji: "🤲", singular: "niyyah", plural: "niyyahs" },
+  actions: { emoji: "🌿", singular: "action", plural: "actions" },
+  locations: { emoji: "📍", singular: "location", plural: "locations" },
+  types: { emoji: "📍", singular: "location", plural: "locations" },
+  jobs: { emoji: "💼", singular: "job", plural: "jobs" },
+  maritalStatuses: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
+  marital: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
+  tips: { emoji: "💡", singular: "tip", plural: "tips" },
+  events: { emoji: "📅", singular: "event", plural: "events" },
+  languages: { emoji: "🌐", singular: "language", plural: "languages" }
+};
+
+function chipCount(kind, n) {
+  const num = typeof n === "number" ? n : parseInt(n, 10) || 0;
+  const cfg = CHIP_KINDS[kind] || { emoji: "•", singular: kind || "item", plural: (kind || "item") + "s" };
+  const label = `${num} ${num === 1 ? cfg.singular : cfg.plural}`;
+  return `<span class="chip chip-count" aria-label="${esc(label)}" title="${esc(label)}">${num}<span class="chip-emoji" aria-hidden="true">${cfg.emoji}</span></span>`;
+}
+
 function actionChips(a) {
   let h = "";
   const isVis = a.inAppVisibility ?? a.visible ?? true;
   if (!isVis) {
-    h += `<span class="chip" style="background:#fce8e6;color:var(--danger)">Hidden</span>`;
+    h += `<span class="chip chip-bad">Hidden</span>`;
   } else {
-    h += `<span class="chip">In app</span>`;
+    h += `<span class="chip chip-good">In app</span>`;
   }
   if (a.restricted) {
-    h += `<span class="chip" style="background:#e3efec;color:var(--green)">Job-only</span>`;
+    h += `<span class="chip chip-info">Job-only</span>`;
   }
   return h;
 }
@@ -13375,9 +13441,9 @@ function renderCard({
         </div>
         <div class="card-action-bottom" dir="${cardRtl ? 'rtl' : 'ltr'}">
           <div class="card-action-chips">
-            ${!isVis ? '<span class="chip chip-compact chip-hidden">Hidden</span>' : '<span class="chip chip-compact chip-inapp">In app</span>'}
-            ${isRestricted ? '<span class="chip chip-compact chip-jobonly">Job-only</span>' : ''}
-            <span class="chip chip-compact chip-count"><span class="chip-count-num">${nCount}</span><span class="chip-count-label"> niyyah${nCount === 1 ? '' : 's'}</span></span>
+            ${!isVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
+            ${isRestricted ? '<span class="chip chip-info">Job-only</span>' : ''}
+            ${chipCount("niyyahs", nCount)}
           </div>
         </div>
         ${trayHtml}
@@ -14520,8 +14586,8 @@ function renderActions() {
               </div>
               <div class="parent-card-row2" dir="${catRtl ? 'rtl' : 'ltr'}">
                 <div class="parent-chips-wrap">
-                  ${!cVis ? '<span class="chip chip-compact chip-hidden">Hidden</span>' : '<span class="chip chip-compact chip-inapp">In app</span>'}
-                  <span class="chip chip-compact chip-count"><span class="chip-count-num">${filteredKids.length}</span><span class="chip-count-label"> action${filteredKids.length === 1 ? '' : 's'}</span></span>
+                  ${!cVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
+                  ${chipCount("actions", filteredKids.length)}
                 </div>
                 <div class="parent-row2-tools">
                   ${renderLangProgress(c, L, "actions")}
@@ -17239,7 +17305,15 @@ async function seedNamed(key) {
  * Shared 2-row group header (Actions-parent style) for Languages, Marital status, Tips, Events.
  */
 function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, addAct, addLabel, canAdd = true, addAttrs = "" }) {
-  const countWord = count === 1 ? countLabel : (countLabel.endsWith('s') ? countLabel + 'es' : countLabel + 's');
+  const LABEL_TO_KIND = {
+    tip: "tips", tips: "tips",
+    event: "events", events: "events",
+    language: "languages", languages: "languages",
+    status: "maritalStatuses", marital: "maritalStatuses",
+    action: "actions", actions: "actions",
+    niyyah: "niyyahs", niyyahs: "niyyahs"
+  };
+  const kind = LABEL_TO_KIND[countLabel] || countLabel;
   const chevronSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
   const addBtn = addAct
     ? `<button type="button" class="btn-icon btn-add-mini" data-act="${esc(addAct)}" ${addAttrs} aria-label="${esc(addLabel)}" title="${esc(addLabel)}" ${canAdd ? '' : 'disabled aria-disabled="true"'}>+</button>`
@@ -17260,7 +17334,7 @@ function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, 
         </div>
         <div class="parent-card-row2" dir="ltr">
           <div class="parent-chips-wrap">
-            <span class="chip chip-compact chip-count"><span class="chip-count-num">${count}</span><span class="chip-count-label"> ${esc(countWord)}</span></span>
+            ${chipCount(kind, count)}
           </div>
           <div class="parent-row2-tools">
             ${addBtn}
@@ -17334,18 +17408,17 @@ function renderTips() {
             ${catTips.map(t => {
               const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
               const isRtl = isArabic(rawText);
-              const sourceSpan = t.source
-                ? `Source: <span class="tip-source" dir="auto" style="unicode-bidi: plaintext">${esc(t.source)}</span> · `
+              const catName = TIP_CATS[t.category] || (t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : TIP_CATS.habit);
+              const sourceChip = t.source
+                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">📎</span><span class="chip-text">${esc(t.source)}</span></span>`
                 : "";
-              const preview = `${sourceSpan}${t.published ? "Published" : "Draft"}`;
-              const chips = `<span class="chip">${esc(TIP_CATS[t.category] || (t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : TIP_CATS.habit))}</span>
-                             <span class="badge ${t.published ? 'st-published' : 'st-draft'}"><span class="st-icon" aria-hidden="true">${t.published ? '✓' : '✎'}</span> ${t.published ? 'Published' : 'Draft'}</span>`;
+              const chips = `<span class="chip chip-neutral">${esc(catName)}</span><span class="chip ${t.published ? 'chip-status-good' : 'chip-status-warn'}">${t.published ? 'Published' : 'Draft'}</span>${sourceChip ? ' ' + sourceChip : ''}`;
               return renderCard({
                 type: "tips",
                 id: t.id,
                 title: rawText,
                 isRtl,
-                preview,
+                preview: "",
                 chips,
                 item: t,
                 L
@@ -17676,9 +17749,8 @@ function renderEventList() {
           <div class="g-body cards-grid">
             ${g.items.map(e => {
               const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
-              const preview = `${ruleText(e)} · ${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'} · ${cnt} niyyahs`;
-              const chips = `<span class="chip">${esc(ruleText(e))}</span>
-                <span class="badge ${e.published ? 'st-published' : 'st-draft'}"><span class="st-icon" aria-hidden="true">${e.published ? '✓' : '✎'}</span> ${e.published ? 'Published' : 'Draft'}</span>`;
+              const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
+              const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}`;
               return renderCard({
                 type: "events",
                 id: e.id,
@@ -18239,13 +18311,16 @@ function renderEvents() {
         : `${n} days: ${fmt(a, { day: "numeric", month: "short" })} to ${fmt(z, { day: "numeric", month: "short", year: "numeric" })} · ${esc(hLabel(hijriOf(a)))} to ${esc(hLabel(hijriOf(z)))}`}</h3>`;
     html += seen.size ? `<div class="cards-grid">` + [...seen.values()].map(e => {
         const L = langs();
+        const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
+        const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
+        const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}`;
         return renderCard({
           type: "events",
           id: e.id,
           title: nm(e),
           isRtl: isArabic(nm(e)),
-          preview: `${ruleText(e)} · ${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`,
-          chips: `<span class="chip">${esc(ruleText(e))}</span><span class="badge ${e.published ? 'st-published' : 'st-draft'}"><span class="st-icon" aria-hidden="true">${e.published ? '✓' : '✎'}</span> ${e.published ? 'Published' : 'Draft'}</span>`,
+          preview,
+          chips,
           item: e,
           L
         });
@@ -18378,16 +18453,17 @@ function renderSettings() {
         const usageChips = (() => {
           const parts = [];
           if (counts.total > 0) {
-            parts.push(`<span class="chip chip-compact chip-inuse-green">${counts.total} in use</span>`);
+            parts.push(`<span class="chip chip-status-good">${counts.total} in use</span>`);
           } else {
-            parts.push(`<span class="chip chip-compact chip-inuse-muted">0 in use</span>`);
+            parts.push(`<span class="chip chip-muted">0 in use</span>`);
           }
-          // Per-collection counts from summary (e.g. '3 actions, 12 niyyahs')
-          if (counts.summary) {
-            counts.summary.split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
-              parts.push(`<span class="chip chip-compact">${esc(s)}</span>`);
-            });
-          }
+          if (counts.niyyahs) parts.push(chipCount("niyyahs", counts.niyyahs));
+          if (counts.actions) parts.push(chipCount("actions", counts.actions));
+          if (counts.types) parts.push(chipCount("locations", counts.types));
+          if (counts.jobs) parts.push(chipCount("jobs", counts.jobs));
+          if (counts.maritalStatuses) parts.push(chipCount("maritalStatuses", counts.maritalStatuses));
+          if (counts.tips) parts.push(chipCount("tips", counts.tips));
+          if (counts.events) parts.push(chipCount("events", counts.events));
           return parts.join('');
         })();
 
@@ -18405,8 +18481,8 @@ function renderSettings() {
                 </div>
               </div>
               <div class="lang-card-chips">
-                <span class="chip chip-compact chip-code">${esc(l.code)}</span>
-                ${l.rtl ? `<span class="chip chip-compact">right to left</span>` : ''}
+                <span class="chip chip-code">${esc(l.code)}</span>
+                ${l.rtl ? `<span class="chip chip-info">RTL</span>` : ''}
                 ${usageChips}
               </div>
             </div>
@@ -19448,7 +19524,8 @@ window.__ADMIN__ = {
   get expandedGroups() { return expandedGroups; },
   get tabFilterState() { return tabFilterState; },
   TAB_TITLES,
-  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
+  chipCount, CHIP_KINDS,
+  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
   handleSearchTrigger, handleNewItemShortcut,
