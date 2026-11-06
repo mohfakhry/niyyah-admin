@@ -1658,6 +1658,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     gap: var(--space-sm);
     min-width: 0;
   }
+  .card-head[dir="rtl"] {
+    direction: rtl;
+  }
+  .card-head[dir="ltr"] {
+    direction: ltr;
+  }
 
   .card-title-wrap {
     flex: 1 1 auto;
@@ -1665,6 +1671,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     flex-direction: column;
     gap: 2px;
+    text-align: start;
   }
 
   .card-title {
@@ -1676,12 +1683,16 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  .card-title.rtl {
+  .card-title.rtl,
+  .card-named-title.rtl {
     direction: rtl;
-    text-align: right;
+    text-align: start;
     font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
-    font-size: 1.25rem;
-    line-height: 1.8;
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+  .parent-title-wrap .card-title.rtl {
     font-weight: 700;
   }
 
@@ -1703,12 +1714,23 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     min-width: 0;
     line-height: 1.4;
   }
+  .card-preview[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+  }
+  .card-preview[dir="ltr"] {
+    direction: ltr;
+    text-align: left;
+  }
   .card-preview.rtl {
     direction: rtl;
     text-align: right;
     font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
-    font-size: 15px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .tip-source {
+    unicode-bidi: plaintext;
   }
 
   /* Simplified Niyyah card elements */
@@ -2199,6 +2221,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     align-items: center;
     white-space: nowrap;
     font-weight: 500;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
   .chip-inapp {
     background: var(--sand);
@@ -2310,6 +2334,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     margin-top: 8px;
     width: 100%;
     min-width: 0;
+  }
+  .card-action-bottom[dir="rtl"] {
+    direction: rtl;
+  }
+  .card-action-bottom[dir="ltr"] {
+    direction: ltr;
   }
   .card-action-chips {
     display: flex;
@@ -2524,8 +2554,10 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   /* Chips, badges & status colors */
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: 4px; }
-  .chip { background: var(--sand); border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; color: var(--ink); }
-  .badge { border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .chips[dir="rtl"] { direction: rtl; }
+  .chips[dir="ltr"] { direction: ltr; }
+  .chip { background: var(--sand); border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
+  .badge { border-radius: var(--radius-full); padding: 2px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; direction: ltr; unicode-bidi: isolate; }
   /* Status colours: empty = red, draft = pink, reviewed = yellow, published = green */
   .st-empty { background: var(--st-empty-bg); color: var(--st-empty-text); border-color: var(--st-empty); }
   .st-draft { background: var(--st-draft-bg); color: var(--st-draft-text); border-color: var(--st-draft); }
@@ -11515,7 +11547,12 @@ applyTab(currentTab);
 /* ============================================================
    4. CARD HELPERS & MULTI-SELECT SYSTEM
    ============================================================ */
-const isArabic = text => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(text || ""));
+const isArabic = text => {
+  const str = String(text || "").replace(/<[^>]+>/g, "").trim();
+  const match = str.match(/[\p{L}\p{M}]/u);
+  if (!match) return false;
+  return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(match[0]);
+};
 
 function collOf(type) {
   if (type === "actions" || type === "action") return "actions";
@@ -13226,13 +13263,14 @@ function renderCard({
   type,
   id,
   title,
-  isRtl = false,
+  isRtl,
   preview = "",
   previewRtl = false,
   chips = "",
   item,
   L
 }) {
+  const cardRtl = typeof isRtl === "boolean" ? isRtl : isArabic(title);
   const progHtml = renderLangProgress(item, L, type);
   const trayHtml = renderLangTray(item, L, type);
 
@@ -13303,8 +13341,8 @@ function renderCard({
       ${lockBadgeHtml}
       ${viewerBadgeHtml}
       <div class="card-main">
-        <div class="card-named-row" dir="${isRtl ? 'rtl' : 'ltr'}">
-          <h3 class="card-title card-named-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
+        <div class="card-named-row" dir="${cardRtl ? 'rtl' : 'ltr'}">
+          <h3 class="card-title card-named-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           ${progHtml}
           <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
         </div>
@@ -13326,16 +13364,16 @@ function renderCard({
       ${lockBadgeHtml}
       ${viewerBadgeHtml}
       <div class="card-main">
-        <div class="card-head">
+        <div class="card-head" dir="${cardRtl ? 'rtl' : 'ltr'}">
           <div class="card-title-wrap">
-            <h3 class="card-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
+            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           </div>
           <div class="card-head-tools">
             ${progHtml}
             <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
           </div>
         </div>
-        <div class="card-action-bottom" dir="${isRtl ? 'rtl' : 'ltr'}">
+        <div class="card-action-bottom" dir="${cardRtl ? 'rtl' : 'ltr'}">
           <div class="card-action-chips">
             ${!isVis ? '<span class="chip chip-compact chip-hidden">Hidden</span>' : '<span class="chip chip-compact chip-inapp">In app</span>'}
             ${isRestricted ? '<span class="chip chip-compact chip-jobonly">Job-only</span>' : ''}
@@ -13348,26 +13386,32 @@ function renderCard({
     `;
   }
 
+  let previewHtml = preview;
+  if (type === "tips" && item && item.source && preview && !preview.includes("tip-source")) {
+    const sourceSpan = `<span class="tip-source" dir="auto" style="unicode-bidi: plaintext">${esc(item.source)}</span>`;
+    previewHtml = preview.replace(esc(item.source), sourceSpan);
+  }
+
   return `
-    <div class="card"
+    <div class="card ${type === 'tips' ? 'card-tip' : ''}"
          data-type="${esc(type)}" data-id="${esc(id)}"
          role="button" tabindex="0">
       ${lockBadgeHtml}
       ${viewerBadgeHtml}
       <div class="card-main">
-        <div class="card-head">
+        <div class="card-head" dir="${cardRtl ? 'rtl' : 'ltr'}">
           <div class="card-title-wrap">
-            <h3 class="card-title ${isRtl ? 'rtl' : ''}" dir="${isRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
-            ${chips ? `<div class="chips">${chips}</div>` : ''}
+            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
+            ${chips ? `<div class="chips" dir="${cardRtl ? 'rtl' : 'ltr'}">${chips}</div>` : ''}
           </div>
           <div class="card-head-tools">
             ${progHtml}
             <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
           </div>
         </div>
-        ${preview ? `
-          <div class="card-preview ${previewRtl ? 'rtl' : ''}" dir="${previewRtl ? 'rtl' : 'auto'}">
-            ${esc(preview)}
+        ${previewHtml ? `
+          <div class="card-preview ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'ltr'}">
+            ${previewHtml}
           </div>
         ` : ''}
         ${trayHtml}
@@ -14704,7 +14748,7 @@ function renderNiyyahs() {
       const curTr = trs.find(x => x.l.code === viewCode() && x.t.text);
       const pickTr = curTr || (trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text));
       const previewText = pickTr ? pickTr.t.text : "(no text)";
-      const isRtl = pickTr ? (pickTr.l.rtl || isArabic(previewText)) : false;
+      const isRtl = pickTr ? isArabic(previewText) : false;
 
       listHtml += renderCard({
         type: "niyyahs",
@@ -17290,7 +17334,10 @@ function renderTips() {
             ${catTips.map(t => {
               const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
               const isRtl = isArabic(rawText);
-              const preview = `${t.source ? `Source: ${t.source} · ` : ""}${t.published ? "Published" : "Draft"}`;
+              const sourceSpan = t.source
+                ? `Source: <span class="tip-source" dir="auto" style="unicode-bidi: plaintext">${esc(t.source)}</span> · `
+                : "";
+              const preview = `${sourceSpan}${t.published ? "Published" : "Draft"}`;
               const chips = `<span class="chip">${esc(TIP_CATS[t.category] || (t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : TIP_CATS.habit))}</span>
                              <span class="badge ${t.published ? 'st-published' : 'st-draft'}"><span class="st-icon" aria-hidden="true">${t.published ? '✓' : '✎'}</span> ${t.published ? 'Published' : 'Draft'}</span>`;
               return renderCard({
@@ -18929,6 +18976,9 @@ function openCleanupActions() {
                   bodyTemplate: deleteField(),
                   visible: deleteField()
                 };
+                if (a.visible !== undefined && a.inAppVisibility === undefined) {
+                  updates.inAppVisibility = a.visible !== false;
+                }
                 if (!a.parentId) {
                   updates.restricted = deleteField();
                 }
@@ -18942,6 +18992,9 @@ function openCleanupActions() {
             delete a.bodyTemplates;
             delete a.titleTemplate;
             delete a.bodyTemplate;
+            if (a.visible !== undefined && a.inAppVisibility === undefined) {
+              a.inAppVisibility = a.visible !== false;
+            }
             delete a.visible;
             if (!a.parentId) delete a.restricted;
           });

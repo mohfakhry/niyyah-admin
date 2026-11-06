@@ -5,7 +5,8 @@
  * - Uses writeBatch in chunks of 400 docs.
  * - Deletes obsolete notification template fields:
  *   titleTemplates, bodyTemplates, titleTemplate, bodyTemplate.
- * - Deletes legacy `visible` field if still present.
+ * - Deletes legacy `visible` field; if document lacks `inAppVisibility`, converts
+ *   it first (inAppVisibility = visible !== false) before deleting `visible`.
  * - For Action Parents (parentId is empty "" or missing): deletes `restricted`.
  *   Leaves `parentId: ""` untouched.
  * - Does NOT write `updatedAt` to preserve locks and last-edited timestamps.
@@ -51,7 +52,8 @@ async function runCleanup() {
   let needCleanupCount = 0;
   let alreadyCleanCount = 0;
   let templateFieldsCount = 0;
-  let visibleFieldsCount = 0;
+  let visibleDeletedCount = 0;
+  let visibleConvertedCount = 0;
   let parentRestrictedFieldsCount = 0;
 
   const updates = [];
@@ -65,43 +67,50 @@ async function runCleanup() {
     const hasTitleTemplate = Object.prototype.hasOwnProperty.call(data, "titleTemplate");
     const hasBodyTemplate = Object.prototype.hasOwnProperty.call(data, "bodyTemplate");
     const hasVisible = Object.prototype.hasOwnProperty.call(data, "visible");
+    const hasInAppVisibility = Object.prototype.hasOwnProperty.call(data, "inAppVisibility");
     const hasParentRestricted = isParent && Object.prototype.hasOwnProperty.call(data, "restricted");
 
-    const deletePayload = {};
+    const updatePayload = {};
 
     if (hasTitleTemplates) {
-      deletePayload.titleTemplates = FieldValue.delete();
+      updatePayload.titleTemplates = FieldValue.delete();
       templateFieldsCount++;
     }
     if (hasBodyTemplates) {
-      deletePayload.bodyTemplates = FieldValue.delete();
+      updatePayload.bodyTemplates = FieldValue.delete();
       templateFieldsCount++;
     }
     if (hasTitleTemplate) {
-      deletePayload.titleTemplate = FieldValue.delete();
+      updatePayload.titleTemplate = FieldValue.delete();
       templateFieldsCount++;
     }
     if (hasBodyTemplate) {
-      deletePayload.bodyTemplate = FieldValue.delete();
+      updatePayload.bodyTemplate = FieldValue.delete();
       templateFieldsCount++;
     }
     if (hasVisible) {
-      deletePayload.visible = FieldValue.delete();
-      visibleFieldsCount++;
+      if (!hasInAppVisibility) {
+        updatePayload.inAppVisibility = data.visible !== false;
+        updatePayload.visible = FieldValue.delete();
+        visibleConvertedCount++;
+      } else {
+        updatePayload.visible = FieldValue.delete();
+        visibleDeletedCount++;
+      }
     }
     if (hasParentRestricted) {
-      deletePayload.restricted = FieldValue.delete();
+      updatePayload.restricted = FieldValue.delete();
       parentRestrictedFieldsCount++;
     }
 
-    if (Object.keys(deletePayload).length > 0) {
+    if (Object.keys(updatePayload).length > 0) {
       needCleanupCount++;
       updates.push({
         ref: docSnap.ref,
         id: docSnap.id,
         name: data.name || "(unnamed)",
         isParent,
-        deletePayload
+        updatePayload
       });
     } else {
       alreadyCleanCount++;
@@ -111,7 +120,8 @@ async function runCleanup() {
   console.log(`Documents already clean: ${alreadyCleanCount}`);
   console.log(`Documents needing cleanup: ${needCleanupCount}`);
   console.log(`- Obsolete template fields to remove: ${templateFieldsCount}`);
-  console.log(`- Legacy visible fields to remove: ${visibleFieldsCount}`);
+  console.log(`- Legacy visible fields converted to inAppVisibility: ${visibleConvertedCount}`);
+  console.log(`- Legacy visible fields to remove (already had inAppVisibility): ${visibleDeletedCount}`);
   console.log(`- Obsolete Action Parent restricted fields to remove: ${parentRestrictedFieldsCount}\n`);
 
   if (needCleanupCount === 0) {
@@ -122,7 +132,15 @@ async function runCleanup() {
   if (isDryRun) {
     console.log("[DRY RUN] Sample of documents that would be cleaned:");
     updates.slice(0, 10).forEach((u, i) => {
-      console.log(`  ${i + 1}. [${u.id}] "${u.name}" (isParent: ${u.isParent}) -> deleting: ${Object.keys(u.deletePayload).join(", ")}`);
+      const parts = [];
+      if (Object.prototype.hasOwnProperty.call(u.updatePayload, "inAppVisibility")) {
+        parts.push(`convert visible -> inAppVisibility: ${u.updatePayload.inAppVisibility}`);
+      }
+      const deletedKeys = Object.keys(u.updatePayload).filter(k => k !== "inAppVisibility");
+      if (deletedKeys.length > 0) {
+        parts.push(`deleting: ${deletedKeys.join(", ")}`);
+      }
+      console.log(`  ${i + 1}. [${u.id}] "${u.name}" (isParent: ${u.isParent}) -> ${parts.join("; ")}`);
     });
     if (updates.length > 10) {
       console.log(`  ... and ${updates.length - 10} more document(s).`);
@@ -139,7 +157,7 @@ async function runCleanup() {
 
   for (let i = 0; i < updates.length; i++) {
     const item = updates[i];
-    batch.update(item.ref, item.deletePayload);
+    batch.update(item.ref, item.updatePayload);
     countInBatch++;
 
     if (countInBatch >= BATCH_SIZE || i === updates.length - 1) {

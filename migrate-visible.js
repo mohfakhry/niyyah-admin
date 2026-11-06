@@ -4,6 +4,7 @@
  * Requirements:
  * - Replaces boolean field `visible` with `inAppVisibility` (true = "In app", false = "Hidden").
  * - Sets inAppVisibility = (visible !== false) and deletes `visible`.
+ * - Does NOT write `updatedAt` to preserve locks and last-edited timestamps.
  * - Idempotent: safe to run multiple times.
  * - Batches writes (<= 500 per batch).
  * - Detailed logging with counts.
@@ -92,8 +93,7 @@ async function runMigration() {
       if (!isDryRun) {
         batch.update(item.ref, {
           inAppVisibility: item.targetVisibility,
-          visible: FieldValue.delete(),
-          updatedAt: FieldValue.serverTimestamp()
+          visible: FieldValue.delete()
         });
       }
     }
