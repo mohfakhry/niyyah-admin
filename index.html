@@ -229,18 +229,18 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .center p { margin: 0; color: var(--muted); max-width: 40ch; }
 
   /* ============================================================
-     BUTTON SYSTEM: Unified Design System
-     - .btn: Outlined neutral button (Default)
-     - .btn.primary: Filled green (Maximum 1 per screen or sheet)
-     - .btn.text: Text only (transparent)
-     - .btn.danger: Red outline (Never filled red, full danger color)
-     - .btn.small: Compact 36px variant
-     - .btn-icon: 44px circular outlined icon button (Back, Close, History, +, ⋯)
-     - .btn-icon.primary: Filled green circular
-     - .btn-icon.danger: Red outlined circular (🗑️)
-     - States: :active (scale 0.96), :focus-visible (3px outline), disabled (0.45 opacity), loading (.is-loading)
-     - Hover styles strictly inside @media (hover: hover)
-     ============================================================ */
+   BUTTON SYSTEM: Unified Design System
+   All action buttons must adhere to strict visual hierarchy.
+   - Primary: Solid green (var(--primary))
+   - Secondary: Gray background (var(--line))
+   - Destructive: Red outline (default); inside .warn-popup: solid red
+   - .btn.small: Compact 36px variant
+   - .btn-icon: Icon-only buttons (min 44x44 touch target)
+   - Danger button: .btn.danger (never filled red outside .warn-popup)
+   Hover styles strictly inside @media (hover: hover)
+   - .warn-popup: Red warning overlay (deletes, discard, draft-change).
+     Confirm button is solid red; Cancel is red outline.
+   ============================================================ */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -4944,6 +4944,58 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   #dlg-discard,
   #dlg-inactivity-warning,
   #dlg-lock-info,
+  
+  /* Red Warning Popups (deletes, discard, draft-change, inactivity) */
+  dialog:has(.warn-popup) {
+    border: 2px solid var(--danger);
+  }
+  .warn-popup .discard-popup-title,
+  .warn-popup h2 {
+    color: var(--danger);
+  }
+  /* Destructive button inside warn-popup: solid red */
+  .warn-popup .discard-popup-actions .btn.danger,
+  .warn-popup .actions .btn.danger {
+    background: var(--danger-dark);
+    color: #ffffff;
+    border-color: var(--danger-dark);
+  }
+  /* Safe/cancel button inside warn-popup: red outline */
+  .warn-popup .discard-popup-actions .btn:not(.danger):not(.primary),
+  .warn-popup .actions .btn:not(.danger):not(.primary) {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: transparent;
+  }
+  /* Single button popup inside warn-popup (e.g. inactivity warning): solid red */
+  .warn-popup .discard-popup-actions .btn:only-child,
+  .warn-popup .actions .btn:only-child {
+    background: var(--danger-dark);
+    color: #ffffff;
+    border-color: var(--danger-dark);
+  }
+  @media (hover: hover) {
+    .warn-popup .discard-popup-actions .btn.danger:hover:not([disabled]),
+    .warn-popup .actions .btn.danger:hover:not([disabled]) {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #ffffff;
+    }
+    .warn-popup .discard-popup-actions .btn:not(.danger):not(.primary):hover:not([disabled]),
+    .warn-popup .actions .btn:not(.danger):not(.primary):hover:not([disabled]) {
+      background: var(--danger-soft);
+      border-color: var(--danger-dark);
+      color: var(--danger-dark);
+    }
+  }
+  .warn-popup .discard-popup-actions .btn.danger:focus-visible,
+  .warn-popup .actions .btn.danger:focus-visible,
+  .warn-popup .discard-popup-actions .btn:not(.danger):not(.primary):focus-visible,
+  .warn-popup .actions .btn:not(.danger):not(.primary):focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 2px;
+  }
+
   #dlg-lock-prompt {
     position: fixed;
     top: 50%;
@@ -5068,6 +5120,28 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
 
   /* Settings language card styling (matches action parent card) */
+    /* Language card info chips (row 2) */
+  .chip-inuse-green {
+    background: var(--green-soft, #e6f4ea);
+    color: var(--green, #137333);
+    border-color: transparent;
+  }
+  .chip-inuse-muted {
+    background: var(--line, #e2e8e5);
+    color: var(--muted, #5f6368);
+    border-color: transparent;
+  }
+  .chip-code {
+    font-family: monospace;
+  }
+  .lang-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    margin-top: 6px;
+  }
+
   .lang-cards-grid {
     display: flex;
     flex-direction: column;
@@ -7983,7 +8057,7 @@ function confirmSheet(messageOrOpts, opts = {}) {
     const cancelText = (isObj ? messageOrOpts.cancelText : opts.cancelText) || "Cancel";
     const danger = (isObj ? messageOrOpts.danger : opts.danger) !== false;
 
-    dlgDiscard.innerHTML = `<div class="dlg">
+    dlgDiscard.innerHTML = `<div class="dlg ${danger ? 'warn-popup' : ''}">
       <h2>${esc(title)}</h2>
       <p class="muted" style="margin:0;white-space:pre-line">${esc(message)}</p>
       <div class="actions">
@@ -11495,6 +11569,7 @@ function canonicalColl(typeOrColl) {
   if (typeOrColl === "maritalStatuses" || typeOrColl === "maritalStatus") return "maritalStatuses";
   if (typeOrColl === "tips" || typeOrColl === "tip") return "tips";
   if (typeOrColl === "events" || typeOrColl === "event") return "events";
+  if (typeOrColl === "languages" || typeOrColl === "language") return "languages";
   return typeOrColl;
 }
 
@@ -12024,7 +12099,7 @@ function showInactivityWarningPopup() {
     return;
   }
   console.log("[LockSystem] showInactivityWarningPopup opening dialog");
-  dlgWarn.innerHTML = `<div class="discard-popup" data-noguard>
+  dlgWarn.innerHTML = `<div class="discard-popup warn-popup" data-noguard>
     <div class="discard-popup-text">Still editing? Your lock releases in 2 minutes</div>
     <div class="discard-popup-actions">
       <button type="button" class="btn primary" id="btn-im-here" autofocus>I'm here</button>
@@ -12998,7 +13073,15 @@ function renderHistoryPreviewView(canonical, id, revisions, selectedIdx, selecte
 
   const restoreBtn = $("#dh-btn-restore", dlgH);
   if (restoreBtn) {
-    restoreBtn.onclick = () => {
+    restoreBtn.onclick = async () => {
+      const ok = await confirmSheet({
+        title: "Restore this version?",
+        message: `Restore version ${revSeqNum}? This replaces your current unsaved changes with this version.`,
+        confirmText: "Restore",
+        cancelText: "Cancel",
+        danger: false
+      });
+      if (!ok) return;
       if (typeof activeEditorLockState.restoreData === "function") {
         activeEditorLockState.restoreData(rev);
         toast(`Restored version ${revSeqNum} as unsaved changes`, { type: "success" });
@@ -13661,7 +13744,7 @@ async function publishItem(type, id) {
 function showDependentsPopup({ title, message, isParentBlock, onShowSubs, onConfirm }) {
   if (isParentBlock) {
     dlgDiscard.innerHTML = `
-      <div class="discard-popup" data-noguard>
+      <div class="discard-popup warn-popup" data-noguard>
         <div class="discard-popup-text">
           <div class="discard-popup-title">${esc(title)}</div>
           <div class="discard-popup-sub">${esc(message)}</div>
@@ -13804,6 +13887,15 @@ async function requestDelete(type, id) {
           expandedGroups.add("cat_" + id);
           if (activeTab !== "actions") goTab("actions");
           renderAll();
+        }
+      });
+      return;
+    } else {
+      showDependentsPopup({
+        title: `Delete "${title}"?`,
+        message: "This folder is empty.",
+        onConfirm: async () => {
+          await executeDelete(type, id);
         }
       });
       return;
@@ -15043,7 +15135,7 @@ document.addEventListener("click", e => {
     "new-tip": () => openTip(),
     "edit-tip": () => openTip(id),
     "del-tip": () => requestDelete("tips", id),
-    "new-event": () => openEvent(),
+    "new-event": () => openEvent(null, b.dataset.rule ? { rule: { type: b.dataset.rule } } : null),
     "edit-event": () => openEvent(id),
     "del-event": () => requestDelete("events", id),
     "seed-events": seedEvents,
@@ -16083,9 +16175,21 @@ function openNiyyah(id, _mode = null) {
       };
     });
 
-    dlg.querySelectorAll("[data-rm]").forEach(b => (b.onclick = () => {
+    dlg.querySelectorAll("[data-rm]").forEach(b => (b.onclick = async () => {
       capture();
-      draft[cur].sources.splice(+b.dataset.rm, 1);
+      const idx = +b.dataset.rm;
+      const srcText = (draft[cur].sources[idx] || "").trim();
+      if (srcText) {
+        const ok = await confirmSheet({
+          title: "Remove source?",
+          message: `Remove source "${srcText.slice(0, 60)}"?`,
+          confirmText: "Remove",
+          cancelText: "Keep",
+          danger: true
+        });
+        if (!ok) return;
+      }
+      draft[cur].sources.splice(idx, 1);
       if (!draft[cur].sources.length) draft[cur].sources.push("");
       paintPanel();
       onFieldChange();
@@ -16471,7 +16575,7 @@ function openNiyyah(id, _mode = null) {
     });
 
     container.querySelectorAll(".btn-del-situation").forEach(btn => {
-      btn.onclick = (e) => {
+      btn.onclick = async (e) => {
         if (isMainSettingsLocked) {
           toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
           return;
@@ -16479,12 +16583,21 @@ function openNiyyah(id, _mode = null) {
         const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
         if (reviewNow) return;
         const idx = +btn.dataset.delSit;
-        if (idx > 0 && idx < curSituations.length) {
-          curSituations.splice(idx, 1);
-          dlgDirty = true;
-          paintSituations();
-          onFieldChange();
-        }
+        if (idx <= 0 || idx >= curSituations.length) return;
+        const num = idx + 1;
+        const ok = await confirmSheet({
+          title: `Remove Situation ${num}?`,
+          message: `Remove Situation ${num} and its before/after actions?`,
+          confirmText: "Remove",
+          cancelText: "Keep",
+          danger: true
+        });
+        if (!ok) return;
+        if (idx <= 0 || idx >= curSituations.length) return;
+        curSituations.splice(idx, 1);
+        dlgDirty = true;
+        paintSituations();
+        onFieldChange();
       };
     });
 
@@ -17059,79 +17172,8 @@ async function seedMaritalStatuses() {
 }
 
 async function deleteMaritalStatus(id) {
-  if (!checkWritePermission()) return false;
-  const lock = lockOf("maritalStatuses", id);
-  if (lock && !lock.isMine) {
-    const holder = getFirstName(lock.name || lock.email || "another user");
-    toast(`Locked by ${holder}`, true);
-    return false;
-  }
-  const referencingNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
-  const lockedNiyyah = referencingNiyyahs.find(n => {
-    const l = lockOf("niyyahs", n.id);
-    return l && !l.isMine;
-  });
-  if (lockedNiyyah) {
-    toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
-    return false;
-  }
-
-  const count = referencingNiyyahs.length;
-  const item = getItem("maritalStatuses", id);
-  const name = item ? (getItemDisplayName(item, viewCode()) || "Marital Status") : "Marital Status";
-  const msg = `Are you sure you want to delete "${name}"?\nUsed by ${count} ${count === 1 ? "niyyah" : "niyyahs"}.`;
-  const ok = await confirmSheet({
-    title: "🗑️ Delete",
-    message: msg,
-    confirmText: "Delete",
-    danger: true
-  });
-  if (!ok) return false;
-
-  // Optimistic local update
-  maritalStatuses = maritalStatuses.filter(x => x.id !== id);
-  niyyahs.forEach(x => {
-    if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
-  });
-  renderAll();
-
-  if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
-    toast(`Deleted "${name}"`);
-    return true;
-  }
-
-  try {
-    // 1. Remove id from maritalStatusIds in referencing niyyahs in batches of at most 400
-    for (let i = 0; i < referencingNiyyahs.length; i += 400) {
-      const chunk = referencingNiyyahs.slice(i, i + 400);
-      const batch = writeBatch(db);
-      for (const n of chunk) {
-        batch.update(doc(db, "niyyahs", n.id), { maritalStatusIds: arrayRemove(id) });
-      }
-      await batch.commit();
-    }
-
-    // 2. Delete maritalStatus doc, its lock, its viewers, and its revisions
-    const batch = writeBatch(db);
-    batch.delete(doc(db, "maritalStatuses", id));
-    batch.delete(doc(db, "locks", `maritalStatuses__${id}`));
-
-    const prefix = `maritalStatuses__${id}__`;
-    for (const [vKey, v] of viewersCache.entries()) {
-      if (vKey.startsWith(prefix) || (v.collection === "maritalStatuses" && String(v.itemId) === String(id))) {
-        batch.delete(doc(db, "viewers", vKey));
-      }
-    }
-    for (let s = 0; s < 50; s++) {
-      batch.delete(doc(db, "maritalStatuses", id, "revisions", String(s)));
-    }
-    await batch.commit();
-    toast(`Deleted "${name}"`);
-    return true;
-  } catch (err) {
-    fail(err);
-    return false;
-  }
+  // Route through requestDelete for unified: permission check + offline check + lock check + confirm + undo
+  await requestDelete("maritalStatuses", id);
 }
 
 async function delNamed(key, id) {
@@ -17147,6 +17189,42 @@ async function seedNamed(key) {
     await batch.commit();
     toast("Starter list added. Open each one to link its actions.");
   } catch (e) { fail(e); }
+}
+
+/**
+ * Shared 2-row group header (Actions-parent style) for Languages, Marital status, Tips, Events.
+ */
+function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, addAct, addLabel, canAdd = true, addAttrs = "" }) {
+  const countWord = count === 1 ? countLabel : (countLabel.endsWith('s') ? countLabel + 'es' : countLabel + 's');
+  const chevronSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+  const addBtn = addAct
+    ? `<button type="button" class="btn-icon btn-add-mini" data-act="${esc(addAct)}" ${addAttrs} aria-label="${esc(addLabel)}" title="${esc(addLabel)}" ${canAdd ? '' : 'disabled aria-disabled="true"'}>+</button>`
+    : '';
+  return `
+    <div class="sticky-group-head" role="button" tabindex="0" aria-label="${esc(title)} header" data-act="toggle-group-collapse" data-group="${esc(groupKey)}">
+      <div class="card-main" style="width:100%">
+        <div class="parent-card-row1" dir="ltr">
+          <div class="parent-title-wrap">
+            <span class="cat-icon" aria-hidden="true">${esc(icon)}</span>
+            <h3 class="card-title" dir="ltr">${esc(title)}</h3>
+          </div>
+          <div class="parent-row1-tools">
+            <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="${esc(groupKey)}" aria-label="${collapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!collapsed}">
+              <span class="g-chev" aria-hidden="true">${chevronSvg}</span>
+            </button>
+          </div>
+        </div>
+        <div class="parent-card-row2" dir="ltr">
+          <div class="parent-chips-wrap">
+            <span class="chip chip-compact chip-count"><span class="chip-count-num">${count}</span><span class="chip-count-label"> ${esc(countWord)}</span></span>
+          </div>
+          <div class="parent-row2-tools">
+            ${addBtn}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /* ============================================================
@@ -17196,16 +17274,18 @@ function renderTips() {
 
       matchingHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-${c}">
-          <div class="sticky-group-head" role="region" aria-label="Tip category header">
-            <div class="g-title">
-              <span aria-hidden="true">💡</span>
-              <span>${esc(catLabel)}</span>
-              <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${catTips.length})</span>
-            </div>
-            <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="tipcat_${c}" aria-label="${isCollapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!isCollapsed}">
-              <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-            </button>
-          </div>
+          ${renderGroupHead({
+            icon: "💡",
+            title: catLabel,
+            count: catTips.length,
+            countLabel: "tip",
+            groupKey: "tipcat_" + c,
+            collapsed: isCollapsed,
+            addAct: "new-tip",
+            addLabel: "Add " + catLabel.toLowerCase() + " tip",
+            addAttrs: `data-cat="${esc(c)}"`,
+            canAdd: !syncState.gateOpen && !syncState.isOffline
+          })}
           <div class="g-body cards-grid">
             ${catTips.map(t => {
               const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
@@ -17482,7 +17562,7 @@ function openTip(id, _mode = null) {
   $("#lf-text")?.focus();
 }
 async function delTip(id) {
-  await deleteItemWithUndo("tips", id);
+  await requestDelete("tips", id);
 }
 
 const ruleText = e => {
@@ -17523,8 +17603,8 @@ function renderEventList() {
     const hijri = list.filter(e => e.rule?.type !== "weekly").sort(compareByDisplayName);
 
     const groups = [
-      { id: "weekly", title: "Weekly Recurring Events", items: weekly },
-      { id: "hijri", title: "Hijri Calendar Dates", items: hijri }
+      { id: "weekly", title: "Weekly Recurring Events", items: weekly, icon: "🔄", ruleType: "weekly" },
+      { id: "hijri", title: "Hijri Calendar Dates", items: hijri, icon: "🌙", ruleType: "hijri" }
     ].sort(compareByDisplayName);
 
     let groupHtml = "";
@@ -17534,16 +17614,18 @@ function renderEventList() {
       const isCollapsed = isSearchActive ? (g.items.length > 0 ? false : !expandedGroups.has("evgroup_" + g.id)) : !expandedGroups.has("evgroup_" + g.id);
       groupHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-ev-${g.id}">
-          <div class="sticky-group-head" role="region" aria-label="Event group header">
-            <div class="g-title">
-              <span aria-hidden="true">📅</span>
-              <span>${esc(g.title)}</span>
-              <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${g.items.length})</span>
-            </div>
-            <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="evgroup_${g.id}" aria-label="${isCollapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!isCollapsed}">
-              <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-            </button>
-          </div>
+          ${renderGroupHead({
+            icon: g.icon || "📅",
+            title: g.title,
+            count: g.items.length,
+            countLabel: "event",
+            groupKey: "evgroup_" + g.id,
+            collapsed: isCollapsed,
+            addAct: "new-event",
+            addLabel: "Add " + g.title.toLowerCase(),
+            addAttrs: `data-rule="${esc(g.ruleType || g.id)}"`,
+            canAdd: !syncState.gateOpen && !syncState.isOffline
+          })}
           <div class="g-body cards-grid">
             ${g.items.map(e => {
               const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
@@ -17976,7 +18058,7 @@ function openEvent(id, preset = null, _mode = null) {
 }
 
 async function delEvent(id) {
-  await deleteItemWithUndo("events", id);
+  await requestDelete("events", id);
 }
 
 async function seedEvents() {
@@ -18232,6 +18314,126 @@ function renderSettings() {
   const sortedLangs = [...L].sort(compareByDisplayName);
   const sortedMarital = [...maritalStatuses].sort(compareByDisplayName);
 
+  // ── Language cards ────────────────────────────────────────────────────────
+  const langCardsHtml = !L.length
+    ? renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
+    : `<div class="lang-cards-grid">` +
+      sortedLangs.map(l => {
+        const counts = getLanguageCounts(l.code);
+        const isGuarded = counts.total > 0 || languages.length <= 1;
+        const deleteTooltip = counts.total > 0
+          ? `Cannot delete: in use by ${counts.total} item(s) (${counts.summary})`
+          : (languages.length <= 1 ? "Cannot delete the only language" : `Delete ${esc(l.name)}`);
+        // BUG FIX: catRtl uses isArabic(name) only — l.rtl is NOT used for layout direction
+        const catRtl = isArabic(l.name);
+
+        // Build usage chips
+        const usageChips = (() => {
+          const parts = [];
+          if (counts.total > 0) {
+            parts.push(`<span class="chip chip-compact chip-inuse-green">${counts.total} in use</span>`);
+          } else {
+            parts.push(`<span class="chip chip-compact chip-inuse-muted">0 in use</span>`);
+          }
+          // Per-collection counts from summary (e.g. '3 actions, 12 niyyahs')
+          if (counts.summary) {
+            counts.summary.split(',').map(s => s.trim()).filter(Boolean).forEach(s => {
+              parts.push(`<span class="chip chip-compact">${esc(s)}</span>`);
+            });
+          }
+          return parts.join('');
+        })();
+
+        return `
+          <div class="card lang-card" data-type="languages" data-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(l.name)} language card">
+            <div class="card-main" style="width:100%">
+              <div class="parent-card-row1" dir="ltr">
+                <div class="parent-title-wrap">
+                  <span class="cat-icon" aria-hidden="true">🌐</span>
+                  <h3 class="card-title" dir="auto">${esc(l.name)}</h3>
+                </div>
+                <div class="parent-row1-tools">
+                  <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
+                  <button type="button" class="btn-icon danger ${isGuarded ? 'is-disabled' : ''}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}">🗑️</button>
+                </div>
+              </div>
+              <div class="lang-card-chips">
+                <span class="chip chip-compact chip-code">${esc(l.code)}</span>
+                ${l.rtl ? `<span class="chip chip-compact">right to left</span>` : ''}
+                ${usageChips}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') +
+      `</div>`;
+
+  // ── Marital status cards (Option B: Actions-parent style) ──────────────────
+  const maritalCardsHtml = !maritalStatuses.length
+    ? renderEmptyState("💍", STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
+    : `<div class="lang-cards-grid">` +
+      sortedMarital.map(m => {
+        const displayName = getItemDisplayName(m, viewCode()) || getItemDisplayName(m, "en") || firstOf(nameMap(m)) || "(no name)";
+        const lock = lockOf("maritalStatuses", m.id);
+        const isLockedByOther = !!(lock && !lock.isMine);
+
+        let lockBadgeHtml = "";
+        if (lock) {
+          let lockLabel = "";
+          let lockClass = "";
+          if (lock.isMine) {
+            lockLabel = "🔒 You";
+            lockClass = "is-mine";
+          } else if (lock.isMineOtherSession) {
+            lockLabel = "🔒 You (other device)";
+            lockClass = "is-mine-other";
+          } else {
+            const fn = getFirstName(lock.name || lock.email);
+            lockLabel = `🔒 ${fn}`;
+            lockClass = "is-other";
+          }
+          lockBadgeHtml = `
+            <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
+              <span class="badge-text">${esc(lockLabel)}</span>
+            </button>`;
+        }
+
+        const viewers = viewersOf("maritalStatuses", m.id).filter(v => !v.isMine);
+        let viewerBadgeHtml = "";
+        if (viewers.length > 0) {
+          const viewerLabel = viewers.length > 1 ? `👁 ${viewers.length}` : "👁";
+          viewerBadgeHtml = `
+            <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
+              <span class="badge-text">${esc(viewerLabel)}</span>
+            </button>`;
+        }
+
+        const deleteTooltip = isLockedByOther ? "Locked by another user" : `Delete ${esc(displayName)}`;
+        const progHtml = renderLangProgress(m, L, "maritalStatuses");
+
+        return `
+          <div class="card lang-card marital-card" data-type="maritalStatuses" data-id="${esc(m.id)}" role="button" tabindex="0" aria-label="${esc(displayName)} marital status card">
+            ${lockBadgeHtml}
+            ${viewerBadgeHtml}
+            <div class="card-main" style="width:100%">
+              <div class="parent-card-row1" dir="ltr">
+                <div class="parent-title-wrap">
+                  <h3 class="card-title" dir="auto">${esc(displayName)}</h3>
+                </div>
+                <div class="parent-row1-tools">
+                  <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}>✏️</button>
+                  <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>🗑️</button>
+                </div>
+              </div>
+              <div class="parent-card-row2" dir="ltr">
+                <div class="parent-chips-wrap">${progHtml}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') +
+      `</div>`;
+
   let html = `<h2 class="sr-only">Settings</h2>
     <div class="tab-top-row settings-top-row">
       <div class="settings-add-wrap">
@@ -18250,148 +18452,34 @@ function renderSettings() {
     </div>
 
     <!-- 1. Languages Group -->
-    <div class="sticky-group ${langsCollapsed ? "collapsed" : ""}" id="group-settings-languages">
-      <div class="sticky-group-head" role="region" aria-label="Languages header">
-        <div class="g-title">
-          <span aria-hidden="true">🌐</span>
-          <span>Languages</span>
-          <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${L.length})</span>
-        </div>
-        <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="settings_languages" aria-label="${langsCollapsed ? "Expand group" : "Collapse group"}" aria-expanded="${!langsCollapsed}">
-          <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-        </button>
-      </div>
+    <div class="sticky-group ${langsCollapsed ? 'collapsed' : ''}" id="group-settings-languages">
+      ${renderGroupHead({
+        icon: '🌐', title: 'Languages',
+        count: L.length, countLabel: 'language',
+        groupKey: 'settings_languages', collapsed: langsCollapsed,
+        addAct: 'settings-add-lang', addLabel: 'Add language',
+      })}
       <div class="g-body">
         <p class="muted" style="margin-top:0;margin-bottom:var(--space-md)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>
-        ${!L.length
-          ? renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
-          : `<div class="lang-cards-grid">` +
-            sortedLangs.map(l => {
-              const counts = getLanguageCounts(l.code);
-              const isGuarded = counts.total > 0 || languages.length <= 1;
-              const deleteTooltip = counts.total > 0
-                ? `Cannot delete: in use by ${counts.total} item(s) (${counts.summary})`
-                : (languages.length <= 1 ? "Cannot delete the only language" : `Delete ${esc(l.name)}`);
-              const catRtl = isArabic(l.name) || l.rtl;
-
-              return `
-                <div class="card lang-card" data-type="languages" data-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(l.name)} language card">
-                  <div class="card-main" style="width:100%">
-                    <div class="card-head" style="align-items:flex-start">
-                      <div class="card-title-wrap" style="flex:1;min-width:0">
-                        <div style="display:flex;align-items:center;gap:6px;min-width:0">
-                          <span class="cat-icon" aria-hidden="true" style="font-size:18px;line-height:1;flex-shrink:0">🌐</span>
-                          <h3 class="card-title ${catRtl ? "rtl" : ""}" dir="${catRtl ? "rtl" : "auto"}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">${esc(l.name)}</h3>
-                        </div>
-                        <div class="chips" style="margin-top:4px">
-                          <span class="chip" style="font-family:monospace;font-weight:600">${esc(l.code)}</span>
-                          ${l.rtl ? `<span class="chip">right to left</span>` : ""}
-                          ${counts.total > 0
-                            ? `<span class="chip" style="background:var(--green-soft);color:var(--green);font-weight:600">${counts.total} in use</span>`
-                            : `<span class="chip" style="background:var(--st-empty-bg);color:var(--st-empty-text)">0 in use</span>`}
-                        </div>
-                        <div class="card-preview muted" style="margin-top:3px;font-size:13px;line-height:1.3">
-                          ${esc(counts.summary)}
-                        </div>
-                      </div>
-                      <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-top:-2px">
-                        <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
-                        <button type="button" class="btn-icon danger ${isGuarded ? "is-disabled" : ""}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}">🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join("") +
-          `</div>`
-        }
+        ${langCardsHtml}
       </div>
     </div>
 
     <!-- 2. Marital Status Group -->
-    <div class="sticky-group ${maritalCollapsed ? "collapsed" : ""}" id="group-settings-marital">
-      <div class="sticky-group-head" role="region" aria-label="Marital status header">
-        <div class="g-title">
-          <span aria-hidden="true">💍</span>
-          <span>Marital status</span>
-          <span class="count muted" style="font-size:12px;font-weight:400;margin-left:4px">(${maritalStatuses.length})</span>
-        </div>
-        <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="settings_marital" aria-label="${maritalCollapsed ? "Expand group" : "Collapse group"}" aria-expanded="${!maritalCollapsed}">
-          <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-        </button>
-      </div>
+    <div class="sticky-group ${maritalCollapsed ? 'collapsed' : ''}" id="group-settings-marital">
+      ${renderGroupHead({
+        icon: '💍', title: 'Marital status',
+        count: maritalStatuses.length, countLabel: 'status',
+        groupKey: 'settings_marital', collapsed: maritalCollapsed,
+        addAct: 'settings-add-marital', addLabel: 'Add marital status',
+      })}
       <div class="g-body">
-        ${!maritalStatuses.length
-          ? renderEmptyState("💍", STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
-          : `<div class="lang-cards-grid">` +
-            sortedMarital.map(m => {
-              const displayName = getItemDisplayName(m, viewCode()) || getItemDisplayName(m, "en") || firstOf(nameMap(m)) || "(no name)";
-              const isRtl = isArabic(displayName);
-              const lock = lockOf("maritalStatuses", m.id);
-              const isLockedByOther = !!(lock && !lock.isMine);
-
-              let lockBadgeHtml = "";
-              if (lock) {
-                let lockLabel = "";
-                let lockClass = "";
-                if (lock.isMine) {
-                  lockLabel = "🔒 You";
-                  lockClass = "is-mine";
-                } else if (lock.isMineOtherSession) {
-                  lockLabel = "🔒 You (other device)";
-                  lockClass = "is-mine-other";
-                } else {
-                  const fn = getFirstName(lock.name || lock.email);
-                  lockLabel = `🔒 ${fn}`;
-                  lockClass = "is-other";
-                }
-                lockBadgeHtml = `
-                  <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
-                    <span class="badge-text">${esc(lockLabel)}</span>
-                  </button>
-                `;
-              }
-
-              const viewers = viewersOf("maritalStatuses", m.id).filter(v => !v.isMine);
-              let viewerBadgeHtml = "";
-              if (viewers.length > 0) {
-                const viewerLabel = viewers.length > 1 ? `👁 ${viewers.length}` : "👁";
-                viewerBadgeHtml = `
-                  <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
-                    <span class="badge-text">${esc(viewerLabel)}</span>
-                  </button>
-                `;
-              }
-
-              const deleteTooltip = isLockedByOther
-                ? "Locked by another user"
-                : `Delete ${esc(displayName)}`;
-
-              return `
-                <div class="card lang-card marital-card" data-type="maritalStatuses" data-id="${esc(m.id)}" role="button" tabindex="0" aria-label="${esc(displayName)} marital status card">
-                  ${lockBadgeHtml}
-                  ${viewerBadgeHtml}
-                  <div class="card-main" style="width:100%">
-                    <div class="card-head" style="align-items:center">
-                      <div class="card-title-wrap" style="flex:1;min-width:0">
-                        <h3 class="card-title ${isRtl ? "rtl" : ""}" dir="${isRtl ? "rtl" : "auto"}" style="margin:0;font-size:16px;font-weight:700;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(displayName)}</h3>
-                      </div>
-                      <div class="card-head-tools" style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-                        <button type="button" class="btn-icon ${isLockedByOther ? "is-disabled" : ""}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? "Locked by another user" : "Edit"}" ${isLockedByOther ? "disabled" : ""}>✏️</button>
-                        <button type="button" class="btn-icon danger ${isLockedByOther ? "is-disabled" : ""}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? "disabled" : ""}>🗑️</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join("") +
-          `</div>`
-        }
+        ${maritalCardsHtml}
       </div>
     </div>`;
 
   // Publish all names button (secondary button)
-  html += `<div class="bar" style="margin-top:24px"><h3>Names & Publishing</h3>
+  html += `<div class="bar" style="margin-top:24px"><h3>Names &amp; Publishing</h3>
     <button type="button" class="btn" data-act="publish-all-names">Publish all names</button></div>
     <p class="muted" style="margin-top:0">Sets status = "published" for all actions, jobs, and locations that have a name but no language status yet.</p>`;
 
@@ -18662,16 +18750,8 @@ function openLanguage(id) {
 }
 
 async function delLanguage(id) {
-  const lang = languages.find(x => String(x.id) === String(id));
-  if (!lang) return;
-  const counts = getLanguageCounts(lang.code);
-  if (counts.total > 0) {
-    return toast(`Cannot delete "${lang.name}": in use by ${counts.total} item(s) (${counts.summary}). Remove or reassign text first.`, true);
-  }
-  if (languages.length <= 1) {
-    return toast("Cannot delete the only language. Add another language first.", true);
-  }
-  await deleteItemWithUndo("languages", id);
+  // Route through requestDelete for unified: permission check + offline check + lock check + confirm + undo
+  await requestDelete("languages", id);
 }
 
 async function moveLang(id, dir) {

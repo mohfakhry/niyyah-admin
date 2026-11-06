@@ -1,7 +1,7 @@
 {
   "name": "Niyyah Admin",
   "short_name": "Niyyah",
-  "description": "Multilingual intentions catalog and Islamic calendar manager",
+  "description": "Multilingual niyyah catalog and Islamic calendar manager",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
