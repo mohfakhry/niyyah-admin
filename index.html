@@ -2505,6 +2505,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .sticky-group.collapsed .g-body {
     display: none !important;
   }
+  .sticky-group-head.is-compact {
+    padding: 8px 14px;
+  }
+  .sticky-group-head.is-compact .parent-title-wrap .chip {
+    flex-shrink: 0;
+  }
 
   /* Compact tree view for child actions under parent */
   .actions-tree-body {
@@ -17304,7 +17310,7 @@ async function seedNamed(key) {
 /**
  * Shared 2-row group header (Actions-parent style) for Languages, Marital status, Tips, Events.
  */
-function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, addAct, addLabel, canAdd = true, addAttrs = "" }) {
+function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, addAct, addLabel, canAdd = true, addAttrs = "", compact = false }) {
   const LABEL_TO_KIND = {
     tip: "tips", tips: "tips",
     event: "events", events: "events",
@@ -17318,6 +17324,29 @@ function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, 
   const addBtn = addAct
     ? `<button type="button" class="btn-icon btn-add-mini" data-act="${esc(addAct)}" ${addAttrs} aria-label="${esc(addLabel)}" title="${esc(addLabel)}" ${canAdd ? '' : 'disabled aria-disabled="true"'}>+</button>`
     : '';
+
+  if (compact) {
+    return `
+    <div class="sticky-group-head is-compact" role="button" tabindex="0" aria-label="${esc(title)} header" data-act="toggle-group-collapse" data-group="${esc(groupKey)}">
+      <div class="card-main" style="width:100%">
+        <div class="parent-card-row1" dir="ltr">
+          <div class="parent-title-wrap">
+            <span class="cat-icon" aria-hidden="true">${esc(icon)}</span>
+            <h3 class="card-title" dir="ltr">${esc(title)}</h3>
+            ${chipCount(kind, count)}
+          </div>
+          <div class="parent-row1-tools">
+            ${addBtn}
+            <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="${esc(groupKey)}" aria-label="${collapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!collapsed}">
+              <span class="g-chev" aria-hidden="true">${chevronSvg}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  }
+
   return `
     <div class="sticky-group-head" role="button" tabindex="0" aria-label="${esc(title)} header" data-act="toggle-group-collapse" data-group="${esc(groupKey)}">
       <div class="card-main" style="width:100%">
@@ -17402,7 +17431,8 @@ function renderTips() {
             addAct: "new-tip",
             addLabel: "Add " + catLabel.toLowerCase() + " tip",
             addAttrs: `data-cat="${esc(c)}"`,
-            canAdd: !syncState.gateOpen && !syncState.isOffline
+            canAdd: !syncState.gateOpen && !syncState.isOffline,
+            compact: true
           })}
           <div class="g-body cards-grid">
             ${catTips.map(t => {
@@ -17455,10 +17485,7 @@ function renderTips() {
 
   let html = `<h2 class="sr-only">Tips</h2>
   <div class="tab-top-row">
-    <div class="bar tab-top-bar">
-      <div class="tab-stat-text muted">
-        ${tips.length} total, ${tips.filter(t => t.published).length} published
-      </div>
+    <div class="bar tab-top-bar" style="justify-content:flex-end">
       <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
         <button type="button" class="btn primary hdr-add-btn" data-act="new-tip">Add tip</button>
       </div>
@@ -18581,6 +18608,7 @@ function renderSettings() {
         count: L.length, countLabel: 'language',
         groupKey: 'settings_languages', collapsed: langsCollapsed,
         addAct: 'settings-add-lang', addLabel: 'Add language',
+        compact: true
       })}
       <div class="g-body">
         <p class="muted" style="margin-top:0;margin-bottom:var(--space-md)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>
@@ -18595,6 +18623,7 @@ function renderSettings() {
         count: maritalStatuses.length, countLabel: 'status',
         groupKey: 'settings_marital', collapsed: maritalCollapsed,
         addAct: 'settings-add-marital', addLabel: 'Add marital status',
+        compact: true
       })}
       <div class="g-body">
         ${maritalCardsHtml}
