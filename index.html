@@ -155,6 +155,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     --gap-card: 8px;
     --gap-group: 12px;
     --gap-top: 8px;
+    --badge-room: 10px;
 
     /* Radius scale */
     --radius-xs: 4px;
@@ -1499,13 +1500,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     grid-template-columns: 1fr;
     gap: var(--gap-card);
     margin-bottom: var(--gap-group);
-    padding-top: 11px; /* Room for overlapping badges (lock & eye) on top corners so they are readable and not clipped */
   }
   @media (min-width: 721px) {
     .cards-grid {
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: var(--gap-card);
-      padding-top: 11px;
     }
   }
 
@@ -1826,18 +1825,15 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     grid-template-columns: 1fr;
     gap: var(--gap-card);
     margin-bottom: var(--gap-group);
-    padding-top: 11px; /* Smallest extra space showing lock & eye badges (-10px) without clipping */
   }
   @media (min-width: 721px) {
     .cards-grid-compact {
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: var(--gap-card);
-      padding-top: 11px;
     }
   }
   .card-compact {
-    padding: 7px 12px;
-    min-height: 52px;
+    padding: 10px 14px;
     box-sizing: border-box;
     align-items: center;
     margin-top: 0 !important;
@@ -1845,7 +1841,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   @media (min-width: 721px) {
     .card-compact {
-      padding: 7px 14px;
+      padding: 12px 16px;
     }
   }
   .card-compact .card-main {
@@ -2468,6 +2464,13 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tab-top-row {
     margin-bottom: var(--gap-top);
   }
+  .tab-top-row .tab-top-bar,
+  .tab-top-row .search-filter-section {
+    margin-bottom: 0;
+  }
+  .tab-list-content {
+    padding-top: var(--badge-room);
+  }
   .tab-top-bar {
     margin-bottom: var(--gap-top);
   }
@@ -2531,8 +2534,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     gap: var(--gap-card) !important;
     padding-inline-start: 22px;
     padding-inline-end: 0;
-    padding-top: 4px;
-    padding-bottom: 8px;
+    padding-top: 0;
+    padding-bottom: 0;
     margin-bottom: 0;
   }
   @media (min-width: 721px) {
@@ -5592,7 +5595,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 0;
+    margin: 0;
   }
   .active-filter-chips:empty {
     display: none !important;
@@ -5933,6 +5936,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       display: none !important;
     }
     .tab-top-bar.desktop-only,
+    #tab-events .tab-top-bar,
     .tab-top-bar:empty {
       display: none !important;
       margin: 0 !important;
@@ -6567,9 +6571,6 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
 
   /* Marital card styling */
-  .card.marital-card {
-    min-height: 52px;
-  }
   .card.marital-card .card-head {
     align-items: center;
   }
@@ -7188,11 +7189,10 @@ function renderSearchFilterSection(tab) {
           <span>Filter</span>
           ${activeCount > 0 ? `<span class="filter-count-badge">${activeCount}</span>` : ''}
         </button>
+        ${tab === "events" ? `<button type="button" class="btn small" data-act="cal-view">Calendar view</button>` : ""}
         ${actionsHtml}
       </div>
-      <div class="active-filter-chips" id="active-chips-${tab}">
-        ${renderActiveFilterChipsContent(tab)}
-      </div>
+      <div class="active-filter-chips" id="active-chips-${tab}">${renderActiveFilterChipsContent(tab)}</div>
     </div>
   `;
 }
@@ -13973,14 +13973,16 @@ function getDependentsMessage(type, id, item) {
 
 async function executeDelete(type, id) {
   const c = canonicalColl(type);
-  if (c === "actions") await delAction(id);
-  else if (c === "niyyahs") await delNiyyah(id);
-  else if (c === "locationTypes") await delNamed("types", id);
-  else if (c === "jobTypes") await delNamed("jobs", id);
-  else if (c === "tips") await delTip(id);
-  else if (c === "events") await delEvent(id);
-  else if (c === "maritalStatuses") await deleteItemWithUndo("maritalStatuses", id);
-  else await deleteItemWithUndo(type, id);
+  const opts = { confirmed: true };
+  if (c === "actions") await delAction(id, opts);
+  else if (c === "niyyahs") await delNiyyah(id, opts);
+  else if (c === "locationTypes") await delNamed("types", id, opts);
+  else if (c === "jobTypes") await delNamed("jobs", id, opts);
+  else if (c === "tips") await delTip(id, opts);
+  else if (c === "events") await delEvent(id, opts);
+  else if (c === "maritalStatuses") await deleteMaritalStatus(id, opts);
+  else if (c === "languages") await delLanguage(id, opts);
+  else await deleteItemWithUndo(type, id, opts);
 }
 
 async function requestDelete(type, id) {
@@ -14050,7 +14052,7 @@ async function requestDelete(type, id) {
   // No dependents: show red confirm popup (no deletion without confirm)
   showDependentsPopup({
     title: `Delete "${title}"?`,
-    message: "This can't be undone after 6 seconds.",
+    message: "You can undo this for 6 seconds after deleting.",
     onConfirm: async () => {
       await executeDelete(type, id);
     }
@@ -14146,7 +14148,7 @@ async function handleEditorDelete(type, id) {
   // No dependents AND no unsaved changes: show red confirm popup before closing & deleting
   showDependentsPopup({
     title: `Delete "${title}"?`,
-    message: "This can't be undone after 6 seconds.",
+    message: "You can undo this for 6 seconds after deleting.",
     onConfirm: async () => {
       dlgDirty = false;
       editorJustSaved = false;
@@ -14161,7 +14163,10 @@ async function handleEditorDelete(type, id) {
 
 const pendingDeletes = new Map();
 
-async function deleteItemWithUndo(type, id) {
+async function deleteItemWithUndo(type, id, opts = {}) {
+  if (opts.confirmed !== true) {
+    return requestDelete(type, id);
+  }
   if (!checkWritePermission()) return;
   const lock = lockOf(type, id);
   if (lock && !lock.isMine) {
@@ -15751,7 +15756,10 @@ function openAction(id, presetParent = "", _mode = null) {
   }
 }
 
-async function delAction(id) {
+async function delAction(id, opts = {}) {
+  if (opts.confirmed !== true) {
+    return requestDelete("actions", id);
+  }
   const kids = childrenOf(id);
   const lockedChild = kids.find(k => {
     const l = lockOf("actions", k.id);
@@ -15761,7 +15769,7 @@ async function delAction(id) {
     return toast(`Cannot delete category: child action "${nm(lockedChild)}" is currently locked by someone else.`, true);
   }
   if (kids.length) return toast("Delete or move the actions inside this category first.", true);
-  await deleteItemWithUndo("actions", id);
+  await deleteItemWithUndo("actions", id, opts);
 }
 
 function seedFields(name, parentId, order) {
@@ -17020,8 +17028,8 @@ function openNiyyah(id, _mode = null) {
   }
 }
 
-async function delNiyyah(id) {
-  await deleteItemWithUndo("niyyahs", id);
+async function delNiyyah(id, opts = {}) {
+  await deleteItemWithUndo("niyyahs", id, opts);
 }
 
 /* ============================================================
@@ -17328,13 +17336,16 @@ async function seedMaritalStatuses() {
   }
 }
 
-async function deleteMaritalStatus(id) {
-  // Route through requestDelete for unified: permission check + offline check + lock check + confirm + undo
-  await requestDelete("maritalStatuses", id);
+async function deleteMaritalStatus(id, opts = {}) {
+  if (opts.confirmed === true) {
+    await deleteItemWithUndo("maritalStatuses", id, opts);
+  } else {
+    await requestDelete("maritalStatuses", id);
+  }
 }
 
-async function delNamed(key, id) {
-  await deleteItemWithUndo(key, id);
+async function delNamed(key, id, opts = {}) {
+  await deleteItemWithUndo(key, id, opts);
 }
 
 async function seedNamed(key) {
@@ -17526,7 +17537,7 @@ function renderTips() {
 
   let html = `<h2 class="sr-only">Tips</h2>
   <div class="tab-top-row">
-    <div class="bar tab-top-bar" style="justify-content:flex-end">
+    <div class="bar tab-top-bar desktop-only" style="justify-content:flex-end">
       <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
         <button type="button" class="btn primary hdr-add-btn" data-act="new-tip">Add tip</button>
       </div>
@@ -17749,8 +17760,12 @@ function openTip(id, _mode = null) {
   showDlg();
   $("#lf-text")?.focus();
 }
-async function delTip(id) {
-  await requestDelete("tips", id);
+async function delTip(id, opts = {}) {
+  if (opts.confirmed === true) {
+    await deleteItemWithUndo("tips", id, opts);
+  } else {
+    await requestDelete("tips", id);
+  }
 }
 
 const ruleText = e => {
@@ -17862,11 +17877,8 @@ function renderEventList() {
   let html = `<h2 class="sr-only">Events</h2>
   <div class="tab-top-row">
     <div class="bar tab-top-bar">
-      <div class="tab-stat-text muted">common niyyahs by date</div>
-      <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
-        <button class="btn small" data-act="cal-view">Calendar view</button>
-        <button type="button" class="btn primary hdr-add-btn" data-act="new-event">Add event</button>
-      </div>
+      <div class="tab-stat-text muted desktop-only">common niyyahs by date</div>
+      <button type="button" class="btn primary hdr-add-btn" data-act="new-event">Add event</button>
     </div>
     ${renderSearchFilterSection("events")}
   </div>
@@ -18244,8 +18256,12 @@ function openEvent(id, preset = null, _mode = null) {
   }
 }
 
-async function delEvent(id) {
-  await requestDelete("events", id);
+async function delEvent(id, opts = {}) {
+  if (opts.confirmed === true) {
+    await deleteItemWithUndo("events", id, opts);
+  } else {
+    await requestDelete("events", id);
+  }
 }
 
 async function seedEvents() {
@@ -18641,6 +18657,7 @@ function renderSettings() {
         </div>
       </div>
     </div>
+    <div class="tab-list-content" id="list-cont-settings">
 
     <!-- 1. Languages Group -->
     <div class="sticky-group ${langsCollapsed ? 'collapsed' : ''}" id="group-settings-languages">
@@ -18652,7 +18669,7 @@ function renderSettings() {
         compact: true
       })}
       <div class="g-body">
-        <p class="muted" style="margin-top:0;margin-bottom:var(--space-md)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>
+        <p class="muted" style="margin: 0 0 var(--gap-card)">Every language here gets its own tab (text, sources, status) in the Add niyyah box.</p>
         ${langCardsHtml}
       </div>
     </div>
@@ -18669,6 +18686,7 @@ function renderSettings() {
       <div class="g-body">
         ${maritalCardsHtml}
       </div>
+    </div>
     </div>`;
 
   // Publish all names button (secondary button)
@@ -18943,9 +18961,12 @@ function openLanguage(id) {
   $("#l-name")?.focus();
 }
 
-async function delLanguage(id) {
-  // Route through requestDelete for unified: permission check + offline check + lock check + confirm + undo
-  await requestDelete("languages", id);
+async function delLanguage(id, opts = {}) {
+  if (opts.confirmed === true) {
+    await deleteItemWithUndo("languages", id, opts);
+  } else {
+    await requestDelete("languages", id);
+  }
 }
 
 async function moveLang(id, dir) {
