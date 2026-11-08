@@ -6,7 +6,7 @@
    - NEVER touches Firestore, Auth or other Google API calls
    ============================================================ */
 
-const CACHE_NAME = "niyyah-shell-v9";
+const CACHE_NAME = "niyyah-shell-v10";
 const SDK_CACHE = "niyyah-sdk-v1";
 const NAV_TIMEOUT_MS = 4000;
 
@@ -77,7 +77,7 @@ function staleWhileRevalidate(req) {
       const refresh = fetch(req).then(res => {
         if (res && res.status === 200) cache.put(req, res.clone());
         return res;
-      }).catch(() => cached);
+      }).catch(() => cached || Response.error());
       return cached || refresh;
     })
   );

@@ -15,7 +15,8 @@
  * - Does NOT touch the `revisions` subcollection.
  *
  * Usage:
- *   node cleanup-actions.js [--dry-run]
+ *   node cleanup-actions.js           (Dry run by default)
+ *   node cleanup-actions.js --live    (Apply changes to Firestore)
  *
  * Prerequisites:
  *   npm install firebase-admin
@@ -25,7 +26,8 @@
 
 const admin = require("firebase-admin");
 
-const isDryRun = process.argv.includes("--dry-run");
+const isLive = process.argv.includes("--live") || process.argv.includes("--apply");
+const isDryRun = !isLive || process.argv.includes("--dry-run");
 
 if (!admin.apps.length) {
   const projectId = process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || "niyyah-4618a";
@@ -146,6 +148,7 @@ async function runCleanup() {
       console.log(`  ... and ${updates.length - 10} more document(s).`);
     }
     console.log("\n[DRY RUN] Completed without writing changes.");
+    console.log("Run with --live to commit changes to Firestore.");
     return;
   }
 

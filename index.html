@@ -1737,171 +1737,18 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     unicode-bidi: plaintext;
   }
 
-  /* Simplified Niyyah card elements */
-  .card-niyyah {
-    padding: 10px 14px;
-  }
-  .card-niyyah .card-main {
-    gap: 6px;
-  }
-  .card-niyyah-top {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 8px;
-    width: 100%;
-    min-width: 0;
-  }
-  .card-niyyah-top[dir="rtl"] {
-    direction: rtl;
-  }
-  .card-niyyah-top[dir="ltr"] {
-    direction: ltr;
-  }
-  .niyyah-num-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1;
-    padding: 3px 8px;
-    border-radius: var(--radius-full);
-    background: var(--sand);
-    color: var(--ink);
-    border: 1px solid var(--line);
-    letter-spacing: -0.01em;
-    flex-shrink: 0;
-    user-select: none;
-    -webkit-user-select: none;
-    margin-top: 2px;
-  }
-  .card-niyyah-top .card-niyyah-text {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-    font-size: 14.5px;
-    line-height: 1.45;
-    color: var(--ink);
+  /* Unified card layout styles */
+  .card-preview {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 4px;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-  .card-niyyah-top .card-niyyah-text.rtl {
-    direction: rtl;
-    text-align: right;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
-    font-size: 15.5px;
-    line-height: 1.55;
-  }
-  .card-niyyah-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
     min-width: 0;
-    gap: 8px;
-  }
-  .card-niyyah-bottom[dir="rtl"] {
-    direction: rtl;
-  }
-  .card-niyyah-bottom[dir="ltr"] {
-    direction: ltr;
-  }
-  .card-niyyah-bottom .lang-prog {
-    flex-shrink: 0;
-  }
-  .card-niyyah-bottom .card-more-btn {
-    flex-shrink: 0;
-  }
-
-  /* Compact cards for Locations and Jobs */
-  .cards-grid-compact {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--gap-card);
-    margin-bottom: var(--gap-group);
-  }
-  @media (min-width: 721px) {
-    .cards-grid-compact {
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: var(--gap-card);
-    }
-  }
-  .card-compact {
-    padding: 10px 14px;
-    box-sizing: border-box;
-    align-items: center;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
-  @media (min-width: 721px) {
-    .card-compact {
-      padding: 12px 16px;
-    }
-  }
-  .card-compact .card-main {
-    width: 100%;
-    gap: 0;
-  }
-  .card-named-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    min-width: 0;
-  }
-  .card-named-row[dir="rtl"] {
-    direction: rtl;
-  }
-  .card-named-row[dir="ltr"] {
-    direction: ltr;
-  }
-  .card-named-title {
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.35;
-    margin: 0;
-    color: var(--ink);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-  .card-named-title.rtl {
-    direction: rtl;
-    text-align: right;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
-    font-size: 16px;
-  }
-  .card-compact .card-more-btn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    flex-shrink: 0;
-  }
-  .card-compact .card-more-btn::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .card-compact .lang-prog {
-    min-height: 32px !important;
-    height: 32px;
-    padding: 0 8px !important;
-    flex-shrink: 0;
+    line-height: 1.4;
   }
 
   /* Compact language progress indicator: "A/文" + segmented bar */
@@ -7227,6 +7074,7 @@ try {
 } catch (e) {}
 
 const expandedGroups = new Set();
+const openTrays = new Set();
 let isInitialLoading = false;
 
 /* ---------- helpers ---------- */
@@ -11561,6 +11409,26 @@ window.addEventListener("keydown", e => {
   if (isInput) return;
   if (dlg.open || dlgDiscard.open) return;
 
+  if ((e.key === "Enter" || e.key === " " || e.key === "Spacebar") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const focusedCard = active?.closest?.(".card");
+    if (focusedCard && !active.closest("button, a, input, select, textarea, .lang-prog, .card-lang-tray, .g-collapse-btn")) {
+      e.preventDefault();
+      toggleLangTray(focusedCard.dataset.type, focusedCard.dataset.id);
+      return;
+    }
+    const focusedHead = active?.closest?.(".sticky-group-head");
+    if (focusedHead && !active.closest("button, a, input, select, textarea, .lang-prog, .card-lang-tray, .g-collapse-btn")) {
+      const groupKey = focusedHead.dataset.group;
+      if (groupKey) {
+        e.preventDefault();
+        if (expandedGroups.has(groupKey)) expandedGroups.delete(groupKey);
+        else expandedGroups.add(groupKey);
+        renderAll();
+        return;
+      }
+    }
+  }
+
   if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
     handleSearchTrigger();
@@ -13302,10 +13170,11 @@ function renderLangProgress(item, L, type) {
   const publishedCount = statuses.filter(s => s.status === "published").length;
   const totalCount = L.length;
   const label = `${publishedCount} of ${totalCount} languages translated`;
+  const isOpen = openTrays.has(`${type}:${item.id}`);
 
   return `
     <button type="button" class="lang-prog" data-act="toggle-tray" data-type="${esc(type)}" data-id="${esc(item.id)}"
-         aria-label="${esc(label)}" title="${esc(label)}" aria-expanded="false">
+         aria-label="${esc(label)}" title="${esc(label)}" aria-expanded="${isOpen ? 'true' : 'false'}">
       <span class="lp-symbol" aria-hidden="true">A/文</span>
       <span class="lp-bar" aria-hidden="true">
         ${statuses.map(s => `<span class="lp-seg st-${s.status}" title="${esc(s.l.name)}: ${s.status}"></span>`).join("")}
@@ -13327,15 +13196,73 @@ function renderLangTray(item, L, type) {
   }
 
   const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
+  const isOpen = openTrays.has(`${type}:${item.id}`);
 
   return `
-    <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" hidden>
+    <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" ${isOpen ? "" : "hidden"}>
       ${statuses.map(s => `
         <div class="tray-lang-row">
           <span class="t-name">${esc(s.l.name)} <small>(${esc(s.l.code.toUpperCase())})</small></span>
           <span class="badge st-${s.status}">
             <span class="st-icon" aria-hidden="true">${iconOf(s.status)}</span>
             <span>${esc(s.status)}</span>
+          </span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderGroupLangProgress(tipsInCategory, L, groupKey) {
+  if (!L || !L.length) return "";
+  const totalTips = tipsInCategory.length;
+  const statuses = L.map(l => {
+    const pubCount = tipsInCategory.filter(t => langSt(t, l.code, (t.texts || {})[l.code]) === "published").length;
+    let status = "draft";
+    if (totalTips > 0 && pubCount === totalTips) status = "published";
+    else if (pubCount === 0) status = "missing";
+    return { l, status, pubCount };
+  });
+
+  const publishedLangs = statuses.filter(s => s.status === "published").length;
+  const label = `${publishedLangs} of ${L.length} languages fully published`;
+  const trayId = `tray-${String(groupKey).replace(/_/g, '-')}`;
+  const isOpen = openTrays.has(groupKey) || openTrays.has(trayId);
+
+  return `
+    <button type="button" class="lang-prog" data-act="toggle-tray" data-id="${esc(trayId)}"
+         aria-label="${esc(label)}" title="${esc(label)}" aria-expanded="${isOpen ? 'true' : 'false'}">
+      <span class="lp-symbol" aria-hidden="true">A/文</span>
+      <span class="lp-bar" aria-hidden="true">
+        ${statuses.map(s => `<span class="lp-seg st-${s.status} ${s.status === 'missing' ? 'st-empty' : ''}" title="${esc(s.l.name)}: ${s.pubCount}/${totalTips} published"></span>`).join("")}
+      </span>
+    </button>
+  `;
+}
+
+function renderGroupLangTray(tipsInCategory, L, groupKey) {
+  if (!L || !L.length) return "";
+  const totalTips = tipsInCategory.length;
+  const statuses = L.map(l => {
+    const pubCount = tipsInCategory.filter(t => langSt(t, l.code, (t.texts || {})[l.code]) === "published").length;
+    let status = "draft";
+    if (totalTips > 0 && pubCount === totalTips) status = "published";
+    else if (pubCount === 0) status = "missing";
+    return { l, status, pubCount };
+  });
+
+  const trayId = `tray-${String(groupKey).replace(/_/g, '-')}`;
+  const isOpen = openTrays.has(groupKey) || openTrays.has(trayId);
+  const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
+
+  return `
+    <div class="card-lang-tray" id="${esc(trayId)}" ${isOpen ? "" : "hidden"}>
+      ${statuses.map(s => `
+        <div class="tray-lang-row">
+          <span class="t-name">${esc(s.l.name)} <small>(${esc(s.l.code.toUpperCase())})</small></span>
+          <span class="badge st-${s.status} ${s.status === 'missing' ? 'st-empty' : ''}">
+            <span class="st-icon" aria-hidden="true">${iconOf(s.status)}</span>
+            <span>${s.pubCount} / ${totalTips} tips published</span>
           </span>
         </div>
       `).join("")}
@@ -13351,12 +13278,14 @@ function renderCard({
   preview = "",
   previewRtl = false,
   chips = "",
+  tools = "",
   item,
   L
 }) {
   const cardRtl = typeof isRtl === "boolean" ? isRtl : isArabic(title);
-  const progHtml = renderLangProgress(item, L, type);
-  const trayHtml = renderLangTray(item, L, type);
+  const isExpanded = openTrays.has(`${type}:${id}`);
+  const progHtml = (type !== "languages" && L && L.length && item) ? renderLangProgress(item, L, type) : "";
+  const trayHtml = (type !== "languages" && L && L.length && item) ? renderLangTray(item, L, type) : "";
 
   const lock = lockOf(type, id);
   let lockBadgeHtml = "";
@@ -13392,110 +13321,62 @@ function renderCard({
     `;
   }
 
+  let displayTitle = title;
+  let displayChips = chips;
+  let displayPreview = preview;
+
   if (type === "niyyahs") {
     const numDisplay = (item && typeof item.number === "number") ? `#${item.number}` : "#–";
-    return `
-    <div class="card card-niyyah"
-         data-type="niyyahs" data-id="${esc(id)}"
-         role="button" tabindex="0">
-      ${lockBadgeHtml}
-      ${viewerBadgeHtml}
-      <div class="card-main">
-        <div class="card-niyyah-top" dir="${previewRtl ? 'rtl' : 'ltr'}">
-          <span class="niyyah-num-pill">${esc(numDisplay)}</span>
-          <div class="card-niyyah-text ${previewRtl ? 'rtl' : ''}" dir="${previewRtl ? 'rtl' : 'auto'}">
-            ${preview ? esc(preview) : '<span class="muted" style="font-style:italic">No text yet</span>'}
-          </div>
-        </div>
-        <div class="card-niyyah-bottom" dir="${previewRtl ? 'rtl' : 'ltr'}">
-          ${progHtml}
-          <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="niyyahs" data-id="${esc(id)}" aria-label="Options for Niyyah ${esc(numDisplay)}" title="Edit / options">✏️</button>
-        </div>
-        ${trayHtml}
-      </div>
-    </div>
-    `;
+    displayTitle = displayTitle || (STRINGS.common?.niyyah || "Niyyah");
+    if (!displayChips) {
+      displayChips = `<span class="chip chip-code">${esc(numDisplay)}</span>`;
+    }
+  } else if (type === "actions") {
+    if (!displayChips && item) {
+      const isVis = item.inAppVisibility ?? item.visible ?? true;
+      const isRestricted = !!item.restricted;
+      const nCount = niyyahCount(id);
+      displayChips = `
+        ${!isVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
+        ${isRestricted ? '<span class="chip chip-info">Job-only</span>' : ''}
+        ${chipCount("niyyahs", nCount)}
+      `.trim();
+    }
+  } else if (type === "types" || type === "jobs") {
+    if (!displayChips && item) {
+      displayChips = chipCount("actions", (item.actionIds || []).length);
+    }
   }
 
-  if (type === "types" || type === "jobs") {
-    return `
-    <div class="card card-compact card-named"
-         data-type="${esc(type)}" data-id="${esc(id)}"
-         role="button" tabindex="0">
-      ${lockBadgeHtml}
-      ${viewerBadgeHtml}
-      <div class="card-main">
-        <div class="card-named-row" dir="${cardRtl ? 'rtl' : 'ltr'}">
-          <h3 class="card-title card-named-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
-          ${progHtml}
-          <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
-        </div>
-        ${trayHtml}
-      </div>
-    </div>
-    `;
-  }
-
-  if (type === "actions") {
-    const isVis = item ? (item.inAppVisibility ?? item.visible ?? true) : true;
-    const isRestricted = !!(item && item.restricted);
-    const nCount = niyyahCount(id);
-
-    return `
-    <div class="card card-action"
-         data-type="actions" data-id="${esc(id)}"
-         role="button" tabindex="0">
-      ${lockBadgeHtml}
-      ${viewerBadgeHtml}
-      <div class="card-main">
-        <div class="card-head" dir="${cardRtl ? 'rtl' : 'ltr'}">
-          <div class="card-title-wrap">
-            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
-          </div>
-          <div class="card-head-tools">
-            ${progHtml}
-            <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
-          </div>
-        </div>
-        <div class="card-action-bottom" dir="${cardRtl ? 'rtl' : 'ltr'}">
-          <div class="card-action-chips">
-            ${!isVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
-            ${isRestricted ? '<span class="chip chip-info">Job-only</span>' : ''}
-            ${chipCount("niyyahs", nCount)}
-          </div>
-        </div>
-        ${trayHtml}
-      </div>
-    </div>
-    `;
-  }
-
-  let previewHtml = preview;
-  if (type === "tips" && item && item.source && preview && !preview.includes("tip-source")) {
-    const sourceSpan = `<span class="tip-source" dir="auto" style="unicode-bidi: plaintext">${esc(item.source)}</span>`;
-    previewHtml = preview.replace(esc(item.source), sourceSpan);
-  }
+  const toolsHtml = tools || `
+    <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(displayTitle || 'item')}" title="Edit / options">✏️</button>
+  `;
 
   return `
-    <div class="card ${type === 'tips' ? 'card-tip' : ''}"
+    <div class="card"
          data-type="${esc(type)}" data-id="${esc(id)}"
-         role="button" tabindex="0">
+         role="button" tabindex="0"
+         aria-expanded="${isExpanded ? 'true' : 'false'}">
       ${lockBadgeHtml}
       ${viewerBadgeHtml}
       <div class="card-main">
         <div class="card-head" dir="${cardRtl ? 'rtl' : 'ltr'}">
           <div class="card-title-wrap">
-            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
-            ${chips ? `<div class="chips" dir="${cardRtl ? 'rtl' : 'ltr'}">${chips}</div>` : ''}
+            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(displayTitle)}</h3>
           </div>
           <div class="card-head-tools">
             ${progHtml}
-            <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(title)}" title="Edit / options">✏️</button>
+            ${toolsHtml}
           </div>
         </div>
-        ${previewHtml ? `
-          <div class="card-preview ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'ltr'}">
-            ${previewHtml}
+        ${displayChips ? `
+          <div class="chips" dir="${cardRtl ? 'rtl' : 'ltr'}">
+            ${displayChips}
+          </div>
+        ` : ''}
+        ${displayPreview ? `
+          <div class="card-preview ${previewRtl ? 'rtl' : ''}" dir="${previewRtl ? 'rtl' : 'ltr'}">
+            ${displayPreview}
           </div>
         ` : ''}
         ${trayHtml}
@@ -13520,9 +13401,16 @@ function renderSkeletons(count = 4) {
     <div class="cards-grid">
       ${Array.from({ length: count }, () => `
         <div class="card skeleton-card">
-          <div class="sk-bar title"></div>
-          <div class="sk-bar preview"></div>
-          <div class="sk-bar badge"></div>
+          <div class="card-main" style="width:100%">
+            <div class="card-head" style="align-items:center">
+              <div class="sk-bar title"></div>
+              <div class="sk-bar" style="width:48px;height:24px;border-radius:var(--radius-full)"></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <div class="sk-bar badge"></div>
+            </div>
+            <div class="sk-bar preview" style="margin-top:6px"></div>
+          </div>
         </div>
       `).join("")}
     </div>
@@ -13747,10 +13635,27 @@ function openCardEditor(type, id) {
 }
 
 function toggleLangTray(type, id) {
-  const tray = document.getElementById(`tray-${type}-${id}`);
+  let tray = null;
+  if (type) tray = document.getElementById(`tray-${type}-${id}`);
+  if (!tray && id) {
+    tray = document.getElementById(id)
+      || document.getElementById(`tray-${id}`)
+      || document.getElementById(`tray-${String(id).replace(/_/g, '-')}`);
+  }
   if (tray) {
     tray.hidden = !tray.hidden;
-    const btn = document.querySelector(`.lang-prog[data-type="${type}"][data-id="${id}"]`);
+    const key = type ? `${type}:${id}` : tray.id;
+    if (tray.hidden) {
+      openTrays.delete(key);
+      if (id) openTrays.delete(id);
+      if (tray.id) openTrays.delete(tray.id);
+    } else {
+      openTrays.add(key);
+      if (id) openTrays.add(id);
+      if (tray.id) openTrays.add(tray.id);
+    }
+    const btn = document.querySelector(`.lang-prog[data-id="${id}"]`)
+      || (type ? document.querySelector(`.lang-prog[data-type="${type}"][data-id="${id}"]`) : null);
     if (btn) btn.setAttribute("aria-expanded", String(!tray.hidden));
   }
 }
@@ -14579,7 +14484,8 @@ function renderActions() {
 
       totalMatchingActions += filteredKids.length + (catMatches ? 1 : 0);
       const isSearchActive = !!(q || vis || rest);
-      const isCollapsed = isSearchActive ? (filteredKids.length > 0 || catMatches ? false : !expandedGroups.has("cat_" + c.id)) : !expandedGroups.has("cat_" + c.id);
+      const hasKids = filteredKids.length > 0;
+      const isCollapsed = hasKids ? (isSearchActive ? (filteredKids.length > 0 || catMatches ? false : !expandedGroups.has("cat_" + c.id)) : !expandedGroups.has("cat_" + c.id)) : false;
       const catRtl = isArabic(nm(c));
 
       const catLock = lockOf("actions", c.id);
@@ -14620,35 +14526,25 @@ function renderActions() {
 
       matchingContentHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-cat-${c.id}">
-          <div class="sticky-group-head" role="button" tabindex="0" aria-label="Category header" data-type="actions" data-id="${c.id}">
-            ${catLockBadgeHtml}
-            ${catViewerBadgeHtml}
-            <div class="card-main" style="width:100%">
-              <div class="parent-card-row1" dir="${catRtl ? 'rtl' : 'ltr'}">
-                <div class="parent-title-wrap">
-                  <span class="cat-icon" aria-hidden="true">📁</span>
-                  <h3 class="card-title ${catRtl ? 'rtl' : ''}" dir="${catRtl ? 'rtl' : 'auto'}">${esc(nm(c))}</h3>
-                </div>
-                <div class="parent-row1-tools">
-                  <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Options for ${esc(nm(c))}" title="Edit / options">✏️</button>
-                  <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="cat_${c.id}" aria-label="${isCollapsed ? 'Expand category' : 'Collapse category'}" aria-expanded="${!isCollapsed}">
-                    <span class="g-chev" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
-                  </button>
-                </div>
-              </div>
-              <div class="parent-card-row2" dir="${catRtl ? 'rtl' : 'ltr'}">
-                <div class="parent-chips-wrap">
-                  ${!cVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
-                  ${chipCount("actions", filteredKids.length)}
-                </div>
-                <div class="parent-row2-tools">
-                  ${renderLangProgress(c, L, "actions")}
-                  <button type="button" class="btn-icon btn-add-mini" data-act="new-mini" data-id="${c.id}" aria-label="Add sub-action" title="Add sub-action" ${canAdd ? "" : 'disabled aria-disabled="true"'}>+</button>
-                </div>
-              </div>
-              ${renderLangTray(c, L, "actions")}
-            </div>
-          </div>
+          ${renderGroupHead({
+            icon: "📁",
+            title: nm(c),
+            count: filteredKids.length,
+            countLabel: "actions",
+            groupKey: "cat_" + c.id,
+            collapsed: isCollapsed,
+            addAct: "new-mini",
+            addLabel: "Add sub-action",
+            addAttrs: `data-id="${c.id}"`,
+            canAdd: canAdd,
+            chipsHtml: `${!cVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'} ${chipCount("actions", filteredKids.length)}`,
+            langHtml: renderLangProgress(c, L, "actions"),
+            trayHtml: renderLangTray(c, L, "actions"),
+            editHtml: `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Options for ${esc(nm(c))}" title="Edit / options">✏️</button>`,
+            lockBadgeHtml: catLockBadgeHtml,
+            viewerBadgeHtml: catViewerBadgeHtml,
+            isRtl: catRtl
+          })}
           <div class="g-body cards-grid actions-tree-body">
             ${filteredKids.length ? filteredKids.map(k => {
               return renderCard({
@@ -14868,9 +14764,12 @@ function renderNiyyahs() {
       const previewText = pickTr ? pickTr.t.text : "(no text)";
       const isRtl = pickTr ? isArabic(previewText) : false;
 
+      const numDisplay = (n && typeof n.number === "number") ? `#${n.number}` : "#–";
       listHtml += renderCard({
         type: "niyyahs",
         id: n.id,
+        title: "Niyyah",
+        chips: `<span class="chip chip-code">${esc(numDisplay)}</span>`,
         preview: previewText,
         previewRtl: isRtl,
         item: n,
@@ -14997,7 +14896,7 @@ function renderNamed(key) {
   } else if (!list.length) {
     listHtml = renderEmptyState("🔍", `No ${K.many.toLowerCase()} match`, "Try different keywords or clear your filters.", "Clear filters", `clear-${key}-filters`);
   } else {
-    listHtml = `<div class="cards-grid cards-grid-compact">`;
+    listHtml = `<div class="cards-grid">`;
     for (const x of list) {
       const isRtl = isArabic(nm(x));
 
@@ -15006,6 +14905,7 @@ function renderNamed(key) {
         id: x.id,
         title: nm(x),
         isRtl,
+        chips: chipCount("actions", (x.actionIds || []).length),
         item: x,
         L
       });
@@ -15206,15 +15106,17 @@ document.addEventListener("click", e => {
     return;
   }
 
-  // Tapping a card directly
-  const card = e.target.closest(".card, .item, .sticky-group-head");
-  if (card && !e.target.closest("button, a, input, select, .lang-prog, .card-lang-tray, .g-collapse-btn")) {
-    if (card.dataset.id) openCardEditor(card.dataset.type, card.dataset.id);
+  const b = e.target.closest("[data-act]");
+  if (!b) {
+    // Tapping a child card directly toggles its language tray (expand), never opens editor
+    const card = e.target.closest(".card, .item");
+    if (card && !e.target.closest("button, a, input, select, textarea, .lang-prog, .card-lang-tray, .g-collapse-btn, .badge, .card-lock-badge, .card-viewer-badge")) {
+      if (card.dataset.type && card.dataset.id) {
+        toggleLangTray(card.dataset.type, card.dataset.id);
+      }
+    }
     return;
   }
-
-  const b = e.target.closest("[data-act]");
-  if (!b) return;
   const act = b.dataset.act;
   const writeActs = new Set([
     "new-cat", "new-mini", "new-niyyah", "new-type", "new-job", "new-lang", "new-tip", "new-event", "cal-add",
@@ -15294,7 +15196,7 @@ document.addEventListener("click", e => {
     "lang-up": () => moveLang(id, -1),
     "lang-down": () => moveLang(id, 1),
     "seed-langs": seedLanguages,
-    "new-tip": () => openTip(),
+    "new-tip": () => { const cat = b.dataset.cat; openTip(null, null, { category: cat }); },
     "edit-tip": () => openTip(id),
     "del-tip": () => requestDelete("tips", id),
     "new-event": () => openEvent(null, b.dataset.rule ? { rule: { type: b.dataset.rule } } : null),
@@ -17362,7 +17264,26 @@ async function seedNamed(key) {
 /**
  * Shared 2-row group header (Actions-parent style) for Languages, Marital status, Tips, Events.
  */
-function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, addAct, addLabel, canAdd = true, addAttrs = "", compact = false }) {
+function renderGroupHead({
+  icon,
+  title,
+  count,
+  countLabel,
+  groupKey,
+  collapsed,
+  addAct,
+  addLabel,
+  canAdd = true,
+  addAttrs = "",
+  compact = false,
+  chipsHtml = "",
+  langHtml = "",
+  trayHtml = "",
+  editHtml = "",
+  lockBadgeHtml = "",
+  viewerBadgeHtml = "",
+  isRtl = false
+}) {
   const LABEL_TO_KIND = {
     tip: "tips", tips: "tips",
     event: "events", events: "events",
@@ -17377,50 +17298,40 @@ function renderGroupHead({ icon, title, count, countLabel, groupKey, collapsed, 
     ? `<button type="button" class="btn-icon btn-add-mini" data-act="${esc(addAct)}" ${addAttrs} aria-label="${esc(addLabel)}" title="${esc(addLabel)}" ${canAdd ? '' : 'disabled aria-disabled="true"'}>+</button>`
     : '';
 
-  if (compact) {
-    return `
-    <div class="sticky-group-head is-compact" role="button" tabindex="0" aria-label="${esc(title)} header" data-act="toggle-group-collapse" data-group="${esc(groupKey)}">
-      <div class="card-main" style="width:100%">
-        <div class="parent-card-row1" dir="ltr">
-          <div class="parent-title-wrap">
-            <span class="cat-icon" aria-hidden="true">${esc(icon)}</span>
-            <h3 class="card-title" dir="ltr">${esc(title)}</h3>
-            ${chipCount(kind, count)}
-          </div>
-          <div class="parent-row1-tools">
-            ${addBtn}
-            <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="${esc(groupKey)}" aria-label="${collapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!collapsed}">
-              <span class="g-chev" aria-hidden="true">${chevronSvg}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  }
+  const canCollapse = count > 0;
+  const headRtl = typeof isRtl === "boolean" ? isRtl : isArabic(title);
 
   return `
-    <div class="sticky-group-head" role="button" tabindex="0" aria-label="${esc(title)} header" data-act="toggle-group-collapse" data-group="${esc(groupKey)}">
+    <div class="sticky-group-head" role="button" tabindex="0" aria-label="${esc(title)} header" ${canCollapse ? `data-act="toggle-group-collapse" data-group="${esc(groupKey)}"` : ''}>
+      ${lockBadgeHtml || ""}
+      ${viewerBadgeHtml || ""}
       <div class="card-main" style="width:100%">
-        <div class="parent-card-row1" dir="ltr">
+        <div class="parent-card-row1" dir="${headRtl ? 'rtl' : 'ltr'}">
           <div class="parent-title-wrap">
             <span class="cat-icon" aria-hidden="true">${esc(icon)}</span>
-            <h3 class="card-title" dir="ltr">${esc(title)}</h3>
+            <h3 class="card-title ${headRtl ? 'rtl' : ''}" dir="${headRtl ? 'rtl' : 'auto'}">${esc(title)}</h3>
           </div>
           <div class="parent-row1-tools">
+            ${editHtml || ""}
+            ${canCollapse ? `
             <button type="button" class="g-collapse-btn" data-act="toggle-group-collapse" data-group="${esc(groupKey)}" aria-label="${collapsed ? 'Expand group' : 'Collapse group'}" aria-expanded="${!collapsed}">
               <span class="g-chev" aria-hidden="true">${chevronSvg}</span>
-            </button>
+            </button>` : `
+            <button type="button" class="g-collapse-btn" disabled aria-disabled="true" style="opacity:0.35;pointer-events:none;cursor:default">
+              <span class="g-chev" aria-hidden="true">${chevronSvg}</span>
+            </button>`}
           </div>
         </div>
-        <div class="parent-card-row2" dir="ltr">
+        <div class="parent-card-row2" dir="${headRtl ? 'rtl' : 'ltr'}">
           <div class="parent-chips-wrap">
-            ${chipCount(kind, count)}
+            ${chipsHtml || chipCount(kind, count)}
           </div>
           <div class="parent-row2-tools">
+            ${langHtml || ""}
             ${addBtn}
           </div>
         </div>
+        ${trayHtml || ""}
       </div>
     </div>
   `;
@@ -17484,7 +17395,8 @@ function renderTips() {
             addLabel: "Add " + catLabel.toLowerCase() + " tip",
             addAttrs: `data-cat="${esc(c)}"`,
             canAdd: !syncState.gateOpen && !syncState.isOffline,
-            compact: true
+            langHtml: renderGroupLangProgress(catTips, L, "tipcat_" + c),
+            trayHtml: renderGroupLangTray(catTips, L, "tipcat_" + c)
           })}
           <div class="g-body cards-grid">
             ${catTips.map(t => {
@@ -17551,18 +17463,19 @@ function renderTips() {
   root.innerHTML = html;
 }
 
-function openTip(id, _mode = null) {
+function openTip(id, _mode = null, opts = {}) {
   if (!checkWritePermission()) return;
   if (id && _mode === null) {
-    requestOpenEditor("tips", id, {}, (m) => openTip(id, m));
+    requestOpenEditor("tips", id, {}, (m) => openTip(id, m, opts));
     return;
   }
   const L = langs();
   if (!L.length) return needLang();
-  const t = id ? tips.find(x => String(x.id) === String(id)) : { texts: {}, category: "habit", published: false };
+  const defaultCategory = (opts && opts.category) || "habit";
+  const t = id ? tips.find(x => String(x.id) === String(id)) : { texts: {}, category: defaultCategory, published: false };
   const initial = {};
   L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
-  let curCat = t.category || "habit";
+  let curCat = t.category || defaultCategory;
 
   const isTipPublished = isItemPublished("tips", t);
   let isMainSettingsLocked = isTipPublished;
@@ -17685,7 +17598,7 @@ function openTip(id, _mode = null) {
     }
     const srcEl = $("#t-src");
     if (srcEl) srcEl.disabled = isMainSettingsLocked;
-    $("#t-cat-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $$("#t-cat-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
   };
   const btnTipLock = $("#tip-main-settings-lock-btn");
   if (btnTipLock) {
@@ -18141,9 +18054,9 @@ function openEvent(id, preset = null, _mode = null) {
       const lbl = $(".lock-label", btn);
       if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
     }
-    $("#e-type-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
-    $("#e-before-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
-    $("#e-wd-chips .radio-chip").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $$("#e-type-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $$("#e-before-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
+    $$("#e-wd-chips .radio-chip").forEach(b => { b.disabled = isMainSettingsLocked; });
     ["#e-date-picker", "#btn-pick-month", "#e-day", "#e-days", "#e-time", "#e-disp"].forEach(sel => {
       const el = $(sel);
       if (el) el.disabled = isMainSettingsLocked;
@@ -18523,17 +18436,15 @@ function renderSettings() {
   // ── Language cards ────────────────────────────────────────────────────────
   const langCardsHtml = !L.length
     ? renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
-    : `<div class="lang-cards-grid">` +
+    : `<div class="cards-grid">` +
       sortedLangs.map(l => {
         const counts = getLanguageCounts(l.code);
         const isGuarded = counts.total > 0 || languages.length <= 1;
         const deleteTooltip = counts.total > 0
           ? `Cannot delete: in use by ${counts.total} item(s) (${counts.summary})`
           : (languages.length <= 1 ? "Cannot delete the only language" : `Delete ${esc(l.name)}`);
-        // BUG FIX: catRtl uses isArabic(name) only — l.rtl is NOT used for layout direction
         const catRtl = isArabic(l.name);
 
-        // Build usage chips
         const usageChips = (() => {
           const parts = [];
           if (counts.total > 0) {
@@ -18551,93 +18462,49 @@ function renderSettings() {
           return parts.join('');
         })();
 
-        return `
-          <div class="card lang-card" data-type="languages" data-id="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(l.name)} language card">
-            <div class="card-main" style="width:100%">
-              <div class="parent-card-row1" dir="ltr">
-                <div class="parent-title-wrap">
-                  <span class="cat-icon" aria-hidden="true">🌐</span>
-                  <h3 class="card-title" dir="auto">${esc(l.name)}</h3>
-                </div>
-                <div class="parent-row1-tools">
-                  <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
-                  <button type="button" class="btn-icon danger ${isGuarded ? 'is-disabled' : ''}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}">🗑️</button>
-                </div>
-              </div>
-              <div class="lang-card-chips">
-                <span class="chip chip-code">${esc(l.code)}</span>
-                ${l.rtl ? `<span class="chip chip-info">RTL</span>` : ''}
-                ${usageChips}
-              </div>
-            </div>
-          </div>
+        const chips = `<span class="chip chip-code">${esc(l.code)}</span>${l.rtl ? ' <span class="chip chip-info">RTL</span>' : ''} ${usageChips}`;
+        const tools = `
+          <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
+          <button type="button" class="btn-icon danger ${isGuarded ? 'is-disabled' : ''}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}" ${isGuarded ? 'disabled' : ''}>🗑️</button>
         `;
+
+        return renderCard({
+          type: "languages",
+          id: l.id,
+          title: l.name,
+          isRtl: catRtl,
+          chips,
+          tools,
+          item: l
+        });
       }).join('') +
       `</div>`;
 
-  // ── Marital status cards (Option B: Actions-parent style) ──────────────────
+  // ── Marital status cards ──────────────────────────────────────────────────
   const maritalCardsHtml = !maritalStatuses.length
     ? renderEmptyState("💍", STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
-    : `<div class="lang-cards-grid">` +
+    : `<div class="cards-grid">` +
       sortedMarital.map(m => {
         const displayName = getItemDisplayName(m, viewCode()) || getItemDisplayName(m, "en") || firstOf(nameMap(m)) || "(no name)";
+        const isRtl = isArabic(displayName);
         const lock = lockOf("maritalStatuses", m.id);
         const isLockedByOther = !!(lock && !lock.isMine);
-
-        let lockBadgeHtml = "";
-        if (lock) {
-          let lockLabel = "";
-          let lockClass = "";
-          if (lock.isMine) {
-            lockLabel = "🔒 You";
-            lockClass = "is-mine";
-          } else if (lock.isMineOtherSession) {
-            lockLabel = "🔒 You (other device)";
-            lockClass = "is-mine-other";
-          } else {
-            const fn = getFirstName(lock.name || lock.email);
-            lockLabel = `🔒 ${fn}`;
-            lockClass = "is-other";
-          }
-          lockBadgeHtml = `
-            <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
-              <span class="badge-text">${esc(lockLabel)}</span>
-            </button>`;
-        }
-
-        const viewers = viewersOf("maritalStatuses", m.id).filter(v => !v.isMine);
-        let viewerBadgeHtml = "";
-        if (viewers.length > 0) {
-          const viewerLabel = viewers.length > 1 ? `👁 ${viewers.length}` : "👁";
-          viewerBadgeHtml = `
-            <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="maritalStatuses" data-id="${esc(m.id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
-              <span class="badge-text">${esc(viewerLabel)}</span>
-            </button>`;
-        }
-
         const deleteTooltip = isLockedByOther ? "Locked by another user" : `Delete ${esc(displayName)}`;
-        const progHtml = renderLangProgress(m, L, "maritalStatuses");
-
-        return `
-          <div class="card lang-card marital-card" data-type="maritalStatuses" data-id="${esc(m.id)}" role="button" tabindex="0" aria-label="${esc(displayName)} marital status card">
-            ${lockBadgeHtml}
-            ${viewerBadgeHtml}
-            <div class="card-main" style="width:100%">
-              <div class="parent-card-row1" dir="ltr">
-                <div class="parent-title-wrap">
-                  <h3 class="card-title" dir="auto">${esc(displayName)}</h3>
-                </div>
-                <div class="parent-row1-tools">
-                  <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}>✏️</button>
-                  <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>🗑️</button>
-                </div>
-              </div>
-              <div class="parent-card-row2" dir="ltr">
-                <div class="parent-chips-wrap">${progHtml}</div>
-              </div>
-            </div>
-          </div>
+        const tools = `
+          <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}>✏️</button>
+          <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>🗑️</button>
         `;
+
+        return renderCard({
+          type: "maritalStatuses",
+          id: m.id,
+          title: displayName,
+          isRtl,
+          chips: "",
+          tools,
+          item: m,
+          L
+        });
       }).join('') +
       `</div>`;
 
@@ -19075,7 +18942,7 @@ function openConvertNames() {
 
 function openCleanupActions() {
   const needsCleanup = a => {
-    const hasTemplates = !!(a.titleTemplates || a.bodyTemplates || a.titleTemplate || a.bodyTemplate);
+    const hasTemplates = a.titleTemplates !== undefined || a.bodyTemplates !== undefined || a.titleTemplate !== undefined || a.bodyTemplate !== undefined;
     const hasVisible = a.visible !== undefined;
     const isParent = !a.parentId;
     const hasRestrictedParent = isParent && a.restricted !== undefined;
@@ -19087,7 +18954,7 @@ function openCleanupActions() {
   let visibleCount = 0;
   let parentRestrictedCount = 0;
   targets.forEach(a => {
-    if (a.titleTemplates || a.bodyTemplates || a.titleTemplate || a.bodyTemplate) templateCount++;
+    if (a.titleTemplates !== undefined || a.bodyTemplates !== undefined || a.titleTemplate !== undefined || a.bodyTemplate !== undefined) templateCount++;
     if (a.visible !== undefined) visibleCount++;
     if (!a.parentId && a.restricted !== undefined) parentRestrictedCount++;
   });
