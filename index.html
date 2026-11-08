@@ -5998,6 +5998,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
      ============================================================ */
   @media (prefers-color-scheme: dark) {
     :root {
+      color-scheme: dark;
       --ink: #e8f1ee;
       --muted: #95a8a4;
       --paper: #121615;
@@ -6163,21 +6164,193 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       border-color: var(--line);
     }
 
-    .picker-sheet-dialog {
+    /* Picker Sheet, Modal & Desktop Popover Dropdowns (#dlg-picker) */
+    #dlg-picker {
+      background: var(--card) !important;
+      color: var(--ink) !important;
+      border: 1px solid var(--line);
+    }
+    #dlg-picker::backdrop {
+      background: rgba(0, 0, 0, 0.75);
+    }
+    .picker-content {
       background: var(--card) !important;
       color: var(--ink) !important;
     }
-    .picker-row {
+    .picker-header {
+      background: var(--card) !important;
+      color: var(--ink) !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .picker-header h3 {
       color: var(--ink);
+    }
+    .picker-close-btn {
+      color: var(--muted);
+    }
+    .picker-close-btn:hover {
+      color: var(--ink);
+      background: var(--sand);
+    }
+    .picker-search {
+      background: #141c1a !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .picker-search input {
+      background: #141c1a !important;
+      color: var(--ink) !important;
+      border-color: var(--line) !important;
+    }
+    .picker-search input::placeholder {
+      color: var(--muted) !important;
+    }
+    .picker-quick-bar {
+      background: var(--sand) !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .picker-list {
+      background: var(--card);
+    }
+    .picker-row {
+      color: var(--ink) !important;
+      border-bottom-color: var(--line);
+    }
+    .picker-row:hover,
+    .picker-row.is-active {
+      background: var(--sand) !important;
+    }
+    .picker-row.is-selected {
+      background: var(--green-soft) !important;
+    }
+    .picker-row .p-check {
+      border-color: var(--line);
+      color: #ffffff;
+    }
+    .picker-row .p-radio {
       border-color: var(--line);
     }
-    .picker-row:hover, .picker-row.is-active {
-      background: var(--green-soft);
+    .picker-footer {
+      background: var(--card) !important;
+      border-top-color: var(--line) !important;
+    }
+    .picker-pinned-niyyah {
+      background: var(--sand) !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .picker-pinned-text {
+      color: var(--ink);
     }
     .picker-trigger-btn {
       background: var(--card);
       color: var(--ink);
       border-color: var(--line);
+    }
+
+    /* Desktop Popover Mode Dropdown (#dlg-picker.popover-mode) */
+    #dlg-picker.popover-mode {
+      background: var(--card) !important;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-xl);
+    }
+    #dlg-picker.popover-mode .picker-content {
+      background: var(--card);
+    }
+
+    /* Tree Picker in Dark Mode (#dlg-picker.tree-picker-mode) */
+    #dlg-picker.tree-picker-mode {
+      background: var(--card) !important;
+      color: var(--ink) !important;
+      border-color: var(--line);
+    }
+    .tree-picker-content {
+      background: var(--card) !important;
+      color: var(--ink) !important;
+    }
+    .tree-picker-header {
+      background: var(--card) !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .tree-picker-title {
+      color: var(--ink) !important;
+    }
+    .tree-picker-clear-btn {
+      color: var(--muted) !important;
+    }
+    .tree-picker-clear-btn:hover {
+      color: var(--danger) !important;
+    }
+    .tree-picker-search-bar {
+      background: #141c1a !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .tree-search-wrap {
+      background: #141c1a !important;
+      border-color: var(--line) !important;
+    }
+    .tree-search-input {
+      color: var(--ink) !important;
+    }
+    .tree-search-input::placeholder {
+      color: var(--muted);
+    }
+    .tree-search-icon, .tree-search-clear {
+      color: var(--muted);
+    }
+    .tree-row {
+      color: var(--ink) !important;
+      border-bottom-color: var(--line) !important;
+    }
+    .tree-row:hover {
+      background: var(--sand) !important;
+    }
+    .tree-row.is-active,
+    .tree-row:focus-visible {
+      background: var(--green-soft) !important;
+    }
+    .tree-chevron-btn:hover {
+      background: var(--sand) !important;
+    }
+    .tree-hl {
+      background: rgba(38, 147, 126, 0.3) !important;
+      color: var(--green) !important;
+    }
+    .tree-picker-footer {
+      background: var(--card) !important;
+      border-top-color: var(--line) !important;
+    }
+
+    /* Settings Add Popover Dropdown */
+    .settings-add-popover {
+      background: var(--card);
+      border-color: var(--line);
+      box-shadow: var(--shadow-lg);
+    }
+    .settings-popover-item {
+      color: var(--ink);
+    }
+    .settings-popover-item:hover,
+    .settings-popover-item:focus {
+      background: var(--sand) !important;
+      color: var(--ink);
+    }
+
+    /* Card Options Popup Dialog */
+    dialog#dlg-popup {
+      background: var(--card);
+      color: var(--ink);
+      border-color: var(--line);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Native select and options */
+    select {
+      background: #141c1a !important;
+      color: var(--ink) !important;
+      border-color: var(--line) !important;
+    }
+    select option {
+      background: var(--card) !important;
+      color: var(--ink) !important;
     }
 
     .editor-top-bar, .editor-bottom-bar {
@@ -6410,7 +6583,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .settings-popover-item:hover,
   .settings-popover-item:focus {
-    background: var(--bg-hover, var(--sheet-bg));
+    background: var(--sand);
   }
   .popover-icon {
     font-size: 16px;
@@ -7756,7 +7929,7 @@ function setupEditorCompactPreview(editorPageEl) {
   return activeCompactPreview;
 }
 
-function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.common.save, saveDisabledReason = "" }) {
+function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.common.save, saveDisabledReason = "", headerExtraHtml = "" }) {
   const isReview = (activeEditorLockState.mode === "review" && activeEditorLockState.id === id) || Boolean(dlg?.querySelector(".editor-page.review-mode"));
   const isMineLock = !isReview && (currentActiveLock || activeEditorLockState.lockInfo?.isMine || activeEditorLockState.mode === "edit");
   const isNiyyah = type === "niyyah" || type === "niyyahs";
@@ -7783,6 +7956,7 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
         </button>
         <div class="editor-header-info">
           <h2 class="editor-title">${esc(title)}</h2>
+          ${headerExtraHtml ? headerExtraHtml : ""}
           <span class="editor-lock-chip" id="d-lock-chip" ${isMineLock ? "" : "hidden"}>🔒 You</span>
         </div>
         <div class="editor-top-actions">
@@ -9210,7 +9384,23 @@ window.sheetHelper = sheetHelper;
 function show(id) {
   for (const s of ["loading", "login", "denied", "app"]) $("#" + s).hidden = s !== id;
   if (id === "app") {
-    applyTab(currentTab);
+    // Sync dark theme class on body for CSS selectors using body.dark
+if (typeof window !== "undefined" && window.matchMedia) {
+  const darkSchemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+  const syncDarkBodyClass = (matches) => {
+    if (document.body) {
+      document.body.classList.toggle("dark", matches);
+    }
+  };
+  syncDarkBodyClass(darkSchemeMq.matches);
+  try {
+    darkSchemeMq.addEventListener("change", (e) => syncDarkBodyClass(e.matches));
+  } catch (e) {
+    try { darkSchemeMq.addListener((e) => syncDarkBodyClass(e.matches)); } catch (e2) {}
+  }
+}
+
+applyTab(currentTab);
     if (typeof showPhoneSwipeHintIfNeeded === "function") showPhoneSwipeHintIfNeeded();
   }
 }
@@ -9233,6 +9423,7 @@ const CHIP_KINDS = {
   jobs: { emoji: "💼", singular: "job", plural: "jobs" },
   maritalStatuses: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
   marital: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
+  chain: { emoji: "🔗", singular: "chain step", plural: "chain steps" },
   tipCategories: { emoji: "📁", singular: "tip category", plural: "tip categories" },
   tipCategory: { emoji: "📁", singular: "tip category", plural: "tip categories" },
   tips: { emoji: "💡", singular: "tip", plural: "tips" },
@@ -9245,6 +9436,44 @@ function chipCount(kind, n) {
   const cfg = CHIP_KINDS[kind] || { emoji: "•", singular: kind || "item", plural: (kind || "item") + "s" };
   const label = `${num} ${num === 1 ? cfg.singular : cfg.plural}`;
   return `<span class="chip chip-count" aria-label="${esc(label)}" title="${esc(label)}">${num}<span class="chip-emoji" aria-hidden="true">${cfg.emoji}</span></span>`;
+}
+
+function chipFlag(emoji, label, tone = "neutral", tooltip = "") {
+  const toneClass = tone ? (tone.startsWith("chip-") ? tone : `chip-${tone}`) : "chip-neutral";
+  const tip = tooltip || label;
+  return `<span class="chip ${toneClass}" aria-label="${esc(tip)}" title="${esc(tip)}"><span class="chip-emoji" aria-hidden="true">${emoji}</span><span class="chip-text">${esc(label)}</span></span>`;
+}
+
+function niyyahFlags(n = {}) {
+  const item = n || {};
+  let situationsCount = 0;
+  if (Array.isArray(item.situations)) {
+    situationsCount = item.situations.length;
+  } else if ((item.beforeActionIds && item.beforeActionIds.length > 0) || (item.afterActionIds && item.afterActionIds.length > 0)) {
+    situationsCount = 1;
+  }
+  return {
+    general: !!item.general,
+    jobs: (item.jobIds || []).length,
+    marital: (item.maritalStatusIds || []).length,
+    children: !!item.hasChildren,
+    chain: situationsCount,
+    events: (item.eventIds || []).length,
+    actions: (item.actionIds || []).length
+  };
+}
+
+function renderNiyyahChips(n) {
+  const flags = niyyahFlags(n);
+  const chips = [];
+  if (flags.actions > 0) chips.push(chipCount("actions", flags.actions));
+  if (flags.general) chips.push(chipFlag("🌍", "Any action", "neutral", "Fits any action"));
+  if (flags.jobs > 0) chips.push(chipCount("jobs", flags.jobs));
+  if (flags.marital > 0) chips.push(chipCount("maritalStatuses", flags.marital));
+  if (flags.children) chips.push(chipFlag("👶", "Children", "neutral", "Has children"));
+  if (flags.chain > 0) chips.push(chipCount("chain", flags.chain));
+  if (flags.events > 0) chips.push(chipCount("events", flags.events));
+  return chips.join(" ");
 }
 
 function actionChips(a) {
@@ -13346,11 +13575,14 @@ function renderCard({
   let displayChips = chips;
   let displayPreview = preview;
 
-  if (type === "niyyahs") {
-    const numDisplay = (item && typeof item.number === "number") ? `#${item.number}` : "#–";
+  const isNiyyah = type === "niyyahs";
+  const headRtl = isNiyyah ? false : cardRtl;
+  let numDisplay = "";
+  if (isNiyyah) {
+    numDisplay = (item && typeof item.number === "number") ? `#${item.number}` : "#–";
     displayTitle = displayTitle || (STRINGS.common?.niyyah || "Niyyah");
-    if (!displayChips) {
-      displayChips = `<span class="chip chip-code">${esc(numDisplay)}</span>`;
+    if (!displayChips && item) {
+      displayChips = renderNiyyahChips(item);
     }
   } else if (type === "actions") {
     if (!displayChips && item) {
@@ -13381,9 +13613,10 @@ function renderCard({
       ${lockBadgeHtml}
       ${viewerBadgeHtml}
       <div class="card-main">
-        <div class="card-head" dir="${cardRtl ? 'rtl' : 'ltr'}">
-          <div class="card-title-wrap">
-            <h3 class="card-title ${cardRtl ? 'rtl' : ''}" dir="${cardRtl ? 'rtl' : 'auto'}">${esc(displayTitle)}</h3>
+        <div class="card-head" dir="${headRtl ? 'rtl' : 'ltr'}">
+          <div class="card-title-wrap" style="${isNiyyah ? 'flex-direction:row;align-items:center;gap:6px;' : ''}">
+            ${isNiyyah ? `<span class="chip chip-code">${esc(numDisplay)}</span>` : ''}
+            <h3 class="card-title ${headRtl ? 'rtl' : ''}" dir="${headRtl ? 'rtl' : 'auto'}">${esc(displayTitle)}</h3>
           </div>
           <div class="card-head-tools">
             ${progHtml}
@@ -13391,7 +13624,7 @@ function renderCard({
           </div>
         </div>
         ${displayChips ? `
-          <div class="chips" dir="${cardRtl ? 'rtl' : 'ltr'}">
+          <div class="chips" dir="${isNiyyah ? 'ltr' : (cardRtl ? 'rtl' : 'ltr')}">
             ${displayChips}
           </div>
         ` : ''}
@@ -13596,12 +13829,20 @@ function openCardMoreSheet(type, id, triggerEl = null) {
     });
   }
 
-  // 3. Move to Action Parent… (only for sub-actions)
+  // 3. Move to Action Parent… (only for sub-actions) or Move to category… (for tips)
   if (type === "actions" && item.parentId) {
     items.push({
       act: "move",
       icon: "📁",
       label: "Move to parent…",
+      disabled: editDisabled,
+      sub: editDisabled ? disabledReason : ""
+    });
+  } else if (type === "tips") {
+    items.push({
+      act: "move",
+      icon: "📁",
+      label: "Move to category…",
       disabled: editDisabled,
       sub: editDisabled ? disabledReason : ""
     });
@@ -14421,6 +14662,44 @@ async function deleteItemWithUndo(type, id, opts = {}) {
 }
 
 function openMovePicker(type, id) {
+  if (type === "tips") {
+    const lock = lockOf("tips", id);
+    if (lock && !lock.isMine) {
+      const holder = getFirstName(lock.name || lock.email);
+      toast(`Locked by ${holder}`, true);
+      return;
+    }
+    const item = getItem("tips", id);
+    if (!item) return;
+    const tText = (item.texts || {})[viewCode()] || firstOf(item.texts || {}) || "Tip";
+    const title = tText.length > 50 ? tText.slice(0, 47) + "…" : tText;
+    const cats = effectiveTipCategories().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || nm(a).localeCompare(nm(b)));
+
+    const content = `
+      <div class="dlg move-sheet" data-noguard>
+        <h2>Move to category</h2>
+        <p class="muted" style="margin:0 0 var(--space-sm)">${esc(title)}</p>
+        <div class="more-sheet-menu">
+          ${cats.map(c => {
+            const isCur = String(c.id) === String(item.category);
+            return `
+              <button type="button" class="more-item ${isCur ? "is-selected" : ""}" data-act="move-tip-to-cat" data-cat="${esc(c.id)}" data-id="${esc(id)}">
+                <span class="m-icon" aria-hidden="true">${isCur ? "✓" : "📁"}</span>
+                <div class="m-text">
+                  <span class="m-title">${esc(nm(c))}${isCur ? " <span class=\"muted\" style=\"font-weight:normal\">(current)</span>" : ""}</span>
+                </div>
+              </button>
+            `;
+          }).join("")}
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" id="d-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    openSheet(content);
+    return;
+  }
   if (type !== "actions") return;
   const lock = lockOf(type, id);
   if (lock && !lock.isMine) {
@@ -14481,6 +14760,38 @@ async function reparentAction(id, catId) {
     await updateDoc(doc(db, "actions", id), { parentId: catId, updatedAt: serverTimestamp() });
     toast("Action moved");
   } catch (err) { fail(err); }
+}
+
+async function moveTipToCategory(id, catId) {
+  closeSheet();
+  const item = tips.find(x => String(x.id) === String(id));
+  if (!item) return;
+  if (String(item.category) === String(catId)) return;
+  const lock = lockOf("tips", id);
+  if (lock && !lock.isMine) {
+    const holder = getFirstName(lock.name || lock.email);
+    toast(`Locked by ${holder}`, true);
+    return;
+  }
+  try {
+    if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
+      item.category = catId;
+      renderTips();
+      toast("Tip moved.");
+      return;
+    }
+    const sRes = await executeEditorSaveTransaction({
+      coll: "tips",
+      id,
+      data: { category: catId },
+      originalUpdatedAt: item.updatedAt
+    });
+    if (sRes.ok) {
+      toast("Tip moved.");
+    }
+  } catch (err) {
+    fail(err);
+  }
 }
 
 /* ============================================================
@@ -14814,12 +15125,11 @@ function renderNiyyahs() {
       const previewText = pickTr ? pickTr.t.text : "(no text)";
       const isRtl = pickTr ? isArabic(previewText) : false;
 
-      const numDisplay = (n && typeof n.number === "number") ? `#${n.number}` : "#–";
       listHtml += renderCard({
         type: "niyyahs",
         id: n.id,
         title: "Niyyah",
-        chips: `<span class="chip chip-code">${esc(numDisplay)}</span>`,
+        chips: renderNiyyahChips(n),
         preview: previewText,
         previewRtl: isRtl,
         item: n,
@@ -15190,7 +15500,7 @@ document.addEventListener("click", e => {
     "del-action", "del-niyyah", "del-type", "del-job", "del-lang", "del-tip", "del-event",
     "seed-actions", "seed-types", "seed-jobs", "seed-langs", "seed-events",
     "card-sheet-edit", "card-sheet-duplicate", "card-sheet-move", "card-sheet-publish", "card-sheet-delete",
-    "reparent-action", "lang-up", "lang-down", "settings-add-lang", "settings-add-marital", "edit-marital-status", "del-marital-status", "seed-marital-statuses"
+    "reparent-action", "move-tip-to-cat", "lang-up", "lang-down", "settings-add-lang", "settings-add-marital", "edit-marital-status", "del-marital-status", "seed-marital-statuses"
   ]);
   if (writeActs.has(act) && !checkWritePermission()) return;
   const id = b.dataset.id;
@@ -15265,12 +15575,14 @@ document.addEventListener("click", e => {
     "seed-langs": seedLanguages,
     "new-tip-category": () => openTipCategory(),
     "new-tip": async () => {
+      const cat = b.dataset.cat || effectiveTipCategories()[0]?.id;
+      if (!cat) return;
       if (!tipCategories.length) {
         await seedTipCategories();
       }
-      const cat = b.dataset.cat;
-      openTip(null, null, cat ? { category: cat } : {});
+      openTip(null, null, { category: cat });
     },
+    "move-tip-to-cat": () => moveTipToCategory(b.dataset.id, b.dataset.cat),
     "edit-tip": () => openTip(id),
     "del-tip": () => requestDelete("tips", id),
     "new-event": () => openEvent(null, b.dataset.rule ? { rule: { type: b.dataset.rule } } : null),
@@ -15866,10 +16178,11 @@ function openNiyyah(id, _mode = null) {
 
   const title = id ? `${STRINGS.common.edit} niyyah` : `${STRINGS.common.add} niyyah`;
 
-  const initJobOn = curJobIds.length > 0;
-  const initMaritalOn = curMaritalIds.length > 0;
-  const initChainOn = curSituations.some(s => (s.beforeActionIds?.length || 0) > 0 || (s.afterActionIds?.length || 0) > 0);
-  const initEventOn = curEventIds.length > 0;
+  const nFlags = niyyahFlags(n);
+  const initJobOn = nFlags.jobs > 0;
+  const initMaritalOn = nFlags.marital > 0;
+  const initChainOn = nFlags.chain > 0;
+  const initEventOn = nFlags.events > 0;
 
   const bodyHtml = `
 
@@ -15881,7 +16194,7 @@ function openNiyyah(id, _mode = null) {
       contentHtml: `
         <div class="editor-toggle-grid">
           <label class="chk switch-label editor-toggle-tile">
-            <input type="checkbox" id="n-gen" ${n.general ? "checked" : ""}> <span class="editor-toggle-label">Fits any action</span>
+            <input type="checkbox" id="n-gen" ${nFlags.general ? "checked" : ""}> <span class="editor-toggle-label">Fits any action</span>
           </label>
           <label class="chk switch-label editor-toggle-tile">
             <input type="checkbox" id="n-job-toggle" ${initJobOn ? "checked" : ""}> <span class="editor-toggle-label">Job specific</span>
@@ -15890,7 +16203,7 @@ function openNiyyah(id, _mode = null) {
             <input type="checkbox" id="n-marital-toggle" ${initMaritalOn ? "checked" : ""}> <span class="editor-toggle-label">Marital status</span>
           </label>
           <label class="chk switch-label editor-toggle-tile">
-            <input type="checkbox" id="n-children-toggle" ${n && n.hasChildren ? "checked" : ""}> <span class="editor-toggle-label">Has children</span>
+            <input type="checkbox" id="n-children-toggle" ${nFlags.children ? "checked" : ""}> <span class="editor-toggle-label">Has children</span>
           </label>
           <label class="chk switch-label editor-toggle-tile">
             <input type="checkbox" id="n-chain-toggle" ${initChainOn ? "checked" : ""}> <span class="editor-toggle-label">Chain niyyah</span>
@@ -17735,7 +18048,6 @@ function renderTips() {
     <div class="bar tab-top-bar desktop-only" style="justify-content:flex-end">
       <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
         <button type="button" class="btn primary hdr-add-btn" data-act="new-tip-category">Add category</button>
-        <button type="button" class="btn hdr-add-btn" data-act="new-tip">Add tip</button>
       </div>
     </div>
     ${renderSearchFilterSection("tips")}
@@ -17759,35 +18071,20 @@ function openTip(id, _mode = null, opts = {}) {
   const t = id ? tips.find(x => String(x.id) === String(id)) : { texts: {}, category: defaultCategory, published: false };
   const initial = {};
   L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
-  let curCat = t.category || defaultCategory;
+  const curCat = (opts && opts.category) || t.category || defaultCategory;
+  const catName = tipCategoryLabel(curCat) || curCat;
 
   const isTipPublished = isItemPublished("tips", t);
-  let isMainSettingsLocked = isTipPublished;
   const title = id ? `${STRINGS.common.edit} tip` : `${STRINGS.common.add} tip`;
   const bodyHtml = `
-    ${renderMainSettingsCard({
-      id: "tip-main-settings",
-      title: "Main Settings",
-      isLocked: isMainSettingsLocked,
-      contentHtml: `
-        <div class="f" style="margin:4px 0">
-          <div class="f-head"><label class="f-label">Category</label></div>
-          <input type="hidden" id="t-cat" value="${esc(curCat)}">
-          <div class="segmented-ctrl" role="radiogroup" aria-label="Tip category" id="t-cat-ctrl" style="margin-top:4px;flex-wrap:wrap;gap:4px">
-            ${effectiveTipCategories().map(c => `
-              <button type="button" role="radio" aria-checked="${c.id === curCat}" class="seg-item ${c.id === curCat ? 'is-selected' : ''}" data-val="${esc(c.id)}">${esc(nm(c))}</button>
-            `).join("")}
-          </div>
-        </div>
-        <div class="f" style="margin:4px 0">
-          <div class="f-head">
-            <label for="t-src" class="f-label">Source reference</label>
-            <span class="char-count" id="cc-tip-src">0 chars</span>
-          </div>
-          <input type="text" id="t-src" value="${esc(t.source || "")}" placeholder="${esc(STRINGS.placeholders.tipSource)}" autocomplete="off" autocapitalize="sentences">
-        </div>
-      `
-    })}
+    <input type="hidden" id="t-cat" value="${esc(curCat)}">
+    <div class="f" style="margin:4px 0 var(--space-base) 0">
+      <div class="f-head">
+        <label for="t-src" class="f-label">Source reference</label>
+        <span class="char-count" id="cc-tip-src">0 chars</span>
+      </div>
+      <input type="text" id="t-src" value="${esc(t.source || "")}" placeholder="${esc(STRINGS.placeholders.tipSource)}" autocomplete="off" autocapitalize="sentences">
+    </div>
     ${langFieldsHtml()}
     <div id="lf-status-container"></div>
   `;
@@ -17797,6 +18094,7 @@ function openTip(id, _mode = null, opts = {}) {
     type: "tip",
     id,
     bodyHtml,
+    headerExtraHtml: `<span class="chip chip-neutral" style="font-size:12px">💡 ${esc(catName)}</span>`,
     saveLabel: STRINGS.common.save
   });
 
@@ -17818,7 +18116,7 @@ function openTip(id, _mode = null, opts = {}) {
           setSaveValidity(STRINGS.validation.langMismatch(l.name));
           return false;
         }
-      }
+      } 
     }
     setSaveValidity("");
     return true;
@@ -17826,7 +18124,7 @@ function openTip(id, _mode = null, opts = {}) {
 
   const getFormData = () => ({
     texts: lf.values(),
-    category: $("#t-cat")?.value || "habit",
+    category: $("#t-cat")?.value || defaultCategory,
     source: $("#t-src")?.value || ""
   });
 
@@ -17842,17 +18140,6 @@ function openTip(id, _mode = null, opts = {}) {
     maxChars: 200
   }], initial, onFieldChange, statusInit(t, L, t.texts || {}), { isPublished: isTipPublished });
 
-  $$("#t-cat-ctrl .seg-item").forEach(btn => {
-    btn.onclick = () => {
-      $$("#t-cat-ctrl .seg-item").forEach(b => {
-        b.classList.toggle("is-selected", b === btn);
-        b.setAttribute("aria-checked", b === btn ? "true" : "false");
-      });
-      $("#t-cat").value = btn.dataset.val;
-      onFieldChange();
-    };
-  });
-
   const srcInp = $("#t-src");
   if (srcInp) {
     const updateSrcCount = () => {
@@ -17866,46 +18153,6 @@ function openTip(id, _mode = null, opts = {}) {
     };
   }
 
-  const updateTipMainSettingsUI = () => {
-    const card = $("#tip-main-settings");
-    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
-    const btn = $("#tip-main-settings-lock-btn");
-    if (btn) {
-      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
-      btn.setAttribute("aria-pressed", isMainSettingsLocked);
-      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
-      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
-      const emoji = $(".lock-emoji", btn);
-      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
-      const lbl = $(".lock-label", btn);
-      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
-    }
-    const srcEl = $("#t-src");
-    if (srcEl) srcEl.disabled = isMainSettingsLocked;
-    $$("#t-cat-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
-  };
-  const btnTipLock = $("#tip-main-settings-lock-btn");
-  if (btnTipLock) {
-    btnTipLock.onclick = async () => {
-      if (isMainSettingsLocked) {
-        const ok = await promptMainSettingsUnlock({
-          title: "Unlock Tip Settings?",
-          message: "This tip has published translations. Changing category or source reference affects all languages.\n\nUnlock main settings for editing?"
-        });
-        if (ok) {
-          isMainSettingsLocked = false;
-          updateTipMainSettingsUI();
-          toast("Main settings unlocked.", { type: "info" });
-        }
-      } else {
-        isMainSettingsLocked = true;
-        updateTipMainSettingsUI();
-        toast("Main settings locked.", { type: "info" });
-      }
-    };
-  }
-  updateTipMainSettingsUI();
-
   validate();
 
   activeEditorLockState.restoreData = (rev) => {
@@ -17915,14 +18162,6 @@ function openTip(id, _mode = null, opts = {}) {
         lfVals[l.code] = { text: rev.texts?.[l.code] || "" };
       });
       lf.setValues(lfVals);
-    }
-    if (rev.category) {
-      $("#t-cat").value = rev.category;
-      $$("#t-cat-ctrl .seg-item").forEach(b => {
-        const isCur = b.dataset.val === rev.category;
-        b.classList.toggle("is-selected", isCur);
-        b.setAttribute("aria-checked", isCur ? "true" : "false");
-      });
     }
     if (rev.source !== undefined) $("#t-src").value = rev.source;
     dlgDirty = true;
@@ -17946,7 +18185,7 @@ function openTip(id, _mode = null, opts = {}) {
             const sRes = await executeEditorSaveTransaction({ coll: "tips", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
             if (!sRes.ok) return false;
           } else {
-            data.order = tips.length;
+            data.order = tips.length; 
             await addDoc(collection(db, "tips"), data);
           }
         }
@@ -19781,8 +20020,8 @@ window.__ADMIN__ = {
   get expandedGroups() { return expandedGroups; },
   get tabFilterState() { return tabFilterState; },
   TAB_TITLES,
-  chipCount, CHIP_KINDS,
-  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
+  chipCount, chipFlag, niyyahFlags, renderNiyyahChips, CHIP_KINDS,
+  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, moveTipToCategory, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
   handleSearchTrigger, handleNewItemShortcut,
