@@ -6777,6 +6777,11 @@ const STRINGS = {
       desc: "Add your first profession or load common roles.",
       btn: "Add starter jobs"
     },
+    tipCategories: {
+      title: "No tip categories yet",
+      desc: "Add categories to organize your tips.",
+      btn: "Add starter categories"
+    },
     maritalStatuses: {
       title: "No marital statuses yet",
       desc: "Add marital statuses so niyyahs can target specific life stages.",
@@ -6939,6 +6944,12 @@ const STRINGS = {
 };
 
 const TIP_CATS = { habit: "Habit anchor", knowledge: "Knowledge", practical: "Practical" };
+const tipCategoryLabel = id => {
+  if (!id) return "";
+  const c = (typeof tipCategories !== "undefined" ? tipCategories : []).find(x => String(x.id) === String(id));
+  if (c) return nm(c);
+  return (typeof TIP_CATS !== "undefined" && TIP_CATS[id]) || id;
+};
 const HIJRI = ["Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah"];
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const COUNTRIES = [
@@ -6951,7 +6962,7 @@ const COUNTRIES = [
 ];
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [], jobs = [], maritalStatuses = [], languages = [], tips = [], events = [];
+let actions = [], niyyahs = [], types = [], jobs = [], maritalStatuses = [], tipCategories = [], languages = [], tips = [], events = [];
 let listening = false;
 let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let calView = "cal", calSel = null, calRange = false, calCountry = "";
@@ -6990,7 +7001,7 @@ function getTabFilterChips(tab) {
     if (s.restricted) chips.push({ key: "restricted", label: "Access", val: s.restricted === "jobonly" ? "Job-only" : "General" });
     if (s.catId) chips.push({ key: "catId", label: "Category", val: actionLabel(s.catId) });
   } else if (tab === "tips") {
-    if (s.cat) chips.push({ key: "cat", label: "Category", val: TIP_CATS[s.cat] || s.cat });
+    if (s.cat) chips.push({ key: "cat", label: "Category", val: tipCategoryLabel(s.cat) });
     if (s.status) chips.push({ key: "status", label: "Status", val: s.status === "published" ? "Published" : "Draft" });
   } else if (tab === "events") {
     if (s.type) chips.push({ key: "type", label: "Rule", val: s.type === "weekly" ? "Weekly" : "Hijri date" });
@@ -7086,6 +7097,8 @@ const byOrder = (a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.name).loca
 function getItemDisplayName(item, lang) {
   if (item == null) return "";
   if (typeof item === "string") {
+    const tc = (typeof tipCategories !== "undefined" ? tipCategories : []).find(c => String(c.id) === String(item));
+    if (tc) return getItemDisplayName(tc, lang);
     return (typeof TIP_CATS !== "undefined" && TIP_CATS[item]) || item;
   }
   if (typeof item !== "object") return String(item);
@@ -9220,6 +9233,8 @@ const CHIP_KINDS = {
   jobs: { emoji: "💼", singular: "job", plural: "jobs" },
   maritalStatuses: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
   marital: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
+  tipCategories: { emoji: "📁", singular: "tip category", plural: "tip categories" },
+  tipCategory: { emoji: "📁", singular: "tip category", plural: "tip categories" },
   tips: { emoji: "💡", singular: "tip", plural: "tips" },
   events: { emoji: "📅", singular: "event", plural: "events" },
   languages: { emoji: "🌐", singular: "language", plural: "languages" }
@@ -9388,8 +9403,8 @@ async function openFilterSheet(tab) {
         <label class="f-label">Category</label>
         <div class="filter-chips" role="radiogroup" aria-label="Tip category filter" id="filter-tipcat-chips" style="margin-top:6px">
           <button type="button" role="radio" aria-checked="${!state.cat}" class="filter-chip ${!state.cat ? 'is-selected' : ''}" data-val="">All</button>
-          ${Object.entries(TIP_CATS).map(([k, v]) => `
-            <button type="button" role="radio" aria-checked="${state.cat === k}" class="filter-chip ${state.cat === k ? 'is-selected' : ''}" data-val="${k}">${v}</button>
+          ${effectiveTipCategories().map(c => `
+            <button type="button" role="radio" aria-checked="${state.cat === c.id}" class="filter-chip ${state.cat === c.id ? 'is-selected' : ''}" data-val="${esc(c.id)}">${esc(nm(c))}</button>
           `).join("")}
         </div>
       </div>
@@ -10203,6 +10218,7 @@ function startListening() {
   watch("languages", v => (languages = v));
   watch("jobTypes", v => (jobs = v));
   watch("maritalStatuses", v => (maritalStatuses = v));
+  watch("tipCategories", v => (tipCategories = v));
   watch("tips", v => (tips = v));
   watch("events", v => (events = v));
   watch("locks", v => {
@@ -10391,7 +10407,7 @@ function applyTab(name) {
       niyyahs: "Add niyyah",
       types: "Add location",
       jobs: "Add job",
-      tips: "Add tip",
+      tips: "Add tip category",
       events: "Add event",
       settings: "Add"
     };
@@ -11019,7 +11035,7 @@ function handleNewItemShortcut() {
     case "niyyahs": openNiyyah(); break;
     case "types": openNamed("types"); break;
     case "jobs": openNamed("jobs"); break;
-    case "tips": openTip(); break;
+    case "tips": openTipCategory(); break;
     case "events": openEvent(); break;
     case "settings": {
       if (window.innerWidth >= 721) {
@@ -11042,6 +11058,7 @@ const GATE_COLLECTIONS = [
   "languages",
   "jobTypes",
   "maritalStatuses",
+  "tipCategories",
   "tips",
   "events",
   "locks",
@@ -11512,6 +11529,7 @@ function collOf(type) {
   if (type === "types" || type === "type" || type === "locationTypes") return "locationTypes";
   if (type === "jobs" || type === "job" || type === "jobTypes") return "jobTypes";
   if (type === "maritalStatuses" || type === "maritalStatus") return "maritalStatuses";
+  if (type === "tipCategories" || type === "tipCategory") return "tipCategories";
   if (type === "tips" || type === "tip") return "tips";
   if (type === "events" || type === "event") return "events";
   return type;
@@ -11556,6 +11574,7 @@ function canonicalColl(typeOrColl) {
   if (typeOrColl === "types" || typeOrColl === "type" || typeOrColl === "locationTypes") return "locationTypes";
   if (typeOrColl === "jobs" || typeOrColl === "job" || typeOrColl === "jobTypes") return "jobTypes";
   if (typeOrColl === "maritalStatuses" || typeOrColl === "maritalStatus") return "maritalStatuses";
+  if (typeOrColl === "tipCategories" || typeOrColl === "tipCategory") return "tipCategories";
   if (typeOrColl === "tips" || typeOrColl === "tip") return "tips";
   if (typeOrColl === "events" || typeOrColl === "event") return "events";
   if (typeOrColl === "languages" || typeOrColl === "language") return "languages";
@@ -12202,6 +12221,7 @@ function updateLocalItem(coll, id, data) {
                (coll === "types" || coll === "locationTypes") ? types :
                (coll === "jobs" || coll === "jobTypes") ? jobs :
                (coll === "maritalStatuses" || coll === "maritalStatus") ? maritalStatuses :
+               (coll === "tipCategories" || coll === "tipCategory") ? tipCategories :
                coll === "tips" ? tips :
                coll === "events" ? events : null;
   if (!list) return;
@@ -13134,6 +13154,7 @@ function getItem(type, id) {
   if (c === "locationTypes") return types.find(x => String(x.id) === String(id));
   if (c === "jobTypes") return jobs.find(x => String(x.id) === String(id));
   if (c === "maritalStatuses") return maritalStatuses.find(x => String(x.id) === String(id));
+  if (c === "tipCategories") return tipCategories.find(x => String(x.id) === String(id));
   if (c === "tips") return tips.find(x => String(x.id) === String(id));
   if (c === "events") return events.find(x => String(x.id) === String(id));
   if (c === "languages") return languages.find(x => String(x.id) === String(id));
@@ -13562,8 +13583,10 @@ function openCardMoreSheet(type, id, triggerEl = null) {
     sub: editDisabled ? disabledReason : ""
   });
 
-  // 2. Duplicate (hidden for parent actions)
-  if (!(type === "actions" && !item.parentId)) {
+  const isTipCategory = type === "tipCategories" || type === "tipCategory";
+
+  // 2. Duplicate (hidden for parent actions and tip categories)
+  if (!(type === "actions" && !item.parentId) && !isTipCategory) {
     items.push({
       act: "duplicate",
       icon: "📋",
@@ -13584,14 +13607,16 @@ function openCardMoreSheet(type, id, triggerEl = null) {
     });
   }
 
-  // 4. Publish
-  items.push({
-    act: "publish",
-    icon: "🚀",
-    label: "Publish",
-    disabled: editDisabled,
-    sub: editDisabled ? disabledReason : ""
-  });
+  // 4. Publish (hidden for tip categories)
+  if (!isTipCategory) {
+    items.push({
+      act: "publish",
+      icon: "🚀",
+      label: "Publish",
+      disabled: editDisabled,
+      sub: editDisabled ? disabledReason : ""
+    });
+  }
 
   // 5. Divider
   items.push({ divider: true });
@@ -13629,6 +13654,7 @@ function openCardEditor(type, id) {
   else if (type === "types") openNamed("types", id);
   else if (type === "jobs") openNamed("jobs", id);
   else if (type === "maritalStatuses" || type === "maritalStatus") openNamed("maritalStatus", id);
+  else if (type === "tipCategories" || type === "tipCategory") openTipCategory(id);
   else if (type === "tips") openTip(id);
   else if (type === "events") openEvent(id);
   else if (type === "languages") openLanguage(id);
@@ -13886,6 +13912,7 @@ async function executeDelete(type, id) {
   else if (c === "tips") await delTip(id, opts);
   else if (c === "events") await delEvent(id, opts);
   else if (c === "maritalStatuses") await deleteMaritalStatus(id, opts);
+  else if (c === "tipCategories") await deleteTipCategory(id, opts);
   else if (c === "languages") await delLanguage(id, opts);
   else await deleteItemWithUndo(type, id, opts);
 }
@@ -13924,6 +13951,26 @@ async function requestDelete(type, id) {
           renderAll();
         }
       });
+      return;
+    }
+  }
+
+  // Tip category with tips check
+  if (type === "tipCategories" || type === "tipCategory") {
+    const catTips = tips.filter(x => x.category === id);
+    if (catTips.length > 0) {
+      const n = catTips.length;
+      toast(`Move or delete its ${n} ${n === 1 ? "tip" : "tips"} first.`, true);
+      return;
+    }
+  }
+
+  // Tip category with tips check
+  if (type === "tipCategories" || type === "tipCategory") {
+    const catTips = tips.filter(x => x.category === id);
+    if (catTips.length > 0) {
+      const n = catTips.length;
+      toast(`Move or delete its ${n} ${n === 1 ? "tip" : "tips"} first.`, true);
       return;
     }
   }
@@ -14152,7 +14199,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
     pendingDeletes.delete(id);
   }
 
-  const list = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : (type === "tips" ? tips : (type === "events" ? events : languages)))));
+  const list = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : ((type === "tipCategories" || type === "tipCategory") ? tipCategories : (type === "tips" ? tips : (type === "events" ? events : languages)))))));
   const origIdx = list.findIndex(x => x.id === id);
 
   // Snapshot affected items for Undo restoration
@@ -14245,6 +14292,9 @@ async function deleteItemWithUndo(type, id, opts = {}) {
         if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
       });
     }
+    else if (type === "tipCategories" || type === "tipCategory") {
+      tipCategories = tipCategories.filter(x => x.id !== id);
+    }
     else if (type === "tips") tips = tips.filter(x => x.id !== id);
     else if (type === "events") {
       events = events.filter(x => x.id !== id);
@@ -14258,7 +14308,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
 
   const restoreToLocal = () => {
     const restored = { id, ...copy };
-    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : (type === "tips" ? tips : (type === "events" ? events : languages))))));
+    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : ((type === "tipCategories" || type === "tipCategory") ? tipCategories : (type === "tips" ? tips : (type === "events" ? events : languages)))))));
     if (!targetList.some(x => x.id === id)) {
       if (origIdx >= 0 && origIdx <= targetList.length) targetList.splice(origIdx, 0, restored);
       else targetList.push(restored);
@@ -14866,6 +14916,22 @@ const KINDS = {
     ph: "e.g. Single",
     hasActions: false,
     list: () => maritalStatuses
+  },
+  tipCategory: {
+    coll: "tipCategories",
+    one: "tip category",
+    many: "Tip categories",
+    ph: "e.g. Habit anchor",
+    hasActions: false,
+    list: () => tipCategories
+  },
+  tipCategories: {
+    coll: "tipCategories",
+    one: "tip category",
+    many: "Tip categories",
+    ph: "e.g. Habit anchor",
+    hasActions: false,
+    list: () => tipCategories
   }
 };
 
@@ -15119,7 +15185,7 @@ document.addEventListener("click", e => {
   }
   const act = b.dataset.act;
   const writeActs = new Set([
-    "new-cat", "new-mini", "new-niyyah", "new-type", "new-job", "new-lang", "new-tip", "new-event", "cal-add",
+    "new-cat", "new-mini", "new-niyyah", "new-type", "new-job", "new-lang", "new-tip", "new-tip-category", "new-event", "cal-add",
     "edit-action", "edit-niyyah", "edit-type", "edit-job", "edit-lang", "edit-tip", "edit-event",
     "del-action", "del-niyyah", "del-type", "del-job", "del-lang", "del-tip", "del-event",
     "seed-actions", "seed-types", "seed-jobs", "seed-langs", "seed-events",
@@ -15161,7 +15227,8 @@ document.addEventListener("click", e => {
         childrenOf("").forEach(c => expandedGroups.add("cat_" + c.id));
         renderActions();
       } else if (currentTab === "tips") {
-        ["habit", "knowledge", "practical", ...new Set(tips.map(t => t.category || "habit"))].forEach(c => expandedGroups.add("tipcat_" + c));
+        effectiveTipCategories().forEach(c => expandedGroups.add("tipcat_" + c.id));
+        expandedGroups.add("tipcat_uncategorized");
         renderTips();
       } else if (currentTab === "events") {
         ["weekly", "hijri"].forEach(id => expandedGroups.add("evgroup_" + id));
@@ -15196,7 +15263,14 @@ document.addEventListener("click", e => {
     "lang-up": () => moveLang(id, -1),
     "lang-down": () => moveLang(id, 1),
     "seed-langs": seedLanguages,
-    "new-tip": () => { const cat = b.dataset.cat; openTip(null, null, { category: cat }); },
+    "new-tip-category": () => openTipCategory(),
+    "new-tip": async () => {
+      if (!tipCategories.length) {
+        await seedTipCategories();
+      }
+      const cat = b.dataset.cat;
+      openTip(null, null, cat ? { category: cat } : {});
+    },
     "edit-tip": () => openTip(id),
     "del-tip": () => requestDelete("tips", id),
     "new-event": () => openEvent(null, b.dataset.rule ? { rule: { type: b.dataset.rule } } : null),
@@ -15220,7 +15294,12 @@ document.addEventListener("click", e => {
     },
     "toggle-tray": () => toggleLangTray(b.dataset.type, b.dataset.id),
     "card-edit": () => openCardEditor(b.dataset.type, b.dataset.id),
-    "card-more": () => openCardMoreSheet(b.dataset.type, b.dataset.id, b),
+    "card-more": async () => {
+      if ((b.dataset.type === "tipCategories" || b.dataset.type === "tipCategory") && !tipCategories.length) {
+        await seedTipCategories();
+      }
+      openCardMoreSheet(b.dataset.type, b.dataset.id, b);
+    },
     "show-lock-info": () => openLockInfoPopup(b.dataset.type, b.dataset.id),
     "show-viewer-info": () => openViewerInfoPopup(b.dataset.type, b.dataset.id),
     "close-lock-info": () => {
@@ -17136,7 +17215,7 @@ function openNamed(key, id, _mode = null) {
           if (id) {
             updateLocalItem(K.coll, id, data);
           } else {
-            const newId = (key === "maritalStatus" || key === "maritalStatuses" ? "ms_" : "it_") + Math.random().toString(36).slice(2, 8);
+            const newId = (key === "maritalStatus" || key === "maritalStatuses" ? "ms_" : (key === "tipCategory" || key === "tipCategories" ? "tc_" : "it_")) + Math.random().toString(36).slice(2, 8);
             data.id = newId;
             data.createdAt = new Date();
             data.order = K.list().length;
@@ -17246,6 +17325,116 @@ async function deleteMaritalStatus(id, opts = {}) {
   }
 }
 
+async function deleteTipCategory(id, opts = {}) {
+  const catTips = tips.filter(x => x.category === id);
+  if (catTips.length > 0) {
+    const n = catTips.length;
+    toast(`Move or delete its ${n} ${n === 1 ? "tip" : "tips"} first.`, true);
+    return;
+  }
+  if (opts.confirmed === true) {
+    await deleteItemWithUndo("tipCategories", id, opts);
+  } else {
+    await requestDelete("tipCategories", id);
+  }
+}
+
+function effectiveTipCategories() {
+  if (tipCategories && tipCategories.length > 0) {
+    return [...tipCategories].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  }
+  return Object.entries(TIP_CATS).map(([id, name], idx) => ({
+    id,
+    name,
+    names: { en: name },
+    order: idx,
+    statuses: { en: "published" }
+  }));
+}
+
+async function seedTipCategories() {
+  if (!checkWritePermission()) return { created: 0, skipped: 3 };
+  const L = langs();
+  const enLang = L.find(l => l.code === "en") || L[0];
+  const langCode = enLang ? enLang.code : "en";
+
+  const builtins = [
+    { id: "habit", name: TIP_CATS.habit || "Habit anchor", order: 0 },
+    { id: "knowledge", name: TIP_CATS.knowledge || "Knowledge", order: 1 },
+    { id: "practical", name: TIP_CATS.practical || "Practical", order: 2 }
+  ];
+
+  const existingIds = new Set(tipCategories.map(c => String(c.id)));
+  const toCreate = builtins.filter(b => !existingIds.has(b.id));
+
+  if (toCreate.length === 0) {
+    return { created: 0, skipped: builtins.length };
+  }
+
+  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const userEmail = user?.email || "";
+  const userName = getLockDisplayName(user);
+
+  if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
+    const createdDocs = [];
+    toCreate.forEach(cat => {
+      const docData = {
+        id: cat.id,
+        name: cat.name,
+        names: { [langCode]: cat.name },
+        statuses: { [langCode]: "published" },
+        order: cat.order,
+        revSeq: 1,
+        updatedBy: userEmail,
+        updatedByName: userName,
+        createdAt: new Date()
+      };
+      tipCategories.push(docData);
+      createdDocs.push(docData);
+    });
+    renderAll();
+    return { created: toCreate.length, skipped: builtins.length - toCreate.length, docs: createdDocs };
+  }
+
+  try {
+    const batch = writeBatch(db);
+    toCreate.forEach(cat => {
+      const docRef = doc(db, "tipCategories", cat.id);
+      const docData = {
+        name: cat.name,
+        names: { [langCode]: cat.name },
+        statuses: { [langCode]: "published" },
+        order: cat.order,
+        revSeq: 1,
+        updatedBy: userEmail,
+        updatedByName: userName,
+        createdAt: serverTimestamp()
+      };
+      batch.set(docRef, docData);
+      batch.set(doc(db, "tipCategories", cat.id, "revisions", "1"), {
+        ...docData,
+        savedBy: userEmail,
+        savedByName: userName,
+        savedAt: serverTimestamp(),
+        revSeq: 1
+      });
+    });
+    await batch.commit();
+    return { created: toCreate.length, skipped: builtins.length - toCreate.length };
+  } catch (err) {
+    fail(err);
+    return { created: 0, skipped: builtins.length, error: err };
+  }
+}
+
+async function openTipCategory(id = null, mode = null) {
+  if (!checkWritePermission()) return;
+  if (!tipCategories.length) {
+    await seedTipCategories();
+  }
+  return openNamed("tipCategory", id, mode);
+}
+
 async function delNamed(key, id, opts = {}) {
   await deleteItemWithUndo(key, id, opts);
 }
@@ -17290,7 +17479,8 @@ function renderGroupHead({
     language: "languages", languages: "languages",
     status: "maritalStatuses", marital: "maritalStatuses",
     action: "actions", actions: "actions",
-    niyyah: "niyyahs", niyyahs: "niyyahs"
+    niyyah: "niyyahs", niyyahs: "niyyahs",
+    tipCategory: "tipCategories", tipCategories: "tipCategories"
   };
   const kind = LABEL_TO_KIND[countLabel] || countLabel;
   const chevronSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
@@ -17363,50 +17553,143 @@ function renderTips() {
     list = list.filter(t => haystack(t).includes(q));
   }
 
+  const isSearchActive = !!(q || cat || st);
+
   let listHtml = "";
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
-  } else if (!tips.length) {
+  } else if (!tips.length && !tipCategories.length) {
     listHtml = renderEmptyState("💡", STRINGS.empty.tips.title, STRINGS.empty.tips.desc, STRINGS.empty.tips.btn, "new-tip");
-  } else if (!list.length) {
+  } else if (isSearchActive && !list.length) {
     listHtml = renderEmptyState("🔍", "No tips match", "Try different keywords or clear your filters.", "Clear filters", "clear-tips-filters");
   } else {
-    const knownCats = ["habit", "knowledge", "practical"];
-    const presentCats = [...new Set(list.map(t => t.category || "habit"))];
-    const tipCats = [...new Set([...knownCats, ...presentCats])].sort(compareByDisplayName);
-    let matchingHtml = "";
-    for (const c of tipCats) {
-      const catTips = list.filter(t => (t.category || "habit") === c).sort(compareByDisplayName);
-      if (!catTips.length) continue;
-      const catLabel = TIP_CATS[c] || (c.charAt(0).toUpperCase() + c.slice(1));
-      const isSearchActive = !!(q || cat || st);
-      const isCollapsed = isSearchActive ? (catTips.length > 0 ? false : !expandedGroups.has("tipcat_" + c)) : !expandedGroups.has("tipcat_" + c);
+    const cats = effectiveTipCategories().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || nm(a).localeCompare(nm(b)));
+    const knownCatIds = new Set(cats.map(c => String(c.id)));
+    const uncategorizedTips = list.filter(t => !t.category || !knownCatIds.has(String(t.category)));
 
-      matchingHtml += `
-        <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-${c}">
-          ${renderGroupHead({
-            icon: "💡",
-            title: catLabel,
-            count: catTips.length,
-            countLabel: "tip",
-            groupKey: "tipcat_" + c,
-            collapsed: isCollapsed,
-            addAct: "new-tip",
-            addLabel: "Add " + catLabel.toLowerCase() + " tip",
-            addAttrs: `data-cat="${esc(c)}"`,
-            canAdd: !syncState.gateOpen && !syncState.isOffline,
-            langHtml: renderGroupLangProgress(catTips, L, "tipcat_" + c),
-            trayHtml: renderGroupLangTray(catTips, L, "tipcat_" + c)
-          })}
-          <div class="g-body cards-grid">
+    let matchingHtml = "";
+    for (const c of cats) {
+      const catTips = list.filter(t => String(t.category) === String(c.id)).sort(compareByDisplayName);
+      if (isSearchActive && !catTips.length) continue;
+
+      const catTitle = nm(c) || c.name || c.id;
+      const catRtl = isArabic(catTitle);
+      const isCollapsed = catTips.length === 0 ? false : (isSearchActive ? false : !expandedGroups.has("tipcat_" + c.id));
+
+      const catLock = lockOf("tipCategories", c.id);
+      let catLockBadgeHtml = "";
+      if (catLock) {
+        let lockLabel = "";
+        let lockClass = "";
+        if (catLock.isMine) {
+          lockLabel = "🔒 You";
+          lockClass = "is-mine";
+        } else if (catLock.isMineOtherSession) {
+          lockLabel = "🔒 You (other device)";
+          lockClass = "is-mine-other";
+        } else {
+          const fn = getFirstName(catLock.name || catLock.email);
+          lockLabel = `🔒 ${fn}`;
+          lockClass = "is-other";
+        }
+        catLockBadgeHtml = `
+          <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="tipCategories" data-id="${c.id}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
+            <span class="badge-text">${esc(lockLabel)}</span>
+          </button>
+        `;
+      }
+
+      const catViewers = viewersOf("tipCategories", c.id).filter(v => !v.isMine);
+      let catViewerBadgeHtml = "";
+      if (catViewers.length > 0) {
+        const viewerLabel = catViewers.length > 1 ? `👁 ${catViewers.length}` : "👁";
+        catViewerBadgeHtml = `
+          <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="tipCategories" data-id="${c.id}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
+            <span class="badge-text">${esc(viewerLabel)}</span>
+          </button>
+        `;
+      }
+
+      const editHtml = `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="tipCategories" data-id="${c.id}" aria-label="Options for ${esc(catTitle)}" title="Edit / options">✏️</button>`;
+
+      const bodyContentHtml = catTips.length === 0
+        ? `<div class="g-body" style="padding:var(--space-md) var(--space-base)"><p class="muted" style="margin:0;font-size:13.5px">No tips in this category yet.</p></div>`
+        : `<div class="g-body cards-grid">
             ${catTips.map(t => {
               const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
               const isRtl = isArabic(rawText);
-              const catName = TIP_CATS[t.category] || (t.category ? t.category.charAt(0).toUpperCase() + t.category.slice(1) : TIP_CATS.habit);
+              const catName = tipCategoryLabel(t.category) || catTitle;
               const sourceChip = t.source
                 ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">📎</span><span class="chip-text">${esc(t.source)}</span></span>`
                 : "";
               const chips = `<span class="chip chip-neutral">${esc(catName)}</span><span class="chip ${t.published ? 'chip-status-good' : 'chip-status-warn'}">${t.published ? 'Published' : 'Draft'}</span>${sourceChip ? ' ' + sourceChip : ''}`;
+              return renderCard({
+                type: "tips",
+                id: t.id,
+                title: rawText,
+                isRtl,
+                preview: "",
+                chips,
+                item: t,
+                L
+              });
+            }).join("")}
+          </div>`;
+
+      matchingHtml += `
+        <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-${c.id}">
+          ${renderGroupHead({
+            icon: "💡",
+            title: catTitle,
+            count: catTips.length,
+            countLabel: "tip",
+            groupKey: "tipcat_" + c.id,
+            collapsed: isCollapsed,
+            addAct: "new-tip",
+            addLabel: "Add " + catTitle.toLowerCase() + " tip",
+            addAttrs: `data-cat="${esc(c.id)}"`,
+            canAdd: !syncState.gateOpen && !syncState.isOffline,
+            editHtml,
+            lockBadgeHtml: catLockBadgeHtml,
+            viewerBadgeHtml: catViewerBadgeHtml,
+            isRtl: catRtl,
+            langHtml: renderGroupLangProgress(catTips, L, "tipcat_" + c.id),
+            trayHtml: renderGroupLangTray(catTips, L, "tipcat_" + c.id)
+          })}
+          ${bodyContentHtml}
+        </div>
+      `;
+    }
+
+    if (uncategorizedTips.length > 0) {
+      const uncatTips = uncategorizedTips.sort(compareByDisplayName);
+      const isCollapsed = isSearchActive ? false : !expandedGroups.has("tipcat_uncategorized");
+      matchingHtml += `
+        <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-uncategorized">
+          ${renderGroupHead({
+            icon: "💡",
+            title: "Uncategorized",
+            count: uncatTips.length,
+            countLabel: "tip",
+            groupKey: "tipcat_uncategorized",
+            collapsed: isCollapsed,
+            addAct: "new-tip",
+            addLabel: "Add tip",
+            addAttrs: `data-cat=""`,
+            canAdd: !syncState.gateOpen && !syncState.isOffline,
+            editHtml: "",
+            isRtl: false,
+            langHtml: renderGroupLangProgress(uncatTips, L, "tipcat_uncategorized"),
+            trayHtml: renderGroupLangTray(uncatTips, L, "tipcat_uncategorized")
+          })}
+          <div class="g-body cards-grid">
+            ${uncatTips.map(t => {
+              const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
+              const isRtl = isArabic(rawText);
+              const sourceChip = t.source
+                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">📎</span><span class="chip-text">${esc(t.source)}</span></span>`
+                : "";
+              const chips = `<span class="chip chip-neutral">Uncategorized</span><span class="chip ${t.published ? 'chip-status-good' : 'chip-status-warn'}">${t.published ? 'Published' : 'Draft'}</span>${sourceChip ? ' ' + sourceChip : ''}`;
               return renderCard({
                 type: "tips",
                 id: t.id,
@@ -17451,7 +17734,8 @@ function renderTips() {
   <div class="tab-top-row">
     <div class="bar tab-top-bar desktop-only" style="justify-content:flex-end">
       <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center">
-        <button type="button" class="btn primary hdr-add-btn" data-act="new-tip">Add tip</button>
+        <button type="button" class="btn primary hdr-add-btn" data-act="new-tip-category">Add category</button>
+        <button type="button" class="btn hdr-add-btn" data-act="new-tip">Add tip</button>
       </div>
     </div>
     ${renderSearchFilterSection("tips")}
@@ -17471,7 +17755,7 @@ function openTip(id, _mode = null, opts = {}) {
   }
   const L = langs();
   if (!L.length) return needLang();
-  const defaultCategory = (opts && opts.category) || "habit";
+  const defaultCategory = (opts && opts.category) || (effectiveTipCategories()[0]?.id || "habit");
   const t = id ? tips.find(x => String(x.id) === String(id)) : { texts: {}, category: defaultCategory, published: false };
   const initial = {};
   L.forEach(l => (initial[l.code] = { text: (t.texts || {})[l.code] || "" }));
@@ -17489,9 +17773,9 @@ function openTip(id, _mode = null, opts = {}) {
         <div class="f" style="margin:4px 0">
           <div class="f-head"><label class="f-label">Category</label></div>
           <input type="hidden" id="t-cat" value="${esc(curCat)}">
-          <div class="segmented-ctrl" role="radiogroup" aria-label="Tip category" id="t-cat-ctrl" style="margin-top:4px">
-            ${Object.entries(TIP_CATS).map(([k, v]) => `
-              <button type="button" role="radio" aria-checked="${k === curCat}" class="seg-item ${k === curCat ? 'is-selected' : ''}" data-val="${k}">${esc(v)}</button>
+          <div class="segmented-ctrl" role="radiogroup" aria-label="Tip category" id="t-cat-ctrl" style="margin-top:4px;flex-wrap:wrap;gap:4px">
+            ${effectiveTipCategories().map(c => `
+              <button type="button" role="radio" aria-checked="${c.id === curCat}" class="seg-item ${c.id === curCat ? 'is-selected' : ''}" data-val="${esc(c.id)}">${esc(nm(c))}</button>
             `).join("")}
           </div>
         </div>
@@ -18399,16 +18683,18 @@ function getLanguageCounts(code) {
   const nTypes = types.filter(t => (nameMap(t)[c] || "").trim().length > 0).length;
   const nJobs = jobs.filter(j => (nameMap(j)[c] || "").trim().length > 0).length;
   const nMarital = maritalStatuses.filter(m => (nameMap(m)[c] || "").trim().length > 0).length;
+  const nTipCats = tipCategories.filter(tc => (nameMap(tc)[c] || "").trim().length > 0).length;
   const nTips = tips.filter(t => ((t.texts || {})[c] || "").trim().length > 0).length;
   const nEvents = events.filter(e => (nameMap(e)[c] || "").trim().length > 0).length;
 
-  const total = nNiyyahs + nActions + nTypes + nJobs + nMarital + nTips + nEvents;
+  const total = nNiyyahs + nActions + nTypes + nJobs + nMarital + nTipCats + nTips + nEvents;
   const parts = [];
   if (nNiyyahs) parts.push(`${nNiyyahs} niyyah${nNiyyahs === 1 ? "" : "s"}`);
   if (nActions) parts.push(`${nActions} action${nActions === 1 ? "" : "s"}`);
   if (nTypes) parts.push(`${nTypes} location${nTypes === 1 ? "" : "s"}`);
   if (nJobs) parts.push(`${nJobs} job${nJobs === 1 ? "" : "s"}`);
   if (nMarital) parts.push(`${nMarital} marital status${nMarital === 1 ? "" : "es"}`);
+  if (nTipCats) parts.push(`${nTipCats} tip categor${nTipCats === 1 ? "y" : "ies"}`);
   if (nTips) parts.push(`${nTips} tip${nTips === 1 ? "" : "s"}`);
   if (nEvents) parts.push(`${nEvents} event${nEvents === 1 ? "" : "s"}`);
 
@@ -18419,6 +18705,7 @@ function getLanguageCounts(code) {
     types: nTypes,
     jobs: nJobs,
     maritalStatuses: nMarital,
+    tipCategories: nTipCats,
     tips: nTips,
     events: nEvents,
     summary: parts.length ? parts.join(" · ") : "0 items in use"
@@ -18648,7 +18935,8 @@ function openPublishAllNames() {
   const jDocs = needs(jobs).map(x => ({ coll: "jobTypes", doc: x }));
   const tDocs = needs(types).map(x => ({ coll: "locationTypes", doc: x }));
   const mDocs = needs(maritalStatuses).map(x => ({ coll: "maritalStatuses", doc: x }));
-  const targets = [...aDocs, ...jDocs, ...tDocs, ...mDocs];
+  const tcDocs = needs(tipCategories).map(x => ({ coll: "tipCategories", doc: x }));
+  const targets = [...aDocs, ...jDocs, ...tDocs, ...mDocs, ...tcDocs];
 
   if (!targets.length) {
     return toast("All actions, jobs, locations, and marital statuses already have language statuses.");
@@ -19482,6 +19770,7 @@ window.__ADMIN__ = {
   get types() { return types; }, set types(v) { types = v; },
   get jobs() { return jobs; }, set jobs(v) { jobs = v; },
   get maritalStatuses() { return maritalStatuses; }, set maritalStatuses(v) { maritalStatuses = v; },
+  get tipCategories() { return tipCategories; }, set tipCategories(v) { tipCategories = v; },
   get languages() { return languages; }, set languages(v) { languages = v; },
   get tips() { return tips; }, set tips(v) { tips = v; },
   get events() { return events; }, set events(v) { events = v; },
@@ -19493,7 +19782,7 @@ window.__ADMIN__ = {
   get tabFilterState() { return tabFilterState; },
   TAB_TITLES,
   chipCount, CHIP_KINDS,
-  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
+  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
   handleSearchTrigger, handleNewItemShortcut,
