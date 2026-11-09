@@ -4263,15 +4263,20 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     flex-shrink: 0;
   }
 
-  /* Pinned Niyyah Text in Editor (Fixed under header, AA contrast, 3 lines clamp, expandable) */
+  /* Pinned Niyyah Text in Editor (Fixed under header, AA contrast, auto-fit font, fully visible) */
   .editor-pinned-niyyah {
     flex-shrink: 0;
     background: var(--card);
     border-bottom: 1px solid var(--line);
-    padding: 10px 16px;
+    padding: 8px 16px;
     z-index: 4;
     box-sizing: border-box;
     transition: background 0.15s, border-color 0.15s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .editor-pinned-niyyah {
+      transition: none !important;
+    }
   }
   body.dark .editor-pinned-niyyah {
     background: var(--card);
@@ -4280,23 +4285,20 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: none !important;
   }
   .pinned-niyyah-content {
-    cursor: pointer;
     user-select: text;
     -webkit-user-select: text;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .pinned-niyyah-text {
     font-size: 19px;
     font-weight: 700;
     line-height: 1.4;
     color: var(--ink);
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
     word-break: break-word;
     overflow-wrap: anywhere;
     margin: 0;
+    display: block;
   }
   .pinned-niyyah-text.rtl {
     direction: rtl;
@@ -4304,22 +4306,6 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
     font-size: 20px;
     line-height: 1.45;
-  }
-  .pinned-niyyah-text.is-expanded {
-    display: block !important;
-    -webkit-line-clamp: unset !important;
-    max-height: 40vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  /* On-screen keyboard open (visualViewport height under about 500px): clamp to 2 lines */
-  .editor-pinned-niyyah.kbd-open .pinned-niyyah-text:not(.is-expanded) {
-    -webkit-line-clamp: 2 !important;
-  }
-  @media (max-height: 500px) {
-    .editor-pinned-niyyah .pinned-niyyah-text:not(.is-expanded) {
-      -webkit-line-clamp: 2 !important;
-    }
   }
 
   /* Pinned Niyyah text in Pickers (under sheet title bar, above search box, fixed while list scrolls) */
@@ -4330,40 +4316,30 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     padding: 8px 16px;
     z-index: 2;
     box-sizing: border-box;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   body.dark .picker-pinned-niyyah {
     background: var(--paper-2);
   }
   .picker-pinned-text {
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 700;
     line-height: 1.4;
     color: var(--ink);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
     word-break: break-word;
     overflow-wrap: anywhere;
     margin: 0;
-    cursor: pointer;
     user-select: text;
     -webkit-user-select: text;
+    display: block;
   }
   .picker-pinned-text.rtl {
     direction: rtl;
     text-align: right;
     font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
-    font-size: 18px;
+    font-size: 20px;
     line-height: 1.45;
-  }
-  .picker-pinned-text.is-expanded {
-    display: block !important;
-    -webkit-line-clamp: unset !important;
-    max-height: 35vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   /* Compact preview bar while scrolling (slides & morphs in directly under fixed language strip) */
@@ -7685,6 +7661,37 @@ function renderLanguageStrip({
 }
 
 let activeEditorVvHandler = null;
+
+const logDebug = (...args) => {
+  if (typeof window !== "undefined" && window.__DEBUG__) {
+    console.log(...args);
+  }
+};
+
+let activeEditorLockState = {
+  type: null,
+  id: null,
+  mode: "edit",
+  lockInfo: null,
+  originalUpdatedAt: null,
+  hasPromptedLockToEdit: false,
+  renderFn: null
+};
+
+function isReviewMode(_mode = null) {
+  if (_mode === "review") return true;
+  if (typeof activeEditorLockState !== "undefined" && activeEditorLockState && activeEditorLockState.mode === "review") return true;
+  if (typeof document !== "undefined" && document.querySelector(".editor-page.review-mode")) return true;
+  return false;
+}
+
+function guardMainSettings(isLocked) {
+  if (isLocked) {
+    toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+    return true;
+  }
+  return false;
+}
 function initEditorViewport() {
   cleanupEditorViewport();
   if (!window.visualViewport) return;
@@ -7876,8 +7883,7 @@ function setupEditorCompactPreview(editorPageEl) {
     e.preventDefault();
     if (!targetEl) return;
 
-    const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") ||
-                     Boolean(editorPageEl.classList.contains("review-mode"));
+    const isReview = isReviewMode();
 
     targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -7929,8 +7935,101 @@ function setupEditorCompactPreview(editorPageEl) {
   return activeCompactPreview;
 }
 
+function fitTextToBox(el, opts = {}) {
+  if (!el || !el.isConnected) return;
+  const rawText = (el.textContent || "").trim();
+  if (!rawText) return;
+
+  const box = el.parentElement || el;
+  const isRtl = el.classList.contains("rtl") || el.getAttribute("dir") === "rtl" || /[؀-ۿ]/.test(rawText);
+
+  const minPx = opts.minPx !== undefined ? opts.minPx : 11;
+  const maxPx = opts.maxPx !== undefined ? opts.maxPx : (isRtl ? 20 : 19);
+
+  const vv = window.visualViewport;
+  const vh = vv ? vv.height : (window.innerHeight || 600);
+  const isKbd = vv ? (vv.height < Math.min(520, (window.innerHeight || 600) * 0.75)) : false;
+
+  const maxBoxHeight = opts.maxBoxHeight !== undefined
+    ? opts.maxBoxHeight
+    : Math.round(vh * (isKbd ? 0.22 : 0.30));
+
+  box.style.maxHeight = maxBoxHeight + "px";
+  box.style.overflowY = "auto";
+  box.style.webkitOverflowScrolling = "touch";
+
+  el.style.display = "block";
+  el.style.webkitLineClamp = "unset";
+  el.style.lineClamp = "unset";
+  el.style.overflow = "visible";
+
+  let low = minPx;
+  let high = maxPx;
+  let best = minPx;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    el.style.fontSize = mid + "px";
+
+    const fitsVert = (box.scrollHeight - maxBoxHeight) <= 1.5;
+    const fitsHoriz = (box.scrollWidth - box.clientWidth) <= 1.5;
+
+    if (fitsVert && fitsHoriz) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  el.style.fontSize = best + "px";
+}
+
+function observeTextFit(el, opts = {}) {
+  if (!el) return () => {};
+  let rafId = null;
+  const run = () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      if (el && el.isConnected) {
+        fitTextToBox(el, opts);
+      }
+    });
+  };
+
+  run();
+
+  const onResize = () => run();
+  window.addEventListener("resize", onResize, { passive: true });
+  window.addEventListener("orientationchange", onResize, { passive: true });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onResize, { passive: true });
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(run).catch(() => {});
+  }
+
+  let ro = null;
+  const box = el.parentElement || el;
+  if (typeof ResizeObserver !== "undefined") {
+    ro = new ResizeObserver(() => run());
+    ro.observe(box);
+  }
+
+  return () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    window.removeEventListener("resize", onResize);
+    window.removeEventListener("orientationchange", onResize);
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener("resize", onResize);
+    }
+    if (ro) ro.disconnect();
+  };
+}
+
 function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.common.save, saveDisabledReason = "", headerExtraHtml = "" }) {
-  const isReview = (activeEditorLockState.mode === "review" && activeEditorLockState.id === id) || Boolean(dlg?.querySelector(".editor-page.review-mode"));
+  const isReview = isReviewMode();
   const isMineLock = !isReview && (currentActiveLock || activeEditorLockState.lockInfo?.isMine || activeEditorLockState.mode === "edit");
   const isNiyyah = type === "niyyah" || type === "niyyahs";
   const isExistingItem = !!id;
@@ -7981,7 +8080,7 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
 
       ${isNiyyah ? `
         <div class="editor-pinned-niyyah" id="d-pinned-niyyah" hidden role="region" aria-label="Pinned Niyyah text">
-          <div class="pinned-niyyah-content" id="d-pinned-niyyah-content" tabindex="0" role="button" aria-expanded="false" title="Tap to expand / collapse">
+          <div class="pinned-niyyah-content" id="d-pinned-niyyah-content">
             <div class="pinned-niyyah-text" id="d-pinned-niyyah-text"></div>
           </div>
         </div>
@@ -8457,11 +8556,7 @@ function pickerSheet(options, config = {}) {
             <div class="picker-pinned-niyyah" id="picker-pinned-niyyah" role="region" aria-label="Niyyah text">
               <div class="picker-pinned-text ${isContextRtl ? "rtl" : ""}"
                    dir="${contextDir}"
-                   lang="${esc(contextLang)}"
-                   tabindex="0"
-                   role="button"
-                   aria-expanded="false"
-                   title="Tap to expand / collapse">
+                   lang="${esc(contextLang)}">
                 ${esc(contextText)}
               </div>
             </div>
@@ -8513,17 +8608,7 @@ function pickerSheet(options, config = {}) {
 
       const pinnedEl = $(".picker-pinned-text", dlgPicker);
       if (pinnedEl) {
-        const toggleExpand = () => {
-          const isExp = pinnedEl.classList.toggle("is-expanded");
-          pinnedEl.setAttribute("aria-expanded", isExp ? "true" : "false");
-        };
-        pinnedEl.onclick = toggleExpand;
-        pinnedEl.onkeydown = (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            toggleExpand();
-          }
-        };
+        observeTextFit(pinnedEl);
       }
 
       const searchInput = $("#picker-search-input", dlgPicker);
@@ -8693,7 +8778,7 @@ function treePickerSheet(config = {}) {
     const rawSelected = config.selected;
     const initialSelected = new Set(Array.isArray(rawSelected) ? rawSelected : (rawSelected ? [rawSelected] : []));
     const currentSelected = new Set(initialSelected);
-    const isReadOnly = !!config.readOnly || (typeof activeEditorLockState !== "undefined" && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode"));
+    const isReadOnly = !!config.readOnly || isReviewMode();
     const displayLang = config.lang || (typeof viewCode === "function" ? viewCode() : "en");
 
     const hasContext = Boolean(config.contextText && String(config.contextText).trim());
@@ -9066,11 +9151,7 @@ function treePickerSheet(config = {}) {
             <div class="picker-pinned-niyyah" id="tree-picker-pinned-niyyah" role="region" aria-label="Niyyah text">
               <div class="picker-pinned-text ${isContextRtl ? "rtl" : ""}"
                    dir="${contextDir}"
-                   lang="${esc(contextLang)}"
-                   tabindex="0"
-                   role="button"
-                   aria-expanded="false"
-                   title="Tap to expand / collapse">
+                   lang="${esc(contextLang)}">
                 ${esc(contextText)}
               </div>
             </div>
@@ -9097,20 +9178,10 @@ function treePickerSheet(config = {}) {
         </div>
       `;
 
-      // Pinned text expand / collapse
+      // Pinned text auto-fit
       const pinnedEl = $(".picker-pinned-text", dlgPicker);
       if (pinnedEl) {
-        const toggleExpand = () => {
-          const isExp = pinnedEl.classList.toggle("is-expanded");
-          pinnedEl.setAttribute("aria-expanded", isExp ? "true" : "false");
-        };
-        pinnedEl.onclick = toggleExpand;
-        pinnedEl.onkeydown = (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            toggleExpand();
-          }
-        };
+        observeTextFit(pinnedEl);
       }
 
       // Header actions
@@ -9438,6 +9509,22 @@ function chipCount(kind, n) {
   return `<span class="chip chip-count" aria-label="${esc(label)}" title="${esc(label)}">${num}<span class="chip-emoji" aria-hidden="true">${cfg.emoji}</span></span>`;
 }
 
+const NIYYAH_SCOPE_ERROR = "A published niyyah needs at least one action, event, chain action, or 'Fits any action'.";
+
+function niyyahHasScope(item = {}) {
+  if (!item) return false;
+  if (item.general) return true;
+  if (Array.isArray(item.actionIds) && item.actionIds.length > 0) return true;
+  const eventOn = item.eventOn !== undefined ? item.eventOn : true;
+  if (eventOn && Array.isArray(item.eventIds) && item.eventIds.length > 0) return true;
+  const chainOn = item.chainOn !== undefined ? item.chainOn : true;
+  if (chainOn) {
+    if (Array.isArray(item.situations) && item.situations.some(s => (s.beforeActionIds?.length || 0) > 0 || (s.afterActionIds?.length || 0) > 0)) return true;
+    if ((item.beforeActionIds?.length || 0) > 0 || (item.afterActionIds?.length || 0) > 0) return true;
+  }
+  return false;
+}
+
 function chipFlag(emoji, label, tone = "neutral", tooltip = "") {
   const toneClass = tone ? (tone.startsWith("chip-") ? tone : `chip-${tone}`) : "chip-neutral";
   const tip = tooltip || label;
@@ -9466,6 +9553,10 @@ function niyyahFlags(n = {}) {
 function renderNiyyahChips(n) {
   const flags = niyyahFlags(n);
   const chips = [];
+  const isPublished = (n.translations && Object.values(n.translations).some(t => t && t.status === "published")) || n.published || (n.statuses && Object.values(n.statuses).some(s => s === "published"));
+  if (isPublished && !niyyahHasScope(n)) {
+    chips.push(chipFlag("⚠️", "No actions", "bad", "Published niyyah missing action or scope"));
+  }
   if (flags.actions > 0) chips.push(chipCount("actions", flags.actions));
   if (flags.general) chips.push(chipFlag("🌍", "Any action", "neutral", "Fits any action"));
   if (flags.jobs > 0) chips.push(chipCount("jobs", flags.jobs));
@@ -12352,7 +12443,7 @@ function showInactivityWarningPopup() {
   if (!dlgWarn.open) dlgWarn.showModal();
 }
 
-let activeEditorLockState = {
+activeEditorLockState = {
   type: null,
   id: null,
   mode: "edit",
@@ -14023,6 +14114,10 @@ async function publishItem(type, id) {
   const L = langs();
   try {
     if (type === "niyyahs") {
+      if (!niyyahHasScope(item)) {
+        toast(NIYYAH_SCOPE_ERROR, true);
+        return;
+      }
       const trs = { ...(item.translations || {}) };
       for (const c of Object.keys(trs)) {
         if (trs[c] && trs[c].text) trs[c] = { ...trs[c], status: "published" };
@@ -16220,6 +16315,7 @@ function openNiyyah(id, _mode = null) {
               <span class="picker-btn-label" id="lbl-pick-actions">${esc(formatActionsLabel(curActionIds, "Choose actions..."))}</span>
               <span class="picker-chevron" aria-hidden="true">▾</span>
             </button>
+            <div class="inline-err" id="err-niyyah-actions" style="display:none"></div>
           </div>
 
           <div class="f editor-collapsible-section" id="sec-niyyah-jobs" style="${initJobOn ? '' : 'display:none;'}">
@@ -16287,6 +16383,7 @@ function openNiyyah(id, _mode = null) {
     capture();
     const hasText = L.some(l => draft[l.code]?.text?.trim()?.length > 0);
     if (!hasText) {
+      setInlineErr("#err-niyyah-actions", "");
       setInlineErr("#err-niyyah-jobs", "");
       setInlineErr("#err-niyyah-marital", "");
       setInlineErr("#err-niyyah-chain", "");
@@ -16350,13 +16447,21 @@ function openNiyyah(id, _mode = null) {
     }
 
     const isGen = $("#n-gen")?.checked;
-    const hasChain = isChain && curSituations.some(s => (s.beforeActionIds?.length || 0) > 0 || (s.afterActionIds?.length || 0) > 0);
-    const hasEvents = isEv && curEventIds.length > 0;
-    const hasActionOrScope = isGen || curActionIds.length > 0 || hasEvents || hasChain;
+    const hasScope = niyyahHasScope({
+      general: isGen,
+      actionIds: curActionIds,
+      situations: curSituations,
+      eventIds: curEventIds,
+      chainOn: isChain,
+      eventOn: isEv
+    });
     const hasPublished = L.some(l => draft[l.code]?.status === "published" && draft[l.code]?.text?.trim());
-    if (hasPublished && !hasActionOrScope) {
-      setSaveValidity("A published niyyah needs at least one action, event, chain action, or 'Fits any action'.");
+    if (hasPublished && !hasScope) {
+      setInlineErr("#err-niyyah-actions", NIYYAH_SCOPE_ERROR);
+      setSaveValidity(NIYYAH_SCOPE_ERROR);
       return false;
+    } else {
+      setInlineErr("#err-niyyah-actions", "");
     }
 
     for (const l of L) {
@@ -16388,23 +16493,11 @@ function openNiyyah(id, _mode = null) {
   };
 
   const pinnedBox = $("#d-pinned-niyyah");
-  const pinnedContent = $("#d-pinned-niyyah-content");
   const pinnedText = $("#d-pinned-niyyah-text");
+  let unobservePinned = null;
 
-  const togglePinnedExpand = () => {
-    if (!pinnedText) return;
-    const isExp = pinnedText.classList.toggle("is-expanded");
-    if (pinnedContent) pinnedContent.setAttribute("aria-expanded", isExp ? "true" : "false");
-  };
-
-  if (pinnedContent) {
-    pinnedContent.onclick = togglePinnedExpand;
-    pinnedContent.onkeydown = (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        togglePinnedExpand();
-      }
-    };
+  if (pinnedText) {
+    unobservePinned = observeTextFit(pinnedText);
   }
 
   function updatePinnedNiyyah() {
@@ -16422,8 +16515,7 @@ function openNiyyah(id, _mode = null) {
     pinnedText.setAttribute("dir", isRtl ? "rtl" : "ltr");
     pinnedText.setAttribute("lang", l ? l.code : (isRtl ? "ar" : "en"));
 
-    const isKbd = window.visualViewport && window.visualViewport.height < 500;
-    pinnedBox.classList.toggle("kbd-open", Boolean(isKbd));
+    fitTextToBox(pinnedText);
   }
 
   const strip = renderLanguageStrip({
@@ -16790,135 +16882,97 @@ function openNiyyah(id, _mode = null) {
   updatePinnedNiyyah();
   validate();
 
-  $("#n-gen").onchange = (e) => {
-    if (isMainSettingsLocked) {
-      e.preventDefault();
-      $("#n-gen").checked = !$("#n-gen").checked;
-      toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-      return;
-    }
-    onFieldChange();
+  const bindSectionToggle = (toggleSel, sectionSel) => {
+    const toggle = $(toggleSel);
+    if (!toggle) return;
+    toggle.onchange = (e) => {
+      if (guardMainSettings(isMainSettingsLocked)) {
+        e.preventDefault();
+        toggle.checked = !toggle.checked;
+        return;
+      }
+      if (sectionSel) {
+        const sec = $(sectionSel);
+        if (sec) sec.style.display = toggle.checked ? "" : "none";
+      }
+      onFieldChange();
+    };
   };
 
-  if ($("#n-children-toggle")) {
-    $("#n-children-toggle").onchange = (e) => {
-      if (isMainSettingsLocked) {
-        e.preventDefault();
-        $("#n-children-toggle").checked = !$("#n-children-toggle").checked;
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      onFieldChange();
-    };
-  }
+  bindSectionToggle("#n-gen");
+  bindSectionToggle("#n-children-toggle");
+  bindSectionToggle("#n-job-toggle", "#sec-niyyah-jobs");
 
-  const jobToggle = $("#n-job-toggle");
-  if (jobToggle) {
-    jobToggle.onchange = (e) => {
-      if (isMainSettingsLocked) {
-        e.preventDefault();
-        jobToggle.checked = !jobToggle.checked;
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isJob = jobToggle.checked;
-      const sec = $("#sec-niyyah-jobs");
-      if (sec) sec.style.display = isJob ? "" : "none";
+  const openRelationPicker = async ({
+    buttonEl,
+    labelEl,
+    items,
+    selected,
+    title,
+    emptyText = "",
+    searchThreshold = 5,
+    formatLabel,
+    onSelect
+  }) => {
+    if (guardMainSettings(isMainSettingsLocked)) return;
+    const isReview = isReviewMode(_mode);
+    const sorted = [...(items || [])].sort(compareByDisplayName);
+    const opts = sorted.map(it => ({
+      value: it.id,
+      label: getItemDisplayName(it)
+    }));
+    const picked = await pickerSheet(opts, {
+      multi: true,
+      search: opts.length > searchThreshold,
+      selected,
+      title,
+      anchorEl: buttonEl,
+      readOnly: isReview,
+      emptyText,
+      ...getPickerContext()
+    });
+    if (picked !== null && picked !== undefined) {
+      const nextIds = Array.isArray(picked) ? picked : [];
+      onSelect(nextIds);
+      if (labelEl) labelEl.textContent = formatLabel(nextIds);
+      dlgDirty = true;
       onFieldChange();
-    };
-  }
-
-  const getJobDisplayName = (j) => {
-    const m = nameMap(j);
-    const code = viewCode();
-    return m[code] || m["en"] || firstOf(m) || "(no name)";
+    }
   };
 
   const btnPickJobs = $("#btn-pick-jobs");
   if (btnPickJobs) {
-    btnPickJobs.onclick = async () => {
-      if (isMainSettingsLocked) {
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
-      const sortedJobs = [...jobs].sort(compareByDisplayName);
-      const jobOpts = sortedJobs.map(j => ({
-        value: j.id,
-        label: getItemDisplayName(j)
-      }));
-      const picked = await pickerSheet(jobOpts, {
-        multi: true,
-        search: jobOpts.length > 5,
-        selected: curJobIds,
-        title: "Jobs",
-        anchorEl: btnPickJobs,
-        readOnly: isReview,
-        ...getPickerContext()
-      });
-      if (picked !== null && picked !== undefined) {
-        curJobIds = Array.isArray(picked) ? picked : [];
-        $("#lbl-pick-jobs").textContent = formatJobsLabel(curJobIds);
-        dlgDirty = true;
-        onFieldChange();
-      }
-    };
+    btnPickJobs.onclick = () => openRelationPicker({
+      buttonEl: btnPickJobs,
+      labelEl: $("#lbl-pick-jobs"),
+      items: jobs,
+      selected: curJobIds,
+      title: "Jobs",
+      formatLabel: formatJobsLabel,
+      onSelect: (ids) => { curJobIds = ids; }
+    });
   }
 
-  const maritalToggle = $("#n-marital-toggle");
-  if (maritalToggle) {
-    maritalToggle.onchange = (e) => {
-      if (isMainSettingsLocked) {
-        e.preventDefault();
-        maritalToggle.checked = !maritalToggle.checked;
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isMarital = maritalToggle.checked;
-      const sec = $("#sec-niyyah-marital");
-      if (sec) sec.style.display = isMarital ? "" : "none";
-      onFieldChange();
-    };
-  }
+  bindSectionToggle("#n-marital-toggle", "#sec-niyyah-marital");
 
   const btnPickMarital = $("#btn-pick-marital");
   if (btnPickMarital) {
-    btnPickMarital.onclick = async () => {
-      if (isMainSettingsLocked) {
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
-      const sortedMarital = [...(typeof maritalStatuses !== "undefined" ? maritalStatuses : [])].sort(compareByDisplayName);
-      const maritalOpts = sortedMarital.map(m => ({
-        value: m.id,
-        label: getItemDisplayName(m)
-      }));
-      const picked = await pickerSheet(maritalOpts, {
-        multi: false,
-        search: maritalOpts.length > 8,
-        selected: curMaritalIds.length ? curMaritalIds[0] : null,
-        title: "Marital status",
-        anchorEl: btnPickMarital,
-        readOnly: isReview,
-        emptyText: "No marital statuses yet. Add them in Settings.",
-        ...getPickerContext()
-      });
-      if (picked !== null && picked !== undefined) {
-        curMaritalIds = picked ? [picked] : [];
-        $("#lbl-pick-marital").textContent = formatMaritalLabel(curMaritalIds);
-        dlgDirty = true;
-        onFieldChange();
-      }
-    };
+    btnPickMarital.onclick = () => openRelationPicker({
+      buttonEl: btnPickMarital,
+      labelEl: $("#lbl-pick-marital"),
+      items: typeof maritalStatuses !== "undefined" ? maritalStatuses : [],
+      selected: curMaritalIds,
+      title: "Marital status",
+      emptyText: "No marital statuses yet. Add them in Settings.",
+      searchThreshold: 8,
+      formatLabel: formatMaritalLabel,
+      onSelect: (ids) => { curMaritalIds = ids; }
+    });
   }
 
   $("#btn-pick-actions").onclick = async () => {
-    if (isMainSettingsLocked) {
-      toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-      return;
-    }
-    const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
+    if (guardMainSettings(isMainSettingsLocked)) return;
+    const isReview = isReviewMode(_mode);
     const picked = await treePickerSheet({
       selected: curActionIds,
       title: "Actions for this Niyyah",
@@ -16933,21 +16987,7 @@ function openNiyyah(id, _mode = null) {
     }
   };
 
-  const chainToggle = $("#n-chain-toggle");
-  if (chainToggle) {
-    chainToggle.onchange = (e) => {
-      if (isMainSettingsLocked) {
-        e.preventDefault();
-        chainToggle.checked = !chainToggle.checked;
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isChain = chainToggle.checked;
-      const sec = $("#sec-niyyah-chain");
-      if (sec) sec.style.display = isChain ? "" : "none";
-      onFieldChange();
-    };
-  }
+  bindSectionToggle("#n-chain-toggle", "#sec-niyyah-chain");
 
   function paintSituations() {
     const container = $("#situations-list");
@@ -17098,30 +17138,13 @@ function openNiyyah(id, _mode = null) {
     };
   }
 
-  const eventToggle = $("#n-event-toggle");
-  if (eventToggle) {
-    eventToggle.onchange = (e) => {
-      if (isMainSettingsLocked) {
-        e.preventDefault();
-        eventToggle.checked = !eventToggle.checked;
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isEv = eventToggle.checked;
-      const sec = $("#sec-niyyah-events");
-      if (sec) sec.style.display = isEv ? "" : "none";
-      onFieldChange();
-    };
-  }
+  bindSectionToggle("#n-event-toggle", "#sec-niyyah-events");
 
   const btnPickEvents = $("#btn-pick-events");
   if (btnPickEvents) {
     btnPickEvents.onclick = async () => {
-      if (isMainSettingsLocked) {
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
-        return;
-      }
-      const isReview = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
+      if (guardMainSettings(isMainSettingsLocked)) return;
+      const isReview = isReviewMode(_mode);
       const evOpts = [...events].sort(byOrder).map(e => ({
         value: e.id,
         label: nm(e),
@@ -17249,8 +17272,8 @@ function openNiyyah(id, _mode = null) {
     const afterActionIds = [...new Set(situations.flatMap(s => s.afterActionIds || []))];
     const eventIds = isEv ? curEventIds : [];
 
-    if (filled.some(t => t.status === "published") && !general && !actionIds.length && !eventIds.length && !beforeActionIds.length && !afterActionIds.length)
-      return toast("A published niyyah needs at least one action, event, chain action, or 'Fits any action'.", true);
+    if (filled.some(t => t.status === "published") && !niyyahHasScope({ general, actionIds, situations, eventIds, chainOn: isChain, eventOn: isEv }))
+      return toast(NIYYAH_SCOPE_ERROR, true);
 
     const data = {
       translations,
@@ -19593,7 +19616,7 @@ function rebuildSources(raw, code) {
 
 function buildImportPlan(json) {
   if (!json || typeof json !== "object") throw new Error("This file is not in the expected format (an object or array of items).");
-  const items = [], codes = new Set();
+  const items = [], codes = new Set(), scopeWarnings = [];
   const unknownJobIds = new Set();
   const unknownMaritalStatusIds = new Set();
   const unknownActionIds = new Set();
@@ -19668,7 +19691,15 @@ function buildImportPlan(json) {
         Object.entries(it.translations).forEach(([c, tr]) => {
           codes.add(c);
           const text = String(tr.text || "").trim();
-          translations[c] = { text, sources: asArray(tr.sources).map(x => String(x).trim()).filter(Boolean), status: text && langOk(c, text) ? "draft" : "empty" };
+          let st = tr.status || (text && langOk(c, text) ? "draft" : "empty");
+          if (st === "published") {
+            const hasScope = niyyahHasScope({ general: it.general, actionIds: it.actionIds, situations: cleanSituations, beforeActionIds: validBeforeActionIds, afterActionIds: validAfterActionIds, eventIds: it.eventIds });
+            if (!hasScope) {
+              st = "draft";
+              scopeWarnings.push(`Niyyah #${id} (${c}) published status reverted to draft: missing action/scope.`);
+            }
+          }
+          translations[c] = { text, sources: asArray(tr.sources).map(x => String(x).trim()).filter(Boolean), status: st };
         });
       }
       items.push({
@@ -19716,7 +19747,15 @@ function buildImportPlan(json) {
         const translations = {};
         for (const [c, v] of langEntries) {
           const text = String(asArray(v.niyyah || v.text)[i] ?? "").trim();
-          translations[c] = { text, sources: [...(sources[c] || [])], status: text && langOk(c, text) ? "draft" : "empty" };
+          let st = (rawVal.translations && rawVal.translations[c]?.status) || rawVal.status || (text && langOk(c, text) ? "draft" : "empty");
+          if (st === "published") {
+            const hasScope = niyyahHasScope({ general: rawVal.general, actionIds: rawVal.actionIds, situations: cleanSituations, beforeActionIds: validBeforeActionIds, afterActionIds: validAfterActionIds, eventIds: rawVal.eventIds });
+            if (!hasScope) {
+              st = "draft";
+              scopeWarnings.push(`Niyyah #${id}.${i + 1} (${c}) published status reverted to draft: missing action/scope.`);
+            }
+          }
+          translations[c] = { text, sources: [...(sources[c] || [])], status: st };
         }
         items.push({
           importId: id,
@@ -19739,7 +19778,8 @@ function buildImportPlan(json) {
     codes: [...codes],
     unknownJobIds: [...unknownJobIds],
     unknownMaritalStatusIds: [...unknownMaritalStatusIds],
-    unknownActionIds: [...unknownActionIds]
+    unknownActionIds: [...unknownActionIds],
+    scopeWarnings: [...scopeWarnings]
   };
 }
 
@@ -19756,6 +19796,7 @@ function openImport(plan, fileName) {
     ${plan.unknownJobIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown job IDs dropped: ${plan.unknownJobIds.map(esc).join(", ")}.</p>` : ""}
     ${plan.unknownMaritalStatusIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown marital status IDs dropped: ${plan.unknownMaritalStatusIds.map(esc).join(", ")}.</p>` : ""}
     ${plan.unknownActionIds?.length ? `<p style="margin:0;color:var(--danger)">Unknown action IDs dropped: ${plan.unknownActionIds.map(esc).join(", ")}.</p>` : ""}
+    ${plan.scopeWarnings?.length ? `<p style="margin:0;color:var(--danger)">Scope rule: ${plan.scopeWarnings.length} published text(s) reverted to draft because they lack actions or scope.</p>` : ""}
     <div class="imp-list">${plan.items.map(it => `<div class="imp-row ${it.skip ? "skip" : ""}">
         <span class="id">#${esc(it.importId)}.${it.importIndex + 1}</span>
         ${Object.entries(it.translations).map(([c, t]) => `<span class="badge st-${t.status}">${esc(c)}</span>`).join("")}
@@ -20021,6 +20062,9 @@ window.__ADMIN__ = {
   get tabFilterState() { return tabFilterState; },
   TAB_TITLES,
   chipCount, chipFlag, niyyahFlags, renderNiyyahChips, CHIP_KINDS,
+  niyyahHasScope, NIYYAH_SCOPE_ERROR,
+  isReviewMode, guardMainSettings, logDebug,
+  fitTextToBox, observeTextFit,
   renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, moveTipToCategory, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
