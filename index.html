@@ -33,7 +33,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 2. RENDER FUNCTIONS PER TAB:
    - Actions tab:   renderActions()       — builds category parent cards (full title, inAppVisibility/restricted chips, count),
                                             compact child action tree connectors, and action chips.
-   - Niyyahs tab:   renderNiyyahs()       — filters (text, status, action), accordion cards, translations list.
+   - Niyyahs tab:   renderNiyyahs()       — filters, redesigned cards (text in title slot with inline #number chip, bottom chips & lang pill, expanded actions tree & status pills).
    - Locations tab: renderNamed("types")  — location cards, linked action badges.
    - Jobs tab:      renderNamed("jobs")   — job cards, linked action badges.
    - Tips tab:      renderTips()          — tip cards by category with publication statuses.
@@ -2415,6 +2415,175 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     height: 2px;
     background: var(--line);
     transform: translateY(-50%);
+  }
+
+  /* Redesigned Niyyah card layout */
+  .card.card-niyyah {
+    padding: 8px 12px;
+  }
+  @media (min-width: 721px) {
+    .card.card-niyyah {
+      padding: 10px 14px;
+    }
+  }
+  .card-niyyah .card-main {
+    gap: 6px;
+  }
+  .card-niyyah .card-title.card-niyyah-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.6;
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: start;
+  }
+  .card-niyyah .card-title.card-niyyah-title.rtl {
+    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    line-height: 1.6;
+  }
+  .card-niyyah:not(.is-expanded) .card-niyyah-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .card-niyyah.is-expanded .card-niyyah-title {
+    display: block;
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+  .chip-niyyah-num {
+    display: inline-flex;
+    vertical-align: middle;
+    direction: ltr;
+    margin-inline-end: 8px;
+    flex-shrink: 0;
+  }
+  .card-niyyah-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .card-niyyah-bottom .chips {
+    margin-top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .card-niyyah-bottom-tools {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-inline-start: auto;
+  }
+  .card-lang-tray .tray-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card-lang-tray .tray-section + .tray-section {
+    border-top: 1px dashed var(--line);
+    padding-top: var(--space-xs);
+    margin-top: 2px;
+  }
+  .tray-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    direction: ltr;
+    text-align: start;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .tray-actions-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tray-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .tray-action-parent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--green);
+    text-align: start;
+  }
+  .tray-action-parent.muted {
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .tray-parent-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .tray-action-children {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-inline-start: 22px;
+    padding-inline-end: 0;
+    margin-top: 2px;
+  }
+  .tray-action-children::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 8px;
+    inset-inline-start: 7px;
+    width: 2px;
+    background: var(--line);
+    border-radius: 1px;
+  }
+  .tray-action-child {
+    position: relative;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: var(--ink);
+    padding: 1px 0;
+    text-align: start;
+  }
+  .tray-action-child::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    inset-inline-start: -15px;
+    width: 15px;
+    height: 2px;
+    background: var(--line);
+    transform: translateY(-50%);
+  }
+  .tray-lang-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .tray-lang-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    padding: 2px 10px;
+    white-space: nowrap;
+    line-height: 1.3;
+    border: 1px solid transparent;
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   /* Skeleton loading cards */
@@ -13536,8 +13705,103 @@ function renderLangTray(item, L, type) {
     statuses = L.map(l => ({ l, status: langSt(item, l.code, m[l.code]) }));
   }
 
-  const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
   const isOpen = openTrays.has(`${type}:${item.id}`);
+
+  if (type === "niyyahs") {
+    const rawActionIds = Array.isArray(item.actionIds) ? item.actionIds : Object.values(item.actionIds || {});
+    let actionsHtml = "";
+    if (item.general && !rawActionIds.length) {
+      actionsHtml = `<div class="tray-actions-body"><span class="chip chip-neutral" aria-label="Fits any action" title="Fits any action"><span class="chip-emoji" aria-hidden="true">🌍</span><span class="chip-text">Any action</span></span></div>`;
+    } else if (!rawActionIds.length) {
+      actionsHtml = `<div class="tray-actions-body"><p class="muted" style="margin:0;font-size:13px;">No actions</p></div>`;
+    } else {
+      const parentMap = new Map();
+      const deletedActions = [];
+      for (const actId of rawActionIds) {
+        const act = actionById(actId);
+        if (!act) {
+          deletedActions.push(actId);
+          continue;
+        }
+        if (act.parentId) {
+          const parent = actionById(act.parentId);
+          const pKey = parent ? parent.id : `del_${act.parentId}`;
+          if (!parentMap.has(pKey)) {
+            parentMap.set(pKey, { parent, isDeletedParent: !parent, children: [] });
+          }
+          parentMap.get(pKey).children.push(act);
+        } else {
+          const pKey = act.id;
+          if (!parentMap.has(pKey)) {
+            parentMap.set(pKey, { parent: act, isDeletedParent: false, children: [] });
+          }
+        }
+      }
+
+      const sortedGroups = Array.from(parentMap.values()).sort((ga, gb) => {
+        if (!ga.parent) return 1;
+        if (!gb.parent) return -1;
+        return compareByDisplayName(ga.parent, gb.parent);
+      });
+
+      for (const group of sortedGroups) {
+        group.children.sort(compareByDisplayName);
+      }
+
+      actionsHtml = `
+        <div class="tray-actions-tree">
+          ${sortedGroups.map(group => `
+            <div class="tray-action-group">
+              <div class="tray-action-parent" dir="auto">
+                <span class="tray-parent-icon" aria-hidden="true">📁</span>
+                <span class="tray-parent-name" dir="auto">${esc(group.parent ? (group.isDeletedParent ? "(deleted action)" : nm(group.parent)) : "(deleted action)")}</span>
+              </div>
+              ${group.children.length ? `
+                <div class="tray-action-children">
+                  ${group.children.map(child => `
+                    <div class="tray-action-child" dir="auto">
+                      <span class="tray-child-name" dir="auto">${esc(nm(child))}</span>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ''}
+            </div>
+          `).join("")}
+          ${deletedActions.map(() => `
+            <div class="tray-action-group">
+              <div class="tray-action-parent muted" dir="auto">
+                <span class="tray-parent-icon" aria-hidden="true">📁</span>
+                <span class="tray-parent-name" dir="auto">(deleted action)</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    const langPillsHtml = statuses.map(s => `
+      <span class="tray-lang-pill st-${s.status}"
+            title="${esc(s.l.name)}: ${esc(s.status)}"
+            aria-label="${esc(s.l.name)}, ${esc(s.status)}">${esc(s.l.name)}</span>
+    `).join("");
+
+    return `
+      <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" ${isOpen ? "" : "hidden"}>
+        <div class="tray-section tray-section-actions">
+          <div class="tray-section-label">ACTIONS</div>
+          ${actionsHtml}
+        </div>
+        <div class="tray-section tray-section-languages">
+          <div class="tray-section-label">LANGUAGES</div>
+          <div class="tray-lang-pills">
+            ${langPillsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
 
   return `
     <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" ${isOpen ? "" : "hidden"}>
@@ -13667,15 +13931,55 @@ function renderCard({
   let displayPreview = preview;
 
   const isNiyyah = type === "niyyahs";
-  const headRtl = isNiyyah ? false : cardRtl;
-  let numDisplay = "";
   if (isNiyyah) {
-    numDisplay = (item && typeof item.number === "number") ? `#${item.number}` : "#–";
-    displayTitle = displayTitle || (STRINGS.common?.niyyah || "Niyyah");
+    let niyyahText = (preview && preview !== "(no text)") ? preview : "";
+    if (!niyyahText && item) {
+      const trs = (L || langs()).map(l => ({ l, t: trOf(item, l.code) }));
+      const curTr = trs.find(x => x.l.code === viewCode() && x.t.text);
+      const pickTr = curTr || (trs.find(x => x.l.code === "ar" && x.t.text) || trs.find(x => x.t.text));
+      niyyahText = pickTr ? pickTr.t.text : "(no text)";
+    }
+    if (!niyyahText) niyyahText = "(no text)";
+    const isNTextRtl = (preview && typeof previewRtl === "boolean") ? previewRtl : isArabic(niyyahText);
+    const nDir = isNTextRtl ? "rtl" : "ltr";
+    const numDisplay = (item && typeof item.number === "number") ? `#${item.number}` : "#–";
     if (!displayChips && item) {
       displayChips = renderNiyyahChips(item);
     }
-  } else if (type === "actions") {
+    const toolsHtml = tools || `
+      <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for Niyyah ${esc(numDisplay)}" title="Edit / options">✏️</button>
+    `;
+
+    return `
+      <div class="card card-niyyah ${isExpanded ? 'is-expanded' : ''}"
+           data-type="${esc(type)}" data-id="${esc(id)}"
+           role="button" tabindex="0"
+           aria-expanded="${isExpanded ? 'true' : 'false'}">
+        ${lockBadgeHtml}
+        ${viewerBadgeHtml}
+        <div class="card-main" dir="${nDir}">
+          <div class="card-head" dir="${nDir}">
+            <h3 class="card-title card-niyyah-title ${isNTextRtl ? 'rtl' : ''}" dir="${nDir}">
+              <span class="sr-only">Niyyah </span><span class="chip chip-code chip-niyyah-num" dir="ltr">${esc(numDisplay)}</span> ${esc(niyyahText)}
+            </h3>
+            <div class="card-head-tools">
+              ${toolsHtml}
+            </div>
+          </div>
+          <div class="card-niyyah-bottom" dir="${nDir}">
+            <div class="chips" dir="${nDir}">
+              ${displayChips}
+            </div>
+            ${progHtml ? `<div class="card-niyyah-bottom-tools">${progHtml}</div>` : ''}
+          </div>
+          ${trayHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  const headRtl = cardRtl;
+  if (type === "actions") {
     if (!displayChips && item) {
       const isVis = item.inAppVisibility ?? item.visible ?? true;
       const isRestricted = !!item.restricted;
@@ -13705,8 +14009,7 @@ function renderCard({
       ${viewerBadgeHtml}
       <div class="card-main">
         <div class="card-head" dir="${headRtl ? 'rtl' : 'ltr'}">
-          <div class="card-title-wrap" style="${isNiyyah ? 'flex-direction:row;align-items:center;gap:6px;' : ''}">
-            ${isNiyyah ? `<span class="chip chip-code">${esc(numDisplay)}</span>` : ''}
+          <div class="card-title-wrap">
             <h3 class="card-title ${headRtl ? 'rtl' : ''}" dir="${headRtl ? 'rtl' : 'auto'}">${esc(displayTitle)}</h3>
           </div>
           <div class="card-head-tools">
@@ -13715,7 +14018,7 @@ function renderCard({
           </div>
         </div>
         ${displayChips ? `
-          <div class="chips" dir="${isNiyyah ? 'ltr' : (cardRtl ? 'rtl' : 'ltr')}">
+          <div class="chips" dir="${cardRtl ? 'rtl' : 'ltr'}">
             ${displayChips}
           </div>
         ` : ''}
@@ -14011,6 +14314,11 @@ function toggleLangTray(type, id) {
       openTrays.add(key);
       if (id) openTrays.add(id);
       if (tray.id) openTrays.add(tray.id);
+    }
+    const cardEl = tray.closest(".card");
+    if (cardEl) {
+      cardEl.classList.toggle("is-expanded", !tray.hidden);
+      cardEl.setAttribute("aria-expanded", String(!tray.hidden));
     }
     const btn = document.querySelector(`.lang-prog[data-id="${id}"]`)
       || (type ? document.querySelector(`.lang-prog[data-type="${type}"][data-id="${id}"]`) : null);
