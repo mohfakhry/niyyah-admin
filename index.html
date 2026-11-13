@@ -2505,17 +2505,17 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tray-actions-tree {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
   .tray-action-group {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 2px;
   }
   .tray-action-parent {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 13.5px;
     font-weight: 600;
     color: var(--green);
@@ -2526,46 +2526,48 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     font-weight: 500;
   }
   .tray-parent-icon {
-    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    font-size: 15px;
     flex-shrink: 0;
   }
   .tray-action-children {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding-inline-start: 22px;
-    padding-inline-end: 0;
-    margin-top: 2px;
-  }
-  .tray-action-children::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 8px;
-    inset-inline-start: 7px;
-    width: 2px;
-    background: var(--line);
-    border-radius: 1px;
+    padding-inline-start: 9px;
+    margin-top: 1px;
   }
   .tray-action-child {
     position: relative;
     display: flex;
     align-items: center;
+    padding-inline-start: 18px;
     font-size: 13px;
     color: var(--ink);
-    padding: 1px 0;
+    min-height: 26px;
     text-align: start;
   }
   .tray-action-child::before {
     content: "";
     position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--line);
+  }
+  .tray-action-child:last-child::before {
+    bottom: 50%;
+  }
+  .tray-action-child::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
     top: 50%;
-    inset-inline-start: -15px;
-    width: 15px;
+    width: 13px;
     height: 2px;
     background: var(--line);
-    transform: translateY(-50%);
   }
   .tray-lang-pills {
     display: flex;
@@ -13707,6 +13709,12 @@ function renderLangTray(item, L, type) {
 
   const isOpen = openTrays.has(`${type}:${item.id}`);
 
+  const langPillsHtml = statuses.map(s => `
+    <span class="tray-lang-pill st-${s.status}"
+          title="${esc(s.l.name)}: ${esc(s.status)}"
+          aria-label="${esc(s.l.name)}, ${esc(s.status)}">${esc(s.l.name)}</span>
+  `).join("");
+
   if (type === "niyyahs") {
     const rawActionIds = Array.isArray(item.actionIds) ? item.actionIds : Object.values(item.actionIds || {});
     let actionsHtml = "";
@@ -13779,12 +13787,6 @@ function renderLangTray(item, L, type) {
       `;
     }
 
-    const langPillsHtml = statuses.map(s => `
-      <span class="tray-lang-pill st-${s.status}"
-            title="${esc(s.l.name)}: ${esc(s.status)}"
-            aria-label="${esc(s.l.name)}, ${esc(s.status)}">${esc(s.l.name)}</span>
-    `).join("");
-
     return `
       <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" ${isOpen ? "" : "hidden"}>
         <div class="tray-section tray-section-actions">
@@ -13801,19 +13803,11 @@ function renderLangTray(item, L, type) {
     `;
   }
 
-  const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
-
   return `
     <div class="card-lang-tray" id="tray-${esc(type)}-${esc(item.id)}" ${isOpen ? "" : "hidden"}>
-      ${statuses.map(s => `
-        <div class="tray-lang-row">
-          <span class="t-name">${esc(s.l.name)} <small>(${esc(s.l.code.toUpperCase())})</small></span>
-          <span class="badge st-${s.status}">
-            <span class="st-icon" aria-hidden="true">${iconOf(s.status)}</span>
-            <span>${esc(s.status)}</span>
-          </span>
-        </div>
-      `).join("")}
+      <div class="tray-lang-pills">
+        ${langPillsHtml}
+      </div>
     </div>
   `;
 }
@@ -13858,19 +13852,16 @@ function renderGroupLangTray(tipsInCategory, L, groupKey) {
 
   const trayId = `tray-${String(groupKey).replace(/_/g, '-')}`;
   const isOpen = openTrays.has(groupKey) || openTrays.has(trayId);
-  const iconOf = st => st === "published" ? "✓" : st === "reviewed" ? "👁" : st === "draft" ? "✎" : "✕";
 
   return `
     <div class="card-lang-tray" id="${esc(trayId)}" ${isOpen ? "" : "hidden"}>
-      ${statuses.map(s => `
-        <div class="tray-lang-row">
-          <span class="t-name">${esc(s.l.name)} <small>(${esc(s.l.code.toUpperCase())})</small></span>
-          <span class="badge st-${s.status} ${s.status === 'missing' ? 'st-empty' : ''}">
-            <span class="st-icon" aria-hidden="true">${iconOf(s.status)}</span>
-            <span>${s.pubCount} / ${totalTips} tips published</span>
-          </span>
-        </div>
-      `).join("")}
+      <div class="tray-lang-pills">
+        ${statuses.map(s => `
+          <span class="tray-lang-pill st-${s.status} ${s.status === 'missing' ? 'st-empty' : ''}"
+                title="${esc(s.l.name)}: ${s.pubCount}/${totalTips} published"
+                aria-label="${esc(s.l.name)}, ${s.pubCount} of ${totalTips} published">${esc(s.l.name)}</span>
+        `).join("")}
+      </div>
     </div>
   `;
 }
@@ -15889,7 +15880,7 @@ document.addEventListener("click", e => {
   if (!b) {
     // Tapping a child card directly toggles its language tray (expand), never opens editor
     const card = e.target.closest(".card, .item");
-    if (card && !e.target.closest("button, a, input, select, textarea, .lang-prog, .card-lang-tray, .g-collapse-btn, .badge, .card-lock-badge, .card-viewer-badge")) {
+    if (card && !e.target.closest("button, a, input, select, textarea, .lang-prog, .card-lang-tray, .g-collapse-btn, .card-lock-badge, .card-viewer-badge")) {
       if (card.dataset.type && card.dataset.id) {
         toggleLangTray(card.dataset.type, card.dataset.id);
       }
