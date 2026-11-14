@@ -4,25 +4,34 @@ NIYYAH ADMIN — ARCHITECTURE & CODEBASE MAP
 ================================================================================
 A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-in & Firestore).
 
+- Single source of truth: ENTITIES registry, ICONS, and STATUS_ICONS define all names,
+  emoji, collections, navigation tabs, chip labels, and keyboard shortcuts.
+- Navigation: 8 tabs in order: Actions, Niyyahs, Du'a, Tips, Events, Jobs, Locations, Settings.
+- Phone bar: 6 tabs (Actions, Niyyahs, Du'a, Tips, Events, Jobs) + More (Locations, Settings).
+- Swipe gesture: 8-page full sequence (Actions ↔ Niyyahs ↔ Du'a ↔ Tips ↔ Events ↔ Jobs ↔ Locations ↔ Settings).
+- Du'a collection: full mirrored entity in 'dua' with 'dua/{id}/revisions/{slot}' and 'dua__{id}' locks.
+- Shortcuts: 1-8 switch tabs in order, 'n' adds item on active tab, '/' focuses search, '?' opens shortcuts sheet.
+
 1. SECTIONS:
    - <head> / <style>: Design tokens (:root), resets, desktop sidebar, phone slim header,
-                       bottom 5-item tab bar, sheets, sync banner, and responsive layers.
+                       bottom phone bar, sheets, sync banner, and responsive layers.
    - <body> Screens:
      * #loading: Initial auth state loading screen.
      * #login: Google sign-in prompt for admins.
      * #denied: Access denied notice for unauthorized Google accounts.
      * #app: Authenticated admin shell:
-       - aside.sidebar: Desktop left sidebar with all 7 tabs, user email, shortcuts help, sign out.
+       - aside.sidebar: Desktop left sidebar with all 8 tabs, user email, shortcuts help, sign out.
        - .app-wrap: Main wrapper with sticky slim header (page title, search, language switcher).
        - main: Centered content (sync banner + tab sections).
-       - nav.phone-tabs: Phone bottom 6-item tab bar (Actions, Niyyahs, Locations, Jobs, Events, More).
+       - nav.phone-tabs: Phone bottom 7-item bar (6 tabs: Actions, Niyyahs, Du'a, Tips, Events, Jobs + More).
    - Main Tab Sections:
      * #tab-actions: Categories & hierarchical actions management.
      * #tab-niyyahs: Multilingual niyyah catalog with search, filters & language status dots.
-     * #tab-types: Location types linked to actions.
-     * #tab-jobs: Job types linked to actions (and restricted actions).
+     * #tab-dua: Multilingual du'a catalog mirroring Niyyahs in cards, filters, and editor.
      * #tab-tips: Daily tips by category (habit, knowledge, practical).
      * #tab-events: Calendar / list view for Hijri and weekly recurring events.
+     * #tab-jobs: Job types linked to actions (and restricted actions).
+     * #tab-types: Location types linked to actions.
      * #tab-settings: Languages, bulk publishing, legacy conversion, and catalog health check.
    - Overlays & Utilities:
      * #import-file: Hidden JSON file input for importing niyyahs.
@@ -6076,6 +6085,44 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       font-size: 20px;
       line-height: 1.1;
       display: block;
+      font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    }
+    .sidebar-nav button .s-icon {
+      font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+    }
+    @media (max-width: 380px) {
+      nav.phone-tabs button {
+        padding: 5px 1px;
+        gap: 1px;
+      }
+      nav.phone-tabs button .tab-icon {
+        font-size: 19px;
+      }
+      nav.phone-tabs button .tab-label {
+        font-size: 9.5px;
+        letter-spacing: -0.2px;
+      }
+    }
+    @media (max-width: 340px) {
+      nav.phone-tabs button {
+        padding: 4px 1px;
+      }
+      nav.phone-tabs button .tab-icon {
+        font-size: 18px;
+      }
+      nav.phone-tabs button .tab-label {
+        font-size: 9px;
+        letter-spacing: -0.3px;
+      }
+    }
+    @media (max-width: 320px) {
+      nav.phone-tabs button .tab-icon {
+        font-size: 17px;
+      }
+      nav.phone-tabs button .tab-label {
+        font-size: 8.5px;
+        letter-spacing: -0.4px;
+      }
     }
     nav.phone-tabs button .tab-label {
       font-size: 10px;
@@ -6843,47 +6890,18 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
 <!-- App -->
 <div id="app" hidden>
-  <!-- Desktop Left Sidebar Navigation (All 7 tabs) -->
+  <!-- Desktop Left Sidebar Navigation (All 8 tabs) -->
   <aside class="sidebar" aria-label="Main Navigation">
     <div class="sidebar-head">
-      <span class="logo" aria-hidden="true">🌿</span>
+      <span class="logo" aria-hidden="true"></span>
       <h2>Niyyah Admin</h2>
     </div>
-    <nav class="sidebar-nav" aria-label="Sections">
-      <button type="button" data-tab="actions" aria-current="page">
-        <span class="s-icon" aria-hidden="true">🌿</span>
-        <span>Actions</span>
-      </button>
-      <button type="button" data-tab="niyyahs">
-        <span class="s-icon" aria-hidden="true">🤲</span>
-        <span>Niyyahs</span>
-      </button>
-      <button type="button" data-tab="types">
-        <span class="s-icon" aria-hidden="true">📍</span>
-        <span>Locations</span>
-      </button>
-      <button type="button" data-tab="jobs">
-        <span class="s-icon" aria-hidden="true">💼</span>
-        <span>Jobs</span>
-      </button>
-      <button type="button" data-tab="tips">
-        <span class="s-icon" aria-hidden="true">💡</span>
-        <span>Tips</span>
-      </button>
-      <button type="button" data-tab="events">
-        <span class="s-icon" aria-hidden="true">📅</span>
-        <span>Events</span>
-      </button>
-      <button type="button" data-tab="settings">
-        <span class="s-icon" aria-hidden="true">⚙️</span>
-        <span>Settings</span>
-      </button>
-    </nav>
+    <nav class="sidebar-nav" aria-label="Sections"></nav>
     <div class="sidebar-foot">
       <span class="u-email" id="who-desktop" title="Signed in account"></span>
       <div class="tools-row">
         <button type="button" class="btn-shortcuts" id="btn-shortcuts" title="Keyboard shortcuts (?)">
-          <span aria-hidden="true">⌨️</span>
+          <span class="shortcuts-icon" aria-hidden="true"></span>
           <span>Shortcuts <kbd>?</kbd></span>
         </button>
         <button type="button" class="btn small" id="btn-out-desktop">Sign out</button>
@@ -6929,7 +6947,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
           </div>
           <!-- Language Switcher button (opens bottom sheet on phone & desktop) -->
           <button type="button" class="lang-trigger-btn" id="btn-lang-trigger" aria-haspopup="dialog" aria-expanded="false" title="Change display language">
-            <span aria-hidden="true">🌐</span>
+            <span class="lang-icon" aria-hidden="true"></span>
             <span id="cur-lang-code">EN</span>
           </button>
           <!-- Desktop Shortcuts & Sign out in header -->
@@ -6964,7 +6982,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
       <!-- Offline Slim Banner: read-only warning -->
       <div class="offline-banner" id="offline-banner" hidden role="status" aria-live="polite">
-        <span class="offline-banner-icon" aria-hidden="true">⚡</span>
+        <span class="offline-banner-icon" aria-hidden="true"></span>
         <span class="offline-banner-text">You're offline. Viewing saved data.</span>
       </div>
     </div>
@@ -6973,51 +6991,27 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     <main id="app-main">
       <section id="tab-actions"></section>
       <section id="tab-niyyahs" hidden></section>
-      <section id="tab-types" hidden></section>
-      <section id="tab-jobs" hidden></section>
+      <section id="tab-dua" hidden></section>
       <section id="tab-tips" hidden></section>
       <section id="tab-events" hidden></section>
+      <section id="tab-jobs" hidden></section>
+      <section id="tab-types" hidden></section>
       <section id="tab-settings" hidden></section>
     </main>
   </div>
 
-  <!-- Phone 6-item Bottom Navigation -->
-  <nav class="phone-tabs" aria-label="Bottom Navigation">
-    <button type="button" data-tab="actions" aria-current="page">
-      <span class="tab-icon" aria-hidden="true">🌿</span>
-      <span class="tab-label">Actions</span>
-    </button>
-    <button type="button" data-tab="niyyahs">
-      <span class="tab-icon" aria-hidden="true">🤲</span>
-      <span class="tab-label">Niyyahs</span>
-    </button>
-    <button type="button" data-tab="types">
-      <span class="tab-icon" aria-hidden="true">📍</span>
-      <span class="tab-label">Locations</span>
-    </button>
-    <button type="button" data-tab="jobs">
-      <span class="tab-icon" aria-hidden="true">💼</span>
-      <span class="tab-label">Jobs</span>
-    </button>
-    <button type="button" data-tab="events">
-      <span class="tab-icon" aria-hidden="true">📅</span>
-      <span class="tab-label">Events</span>
-    </button>
-    <button type="button" id="btn-more-tab" aria-haspopup="dialog" aria-expanded="false">
-      <span class="tab-icon" aria-hidden="true">⋯</span>
-      <span class="tab-label">More</span>
-    </button>
-  </nav>
+  <!-- Phone Bottom Navigation (Generated from ENTITIES: 6 tabs + More) -->
+  <nav class="phone-tabs" aria-label="Bottom Navigation"></nav>
   <button type="button" id="fab-create" class="fab-btn" aria-label="Add action" title="Add action">＋</button>
   <div id="settings-speed-dial" class="settings-speed-dial" hidden>
     <div id="settings-speed-dial-backdrop" class="settings-speed-dial-backdrop" aria-hidden="true"></div>
     <div class="settings-speed-dial-menu" role="menu" aria-label="Add options">
       <button type="button" class="speed-dial-pill" role="menuitem" data-act="settings-add-lang">
-        <span class="speed-dial-icon" aria-hidden="true">🌐</span>
+        <span class="speed-dial-icon speed-dial-icon-lang" aria-hidden="true"></span>
         <span>Language</span>
       </button>
       <button type="button" class="speed-dial-pill" role="menuitem" data-act="settings-add-marital">
-        <span class="speed-dial-icon" aria-hidden="true">💍</span>
+        <span class="speed-dial-icon speed-dial-icon-marital" aria-hidden="true"></span>
         <span>Marital status</span>
       </button>
     </div>
@@ -7056,18 +7050,94 @@ const STORAGE_KEYS = Object.freeze({
   viewLang: "viewLang"
 });
 
-/* Shared UI glyphs (extend here instead of typing emoji in markup) */
+/* ============================================================
+   SINGLE SOURCE OF TRUTH: ENTITIES, ICONS, AND STATUS ICONS
+   ============================================================ */
+const ENTITIES = Object.freeze({
+  actions:  { emoji: "🏃🏽‍♂️", title: "Actions",   singular: "action",         plural: "actions",          coll: "actions",       tab: "bar",  fab: "Add action" },
+  niyyahs:  { emoji: "🌿",     title: "Niyyahs",   singular: "niyyah",         plural: "niyyahs",          coll: "niyyahs",       tab: "bar",  fab: "Add niyyah" },
+  dua:      { emoji: "🤲🏼",    title: "Du'a",      singular: "du'a",           plural: "du'as",            coll: "dua",           tab: "bar",  fab: "Add du'a",  aliases: ["duas"] },
+  tips:     { emoji: "💡",     title: "Tips",      singular: "tip",            plural: "tips",             coll: "tips",          tab: "bar",  fab: "Add tip category" },
+  events:   { emoji: "📅",     title: "Events",    singular: "event",          plural: "events",           coll: "events",        tab: "bar",  fab: "Add event" },
+  jobs:     { emoji: "💼",     title: "Jobs",      singular: "job",            plural: "jobs",             coll: "jobTypes",      tab: "bar",  fab: "Add job",      aliases: ["job", "jobTypes"] },
+  types:    { emoji: "📍",     title: "Locations", singular: "location",       plural: "locations",        coll: "locationTypes", tab: "more", fab: "Add location", aliases: ["locations", "locationTypes", "type"] },
+  settings: { emoji: "⚙️",     title: "Settings",  tab: "more", fab: "Add" },
+  maritalStatuses: { emoji: "💍", singular: "marital status", plural: "marital statuses", coll: "maritalStatuses", aliases: ["marital", "maritalStatus"] },
+  tipCategories:   { emoji: "📁", singular: "tip category",   plural: "tip categories",   coll: "tipCategories",   aliases: ["tipCategory"] },
+  languages:       { emoji: "🌐", singular: "language",       plural: "languages",        coll: "languages" },
+  chain:           { emoji: "🔗", singular: "chain step",     plural: "chain steps" }
+});
+
+function ent(kind) {
+  if (!kind) return null;
+  if (ENTITIES[kind]) return ENTITIES[kind];
+  for (const [key, val] of Object.entries(ENTITIES)) {
+    if (key === kind) return val;
+    if (Array.isArray(val.aliases) && val.aliases.includes(kind)) return val;
+    if (val.coll === kind) return val;
+    if (val.singular === kind || val.plural === kind) return val;
+  }
+  return null;
+}
+
+function emojiOf(kind) {
+  const e = ent(kind);
+  return e?.emoji || "";
+}
+
+function titleOf(kind) {
+  const e = ent(kind);
+  return e?.title || (e?.singular ? (e.singular.charAt(0).toUpperCase() + e.singular.slice(1)) : "");
+}
+
+function collOfKind(kind) {
+  const e = ent(kind);
+  return e?.coll || kind;
+}
+
 const ICONS = Object.freeze({
   lock: "🔒",
   unlock: "🔓",
   viewers: "👁",
-  close: "✕"
+  close: "✕",
+  warn: "⚠️",
+  anyAction: "🌍",
+  children: "👶",
+  source: "📎",
+  history: "🕒",
+  edit: "✏️",
+  del: "🗑️",
+  importJson: "📥",
+  exportJson: "📤",
+  search: "🔍",
+  user: "👤",
+  signOut: "🚪",
+  weekly: "🔄",
+  hijri: "🌙",
+  folder: "📁",
+  folderOpen: "📂",
+  move: "📋",
+  publish: "🚀",
+  error: "🛑",
+  offline: "⚡",
+  keyboard: "⌨️",
+  logo: "🌿",
+  more: "⋯"
+});
+
+const STATUS_ICONS = Object.freeze({
+  published: "✓",
+  in_review: "👁",
+  reviewed: "👁",
+  draft: "✎",
+  placeholder: "○",
+  empty: "○"
 });
 
 /* Repeated user-facing messages */
 const MESSAGES = Object.freeze({
   mainSettingsLocked: `Main settings are locked. Tap the ${ICONS.lock} lock button above to unlock.`,
-  deleteBlockedByLock: "Cannot delete: a referencing niyyah is currently locked by someone else."
+  deleteBlockedByLock: "Cannot delete: a referencing item is currently locked by someone else."
 });
 
 const HISTORY_CLOSE_BTN_HTML = `<button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">${ICONS.close}</button>`;
@@ -7147,6 +7217,7 @@ const STRINGS = {
   searchPlaceholders: {
     actions: "Search actions…",
     niyyahs: "Search niyyahs…",
+    dua: "Search du'as…",
     types: "Search locations…",
     jobs: "Search jobs…",
     tips: "Search tips…",
@@ -7170,6 +7241,21 @@ const STRINGS = {
     },
     niyyahsFiltered: {
       title: "No niyyahs match",
+      desc: "Try different search keywords or clear your filters.",
+      btn: "Clear filters"
+    },
+    duaNoLang: {
+      title: "No languages added yet",
+      desc: "Add at least one language to start writing du'as.",
+      btn: "Add language"
+    },
+    dua: {
+      title: "No du'as yet",
+      desc: "Write your first du'a to start your catalog.",
+      btn: "Add du'a"
+    },
+    duaFiltered: {
+      title: "No du'as match",
       desc: "Try different search keywords or clear your filters.",
       btn: "Clear filters"
     },
@@ -7223,6 +7309,7 @@ const STRINGS = {
   validation: {
     nameRequired: "Enter a name in at least one language.",
     niyyahTextRequired: "Write the niyyah in at least one language.",
+    duaTextRequired: "Write the du'a in at least one language.",
     tipTextRequired: "Write the tip in at least one language.",
     tipTooLong: "Tip text exceeds 200 characters.",
     langMismatch: (langName) => `Text does not look like ${langName}.`,
@@ -7255,6 +7342,8 @@ const STRINGS = {
     actionName: "e.g. Starting work",
     niyyahText: "e.g. To serve Allah through excellence in my work",
     niyyahSource: "e.g. Sahih al-Bukhari 1",
+    duaText: "e.g. O Allah, I ask You for beneficial knowledge",
+    duaSource: "e.g. Sahih al-Bukhari 1",
     locationName: "e.g. Mosque",
     jobName: "e.g. Software Engineer",
     tipText: "e.g. Pause for a second before entering to set your niyyah.",
@@ -7292,10 +7381,10 @@ const STRINGS = {
       title: "What do these statuses mean?",
       intro: "Each language has its own publishing status:",
       items: [
-        { icon: "✓", label: "Published", desc: "Live and visible to all users in the mobile app." },
-        { icon: "👁", label: "Reviewed", desc: "Checked and approved by editors, but not yet live." },
-        { icon: "✎", label: "Draft", desc: "Work in progress. Saved for editing, hidden from users." },
-        { icon: "○", label: "Empty", desc: "No text has been entered yet in this language." }
+        { icon: STATUS_ICONS.published, label: "Published", desc: "Live and visible to all users in the mobile app." },
+        { icon: STATUS_ICONS.reviewed, label: "Reviewed", desc: "Checked and approved by editors, but not yet live." },
+        { icon: STATUS_ICONS.draft, label: "Draft", desc: "Work in progress. Saved for editing, hidden from users." },
+        { icon: STATUS_ICONS.empty, label: "Empty", desc: "No text has been entered yet in this language." }
       ]
     },
     restricted: {
@@ -7368,7 +7457,7 @@ const COUNTRIES = [
 ];
 
 /* ---------- state ---------- */
-let actions = [], niyyahs = [], types = [], jobs = [], maritalStatuses = [], tipCategories = [], languages = [], tips = [], events = [];
+let actions = [], niyyahs = [], duas = [], types = [], jobs = [], maritalStatuses = [], tipCategories = [], languages = [], tips = [], events = [];
 let listening = false;
 let calMonth = (() => { const d = new Date(); d.setDate(1); return d; })();
 let calView = "cal", calSel = null, calRange = false, calCountry = "";
@@ -7382,10 +7471,12 @@ let shownN = [];
 const tabFilterState = {
   actions: { q: "", visible: "", restricted: "", catId: "" },
   niyyahs: { q: "", status: "", actionId: "", scope: "" },
-  types: { q: "", linked: "" },
-  jobs: { q: "", linked: "" },
+  dua: { q: "", status: "", actionId: "", scope: "" },
   tips: { q: "", cat: "", status: "" },
-  events: { q: "", type: "", status: "", disputed: "" }
+  events: { q: "", type: "", status: "", disputed: "" },
+  jobs: { q: "", linked: "" },
+  types: { q: "", linked: "" },
+  settings: {}
 };
 
 function getActiveFilterCount(tab) {
@@ -7398,7 +7489,7 @@ function getTabFilterChips(tab) {
   const s = tabFilterState[tab];
   if (!s) return [];
   const chips = [];
-  if (tab === "niyyahs") {
+  if (tab === "niyyahs" || tab === "dua") {
     if (s.status) chips.push({ key: "status", label: "Status", val: s.status.charAt(0).toUpperCase() + s.status.slice(1) });
     if (s.actionId) chips.push({ key: "actionId", label: "Action", val: actionLabel(s.actionId) });
     if (s.scope) chips.push({ key: "scope", label: "Scope", val: s.scope === "general" ? "Fits any action" : (s.scope === "job" ? "Job specific" : (s.scope === "marital" ? "Marital status" : "Linked to event")) });
@@ -7434,12 +7525,15 @@ function renderSearchFilterSection(tab) {
   const activeCount = getActiveFilterCount(tab);
 
   let actionsHtml = "";
-  if (tab === "niyyahs") {
+  if (tab === "niyyahs" || tab === "dua") {
+    const isDua = tab === "dua";
+    const act = isDua ? "new-dua" : "new-niyyah";
+    const addLabel = isDua ? "Add du'a" : "Add niyyah";
     actionsHtml = `
       <div class="tab-top-actions">
-        <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">📥</button>
-        <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">📤</button>
-        <button type="button" class="btn-icon primary hdr-add-btn btn-add-niyyah-circle" data-act="new-niyyah" aria-label="Add niyyah" title="Add niyyah">+</button>
+        <button type="button" class="btn-icon btn-import-json" data-act="import-json" data-target="${tab}" aria-label="Import JSON" title="Import JSON">${ICONS.importJson}</button>
+        <button type="button" class="btn-icon btn-export-json" data-act="export-json" data-target="${tab}" aria-label="Export JSON" title="Export JSON">${ICONS.exportJson}</button>
+        <button type="button" class="btn-icon primary hdr-add-btn ${isDua ? 'btn-add-dua-circle' : 'btn-add-niyyah-circle'}" data-act="${act}" aria-label="${addLabel}" title="${addLabel}">+</button>
       </div>
     `;
   }
@@ -7449,7 +7543,7 @@ function renderSearchFilterSection(tab) {
       <div class="search-filter-bar">
         <button type="button" class="btn filter-trigger-btn ${activeCount > 0 ? 'has-active' : ''}"
                 id="filter-btn-${tab}" data-act="open-filter-sheet" data-tab="${tab}" aria-label="Filter ${tab}">
-          <span aria-hidden="true">⚙️</span>
+          <span aria-hidden="true">${emojiOf("settings")}</span>
           <span>Filter</span>
           ${activeCount > 0 ? `<span class="filter-count-badge">${activeCount}</span>` : ''}
         </button>
@@ -7461,18 +7555,71 @@ function renderSearchFilterSection(tab) {
   `;
 }
 
-const TAB_TITLES = {
-  actions: "Actions",
-  niyyahs: "Niyyahs",
-  types: "Locations",
-  jobs: "Jobs",
-  tips: "Tips",
-  events: "Events",
-  settings: "Settings"
-};
+const TAB_TITLES = Object.fromEntries(
+  Object.entries(ENTITIES).filter(([_, v]) => v.tab).map(([k, v]) => [k, v.title])
+);
 const ALL_TABS = Object.keys(TAB_TITLES);
-const PRIMARY_PHONE_TABS = ["actions", "niyyahs", "types", "jobs", "events"];
-const SECONDARY_PHONE_TABS = ["tips", "settings"];
+const PRIMARY_PHONE_TABS = Object.entries(ENTITIES).filter(([_, v]) => v.tab === "bar").map(([k]) => k);
+const SECONDARY_PHONE_TABS = Object.entries(ENTITIES).filter(([_, v]) => v.tab === "more").map(([k]) => k);
+const NAV_PAGE_ORDER = Object.keys(TAB_TITLES);
+const fabLabels = Object.fromEntries(
+  Object.entries(ENTITIES).filter(([_, v]) => v.fab).map(([k, v]) => [k, v.fab])
+);
+
+function renderNavigationElements() {
+  const sidebarNav = document.querySelector("aside.sidebar nav.sidebar-nav");
+  if (sidebarNav) {
+    sidebarNav.innerHTML = Object.entries(ENTITIES)
+      .filter(([_, v]) => v.tab)
+      .map(([k, v]) => `
+        <button type="button" data-tab="${k}" ${k === currentTab ? 'aria-current="page"' : ''}>
+          <span class="s-icon" aria-hidden="true">${v.emoji}</span>
+          <span>${esc(v.title)}</span>
+        </button>
+      `).join("");
+    sidebarNav.querySelectorAll("button[data-tab]").forEach(b => {
+      b.onclick = () => goTab(b.dataset.tab);
+    });
+  }
+
+  const phoneTabs = document.querySelector("nav.phone-tabs");
+  if (phoneTabs) {
+    const barButtonsHtml = Object.entries(ENTITIES)
+      .filter(([_, v]) => v.tab === "bar")
+      .map(([k, v]) => `
+        <button type="button" class="phone-tab-btn" data-tab="${k}" ${k === currentTab ? 'aria-current="page"' : ''}>
+          <span class="tab-icon" aria-hidden="true">${v.emoji}</span>
+          <span class="tab-label">${esc(v.title)}</span>
+        </button>
+      `).join("");
+    const isMoreActive = SECONDARY_PHONE_TABS.includes(currentTab);
+    phoneTabs.innerHTML = barButtonsHtml + `
+      <button type="button" class="phone-tab-btn" id="btn-more-tab" data-tab="more" aria-haspopup="dialog" aria-expanded="false" ${isMoreActive ? 'aria-current="page"' : ''}>
+        <span class="tab-icon" aria-hidden="true">${ICONS.more}</span>
+        <span class="tab-label">More</span>
+      </button>
+    `;
+    phoneTabs.querySelectorAll("button[data-tab]").forEach(b => {
+      b.onclick = () => goTab(b.dataset.tab);
+    });
+    const moreTabBtn = $("#btn-more-tab");
+    if (moreTabBtn) moreTabBtn.onclick = openMoreSheet;
+  }
+
+  // Populate static icons in UI
+  const logoEl = document.querySelector(".sidebar-head .logo");
+  if (logoEl) logoEl.textContent = ICONS.logo;
+  const langIconEl = document.querySelector(".lang-icon");
+  if (langIconEl) langIconEl.textContent = emojiOf("languages");
+  const scIconEl = document.querySelector(".shortcuts-icon");
+  if (scIconEl) scIconEl.textContent = ICONS.keyboard;
+  const offIconEl = document.querySelector(".offline-banner-icon");
+  if (offIconEl) offIconEl.textContent = ICONS.offline;
+  const dialLangEl = document.querySelector(".speed-dial-icon-lang");
+  if (dialLangEl) dialLangEl.textContent = emojiOf("languages");
+  const dialMaritalEl = document.querySelector(".speed-dial-icon-marital");
+  if (dialMaritalEl) dialMaritalEl.textContent = emojiOf("maritalStatuses");
+}
 
 let currentTab = "actions";
 let tabHistory = ["actions"];
@@ -7807,7 +7954,7 @@ function renderLanguageStrip({
   const renderTabs = () => {
     track.innerHTML = languages.map(l => {
       const st = stateOf(l.code);
-      const icon = st === "published" ? "✓" : (st === "reviewed" ? "👁" : (st === "draft" ? "✎" : "○"));
+      const icon = st === "published" ? STATUS_ICONS.published : (st === "reviewed" ? STATUS_ICONS.reviewed : (st === "draft" ? STATUS_ICONS.draft : STATUS_ICONS.placeholder));
       const label = `${l.name}, ${st}`;
       const isCur = l.code === cur;
       return `
@@ -8313,13 +8460,13 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
         <div class="editor-header-info">
           <h2 class="editor-title">${esc(title)}</h2>
           ${headerExtraHtml ? headerExtraHtml : ""}
-          <span class="editor-lock-chip" id="d-lock-chip" ${isMineLock ? "" : "hidden"}>🔒 You</span>
+          <span class="editor-lock-chip" id="d-lock-chip" ${isMineLock ? "" : "hidden"}>${ICONS.lock} You</span>
         </div>
         <div class="editor-top-actions">
           <button type="button" class="btn-icon editor-history-btn" id="d-history-btn" ${id ? "" : "hidden"} aria-label="Version history" title="Version history">
-            <span aria-hidden="true">🕒</span>
+            <span aria-hidden="true">${ICONS.history}</span>
           </button>
-          <button type="button" class="btn-icon editor-close-btn" id="d-close-x" aria-label="${esc(STRINGS.common.close)}" title="${esc(STRINGS.common.close)}">✕</button>
+          <button type="button" class="btn-icon editor-close-btn" id="d-close-x" aria-label="${esc(STRINGS.common.close)}" title="${esc(STRINGS.common.close)}">${ICONS.close}</button>
         </div>
       </header>
 
@@ -8327,7 +8474,7 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
 
       <div class="editor-inactivity-banner" id="d-inactivity-banner" hidden>
         <div class="inactivity-text">
-          <span aria-hidden="true">🔒</span>
+          <span aria-hidden="true">${ICONS.lock}</span>
           <span id="d-inactivity-text">Lock released due to inactivity</span>
         </div>
         <div class="inactivity-actions">
@@ -8380,7 +8527,7 @@ function renderEditorShell({ title, type, id, bodyHtml, saveLabel = STRINGS.comm
         <div class="editor-save-reason" id="d-save-reason" ${saveDisabledReason ? "" : "hidden"} aria-live="polite">${esc(saveDisabledReason)}</div>
         <div class="editor-save-actions">
           ${showEditorDelete ? `
-            <button type="button" class="btn-icon danger editor-del-btn" id="d-delete" aria-label="Delete" title="${deleteDisabled ? "Offline" : "Delete"}" ${deleteDisabled ? "disabled" : ""}>🗑️</button>
+            <button type="button" class="btn-icon danger editor-del-btn" id="d-delete" aria-label="Delete" title="${deleteDisabled ? "Offline" : "Delete"}" ${deleteDisabled ? "disabled" : ""}>${ICONS.del}</button>
           ` : ""}
           <button type="button" class="btn" id="d-cancel">${esc(isReview ? (STRINGS?.common?.close || "Close") : (STRINGS?.common?.cancel || "Cancel"))}</button>
           <button type="button" class="btn primary" id="d-save" ${isReview ? "hidden" : (saveDisabledReason ? "disabled" : "")}>${esc(saveLabel)}</button>
@@ -8397,7 +8544,7 @@ function setSaveValidity(reason = "") {
   if (reason) {
     saveBtn.disabled = true;
     if (reasonEl) {
-      reasonEl.textContent = "⚠ " + reason;
+      reasonEl.textContent = ICONS.warn + " " + reason;
       reasonEl.hidden = false;
     }
   } else {
@@ -8446,7 +8593,7 @@ function showDlg() {
     const box = dlg.querySelector(".dlg");
     if (!isEditor && box && !box.querySelector(".dlg-x, .editor-close-btn")) {
       const x = document.createElement("button");
-      x.type = "button"; x.className = "btn-icon dlg-x"; x.title = "Close"; x.setAttribute("aria-label", "Close"); x.textContent = "✕";
+      x.type = "button"; x.className = "btn-icon dlg-x"; x.title = "Close"; x.setAttribute("aria-label", "Close"); x.textContent = ICONS.close;
       x.onclick = requestClose;
       box.append(x);
       const c = $("#d-cancel", dlg); if (c) c.onclick = requestClose;
@@ -8549,7 +8696,7 @@ function confirmSheet(messageOrOpts, opts = {}) {
       <p class="muted" style="margin:0;white-space:pre-line">${esc(message)}</p>
       <div class="actions">
         <button class="btn" id="cs-cancel">${esc(cancelText)}</button>
-        <button class="btn ${danger ? "danger" : "primary"}" id="cs-confirm">${danger ? (confirmText.includes("🗑") ? esc(confirmText) : `🗑️ ${esc(confirmText)}`) : esc(confirmText)}</button>
+        <button class="btn ${danger ? "danger" : "primary"}" id="cs-confirm">${danger ? (confirmText.includes(ICONS.del) ? esc(confirmText) : `${ICONS.del} ${esc(confirmText)}`) : esc(confirmText)}</button>
       </div>
     </div>`;
 
@@ -8582,7 +8729,7 @@ async function withButtonLoading(btn, asyncTask) {
     const res = await asyncTask();
     btn.classList.remove("is-loading");
     btn.classList.add("is-success");
-    btn.innerHTML = `Saved ✓`;
+    btn.innerHTML = `Saved ${STATUS_ICONS.published}`;
     await new Promise(r => setTimeout(r, 1500));
     return res;
   } catch (err) {
@@ -8632,7 +8779,7 @@ async function handleEditorSave({
     if (btn) {
       btn.classList.remove("is-loading");
       btn.classList.add("is-success");
-      btn.innerHTML = `Saved ✓`;
+      btn.innerHTML = `Saved ${STATUS_ICONS.published}`;
     }
     if (successToast) {
       toast(successToast, { type: "success" });
@@ -8806,7 +8953,7 @@ function pickerSheet(options, config = {}) {
             <h3>${esc(title)}</h3>
             <div class="picker-header-actions">
               ${isMulti ? `<span class="picker-pill" id="picker-count-pill">Selected (${count})</span>` : ""}
-              <button type="button" class="btn-icon picker-close-btn" id="picker-close-btn" aria-label="Close" title="Close">✕</button>
+              <button type="button" class="btn-icon picker-close-btn" id="picker-close-btn" aria-label="Close" title="Close">${ICONS.close}</button>
             </div>
           </div>
           ${hasContext ? `
@@ -8841,7 +8988,7 @@ function pickerSheet(options, config = {}) {
                 <button type="button" class="picker-row ${isSel ? "is-selected" : ""} ${isActive ? "is-active" : ""}"
                         data-val="${esc(opt.value)}" data-idx="${idx}" role="option" aria-selected="${isSel}">
                   ${isMulti ? `
-                    <span class="p-check" aria-hidden="true">${isSel ? "✓" : ""}</span>
+                    <span class="p-check" aria-hidden="true">${isSel ? STATUS_ICONS.published : ""}</span>
                   ` : `
                     <span class="p-radio" aria-hidden="true"></span>
                   `}
@@ -8849,7 +8996,7 @@ function pickerSheet(options, config = {}) {
                     <span class="p-title">${opt.icon ? `${opt.icon} ` : ""}${esc(opt.label)}</span>
                     ${opt.subtitle ? `<span class="p-sub">${esc(opt.subtitle)}</span>` : ""}
                   </div>
-                  ${!isMulti && isSel ? `<span style="color:var(--green);font-weight:700;margin-left:8px" aria-hidden="true">✓</span>` : ""}
+                  ${!isMulti && isSel ? `<span style="color:var(--green);font-weight:700;margin-left:8px" aria-hidden="true">${STATUS_ICONS.published}</span>` : ""}
                 </button>
               `;
             }).join("")}
@@ -8912,7 +9059,7 @@ function pickerSheet(options, config = {}) {
           <button type="button" class="picker-row ${isSel ? "is-selected" : ""} ${isActive ? "is-active" : ""}"
                   data-val="${esc(opt.value)}" data-idx="${idx}" role="option" aria-selected="${isSel}">
             ${isMulti ? `
-              <span class="p-check" aria-hidden="true">${isSel ? "✓" : ""}</span>
+              <span class="p-check" aria-hidden="true">${isSel ? STATUS_ICONS.published : ""}</span>
             ` : `
               <span class="p-radio" aria-hidden="true"></span>
             `}
@@ -8920,7 +9067,7 @@ function pickerSheet(options, config = {}) {
               <span class="p-title">${opt.icon ? `${opt.icon} ` : ""}${esc(opt.label)}</span>
               ${opt.subtitle ? `<span class="p-sub">${esc(opt.subtitle)}</span>` : ""}
             </div>
-            ${!isMulti && isSel ? `<span style="color:var(--green);font-weight:700;margin-left:8px" aria-hidden="true">✓</span>` : ""}
+            ${!isMulti && isSel ? `<span style="color:var(--green);font-weight:700;margin-left:8px" aria-hidden="true">${STATUS_ICONS.published}</span>` : ""}
           </button>
         `;
       }).join("");
@@ -8939,7 +9086,7 @@ function pickerSheet(options, config = {}) {
             if (pill) pill.textContent = `Selected (${currentSelected.size})`;
             row.classList.toggle("is-selected", currentSelected.has(val));
             const chk = row.querySelector(".p-check");
-            if (chk) chk.textContent = currentSelected.has(val) ? "✓" : "";
+            if (chk) chk.textContent = currentSelected.has(val) ? STATUS_ICONS.published : "";
           } else {
             currentSelected = val;
             finish(val);
@@ -9401,7 +9548,7 @@ function treePickerSheet(config = {}) {
               ${!isReadOnly ? `
                 <button type="button" class="btn text tree-picker-clear-btn" id="tree-picker-clear-btn">Clear</button>
               ` : ""}
-              <button type="button" class="btn-icon picker-close-btn" id="tree-picker-close-btn" aria-label="Close" title="Close">✕</button>
+              <button type="button" class="btn-icon picker-close-btn" id="tree-picker-close-btn" aria-label="Close" title="Close">${ICONS.close}</button>
             </div>
           </div>
           ${hasContext ? `
@@ -9415,12 +9562,12 @@ function treePickerSheet(config = {}) {
           ` : ""}
           <div class="tree-picker-search-bar">
             <div class="tree-search-wrap">
-              <span class="tree-search-icon" aria-hidden="true">🔍</span>
+              <span class="tree-search-icon" aria-hidden="true">${ICONS.search}</span>
               <input type="search" class="tree-search-input" id="tree-search-input"
                      placeholder="${esc(config.placeholder || "Search actions…")}"
                      value="${esc(searchQuery)}" autocomplete="off" autocapitalize="off" spellcheck="false">
               ${searchQuery ? `
-                <button type="button" class="tree-search-clear" id="tree-search-clear" aria-label="Clear search">✕</button>
+                <button type="button" class="tree-search-clear" id="tree-search-clear" aria-label="Clear search">${ICONS.close}</button>
               ` : ""}
             </div>
           </div>
@@ -9473,7 +9620,7 @@ function treePickerSheet(config = {}) {
               clearSearchBtn.className = "tree-search-clear";
               clearSearchBtn.id = "tree-search-clear";
               clearSearchBtn.setAttribute("aria-label", "Clear search");
-              clearSearchBtn.textContent = "✕";
+              clearSearchBtn.textContent = ICONS.close;
               clearSearchBtn.onclick = () => {
                 searchInput.value = "";
                 searchQuery = "";
@@ -9741,29 +9888,21 @@ function actionLabel(id) {
   return p ? `${nm(p)} › ${nm(a)}` : nm(a);
 }
 const niyyahCount = id => niyyahs.filter(n => Array.isArray(n.actionIds) ? n.actionIds.includes(id) : Object.values(n.actionIds || {}).includes(id)).length;
+const duaCount = id => (typeof duas !== "undefined" ? duas : []).filter(d => Array.isArray(d.actionIds) ? d.actionIds.includes(id) : Object.values(d.actionIds || {}).includes(id)).length;
 
 /* ---------- count chips & action chips ---------- */
-const CHIP_KINDS = {
-  niyyahs: { emoji: "🤲", singular: "niyyah", plural: "niyyahs" },
-  actions: { emoji: "🌿", singular: "action", plural: "actions" },
-  locations: { emoji: "📍", singular: "location", plural: "locations" },
-  types: { emoji: "📍", singular: "location", plural: "locations" },
-  jobs: { emoji: "💼", singular: "job", plural: "jobs" },
-  maritalStatuses: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
-  marital: { emoji: "💍", singular: "marital status", plural: "marital statuses" },
-  chain: { emoji: "🔗", singular: "chain step", plural: "chain steps" },
-  tipCategories: { emoji: "📁", singular: "tip category", plural: "tip categories" },
-  tipCategory: { emoji: "📁", singular: "tip category", plural: "tip categories" },
-  tips: { emoji: "💡", singular: "tip", plural: "tips" },
-  events: { emoji: "📅", singular: "event", plural: "events" },
-  languages: { emoji: "🌐", singular: "language", plural: "languages" }
-};
+const CHIP_KINDS = Object.fromEntries(
+  Object.entries(ENTITIES).filter(([_, v]) => v.singular).map(([k, v]) => [k, { emoji: v.emoji, singular: v.singular, plural: v.plural }])
+);
 
 function chipCount(kind, n) {
   const num = typeof n === "number" ? n : parseInt(n, 10) || 0;
-  const cfg = CHIP_KINDS[kind] || { emoji: "•", singular: kind || "item", plural: (kind || "item") + "s" };
-  const label = `${num} ${num === 1 ? cfg.singular : cfg.plural}`;
-  return `<span class="chip chip-count" aria-label="${esc(label)}" title="${esc(label)}">${num}<span class="chip-emoji" aria-hidden="true">${cfg.emoji}</span></span>`;
+  const e = ent(kind);
+  const emoji = e?.emoji || "•";
+  const singular = e?.singular || kind || "item";
+  const plural = e?.plural || (kind || "item") + "s";
+  const label = `${num} ${num === 1 ? singular : plural}`;
+  return `<span class="chip chip-count" aria-label="${esc(label)}" title="${esc(label)}">${num}<span class="chip-emoji" aria-hidden="true">${emoji}</span></span>`;
 }
 
 const NIYYAH_SCOPE_ERROR = "A published niyyah needs at least one action, event, chain action, or 'Fits any action'.";
@@ -9812,13 +9951,13 @@ function renderNiyyahChips(n) {
   const chips = [];
   const isPublished = (n.translations && Object.values(n.translations).some(t => t && t.status === "published")) || n.published || (n.statuses && Object.values(n.statuses).some(s => s === "published"));
   if (isPublished && !niyyahHasScope(n)) {
-    chips.push(chipFlag("⚠️", "No actions", "bad", "Published niyyah missing action or scope"));
+    chips.push(chipFlag(ICONS.warn, "No actions", "bad", "Published item missing action or scope"));
   }
   if (flags.actions > 0) chips.push(chipCount("actions", flags.actions));
-  if (flags.general) chips.push(chipFlag("🌍", "Any action", "neutral", "Fits any action"));
+  if (flags.general) chips.push(chipFlag(ICONS.anyAction, "Any action", "neutral", "Fits any action"));
   if (flags.jobs > 0) chips.push(chipCount("jobs", flags.jobs));
   if (flags.marital > 0) chips.push(chipCount("maritalStatuses", flags.marital));
-  if (flags.children) chips.push(chipFlag("👶", "Children", "neutral", "Has children"));
+  if (flags.children) chips.push(chipFlag(ICONS.children, "Children", "neutral", "Has children"));
   if (flags.chain > 0) chips.push(chipCount("chain", flags.chain));
   if (flags.events > 0) chips.push(chipCount("events", flags.events));
   return chips.join(" ");
@@ -9893,6 +10032,7 @@ const langs = () => [...languages].sort(byOrder);
 function renderTab(tab) {
   if (tab === "actions") renderActions();
   else if (tab === "niyyahs") renderNiyyahs();
+  else if (tab === "dua") renderDua();
   else if (tab === "types" || tab === "jobs") renderNamed(tab);
   else if (tab === "tips") renderTips();
   else if (tab === "events") renderEvents();
@@ -9905,13 +10045,14 @@ async function openFilterSheet(tab) {
   const tabTitles = {
     actions: "Actions",
     niyyahs: "Niyyahs",
+    dua: "Du'a",
     types: "Locations",
     jobs: "Professions",
     tips: "Tips",
     events: "Events"
   };
 
-  if (tab === "niyyahs") {
+  if (tab === "niyyahs" || tab === "dua") {
     const act = state.actionId || "";
     const actLabel = act ? actionLabel(act) : "All actions";
     filterHtml = `
@@ -10113,10 +10254,10 @@ async function openFilterSheet(tab) {
   };
 
   $("#d-filter-apply").onclick = () => {
-    if (tab === "niyyahs") {
-      tabFilterState.niyyahs.status = $("#filter-st-chips .is-selected")?.dataset.val || "";
-      tabFilterState.niyyahs.actionId = $("#sheet-filter-action")?.value || "";
-      tabFilterState.niyyahs.scope = $("#filter-scope-ctrl .is-selected")?.dataset.val || "";
+    if (tab === "niyyahs" || tab === "dua") {
+      tabFilterState[tab].status = $("#filter-st-chips .is-selected")?.dataset.val || "";
+      tabFilterState[tab].actionId = $("#sheet-filter-action")?.value || "";
+      tabFilterState[tab].scope = $("#filter-scope-ctrl .is-selected")?.dataset.val || "";
     } else if (tab === "actions") {
       tabFilterState.actions.visible = $("#filter-vis-ctrl .is-selected")?.dataset.val || "";
       tabFilterState.actions.restricted = $("#filter-rest-ctrl .is-selected")?.dataset.val || "";
@@ -10265,7 +10406,7 @@ const hasStatus = (n, st) => langs().some(l => trOf(n, l.code).status === st);
 
 function isItemPublished(type, item) {
   if (!item) return false;
-  if (type === "niyyahs" || type === "niyyah") {
+  if (type === "niyyahs" || type === "niyyah" || type === "dua" || type === "duas") {
     if (item.status === "published" || hasStatus(item, "published")) return true;
     if (item.translations && Object.values(item.translations).some(t => t && t.status === "published")) return true;
     return false;
@@ -10280,7 +10421,7 @@ function renderMainSettingsCard({ id = "main-settings-card", title = "Main Setti
     <div class="editor-settings-card ${isLocked ? "is-main-settings-locked" : ""}" id="${esc(id)}">
       <div class="editor-settings-card-header">
         <div class="editor-settings-card-title">
-          <span class="editor-settings-card-icon" aria-hidden="true">⚙️</span>
+          <span class="editor-settings-card-icon" aria-hidden="true">${emojiOf("settings")}</span>
           <span>${esc(title)}</span>
         </div>
         <button type="button" class="editor-settings-lock-btn ${isLocked ? "is-locked" : "is-unlocked"}"
@@ -10288,7 +10429,7 @@ function renderMainSettingsCard({ id = "main-settings-card", title = "Main Setti
                 aria-pressed="${isLocked}"
                 aria-label="${isLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock"}"
                 title="${isLocked ? "Unlock main settings" : "Lock main settings"}">
-          <span class="lock-emoji" aria-hidden="true">${isLocked ? "🔒" : "🔓"}</span>
+          <span class="lock-emoji" aria-hidden="true">${isLocked ? ICONS.lock : ICONS.unlock}</span>
           <span class="lock-label">${isLocked ? "Locked" : "Unlocked"}</span>
         </button>
       </div>
@@ -10303,7 +10444,7 @@ async function promptMainSettingsUnlock(opts = {}) {
   const title = opts.title || "Unlock Main Settings?";
   const message = opts.message || "This card has published content. Changing common settings (categories, filters, dates, toggles) affects all languages including published ones.\n\nDo you want to unlock main settings for editing?";
   return await confirmSheet({
-    title: "🔓 " + title,
+    title: ICONS.unlock + " " + title,
     message,
     confirmText: "Unlock",
     cancelText: "Keep locked",
@@ -10313,7 +10454,7 @@ async function promptMainSettingsUnlock(opts = {}) {
 
 async function promptLanguageUnlock(langName = "this") {
   return await confirmSheet({
-    title: "🔓 Unlock " + langName + " translation?",
+    title: ICONS.unlock + " Unlock " + langName + " translation?",
     message: "The " + langName + " translation is currently published in the app.\n\nUnlocking allows you to edit its text. Other languages and main settings will remain protected.\n\nDo you want to unlock " + langName + " for editing?",
     confirmText: "Unlock",
     cancelText: "Keep locked",
@@ -10323,7 +10464,7 @@ async function promptLanguageUnlock(langName = "this") {
 
 async function promptLanguageDraft(langName = "this") {
   return await confirmSheet({
-    title: "⚠️ Change " + langName + " to Draft?",
+    title: ICONS.warn + " Change " + langName + " to Draft?",
     message: "The " + langName + " translation is currently published. Setting it to Draft will unpublish the " + langName + " translation in the app.\n\nOther languages and main settings will remain unaffected.\n\nDo you want to continue?",
     confirmText: "Change to Draft",
     cancelText: "Keep published",
@@ -10345,7 +10486,7 @@ const statusOut = (x, L, out, lf) => {
 const anyPublished = st => Object.values(st).includes("published");
 const lcodes = (L, m, x = {}) => `<span class="dots">${L.map(l => {
   const s = langSt(x, l.code, m[l.code]);
-  const ico = s === "published" ? "✓" : s === "reviewed" ? "👁" : s === "draft" ? "✎" : "○";
+  const ico = s === "published" ? STATUS_ICONS.published : s === "reviewed" ? STATUS_ICONS.reviewed : s === "draft" ? STATUS_ICONS.draft : STATUS_ICONS.placeholder;
   return `<span class="lcode st-${s}" title="${esc(l.name)}: ${s}"><span aria-hidden="true">${ico}</span> ${esc(l.code)}</span>`;
 }).join("")}</span>`;
 
@@ -10390,10 +10531,10 @@ function formatCharCounter(len, maxChars) {
   }
   const ratio = len / maxChars;
   if (ratio >= 1) {
-    return { text: `🛑 ${len}/${maxChars}`, cls: "error" };
+    return { text: `${ICONS.error} ${len}/${maxChars}`, cls: "error" };
   }
   if (ratio >= 0.9) {
-    return { text: `⚠️ ${len}/${maxChars}`, cls: "warn" };
+    return { text: `${ICONS.warn} ${len}/${maxChars}`, cls: "warn" };
   }
   return { text: `${len}/${maxChars}`, cls: "" };
 }
@@ -10480,7 +10621,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
         <button type="button" class="editor-settings-lock-btn ${isLangLocked ? 'is-locked' : 'is-unlocked'}"
                 id="lf-lang-lock-btn"
                 aria-label="${isLangLocked ? 'Unlock ' + esc(l.name) + ' for editing' : esc(l.name) + ' is unlocked'}">
-          <span class="lock-emoji" aria-hidden="true">${isLangLocked ? "🔒" : "🔓"}</span>
+          <span class="lock-emoji" aria-hidden="true">${isLangLocked ? ICONS.lock : ICONS.unlock}</span>
           <span class="lock-label">${esc(l.name)} ${isLangLocked ? "Locked" : "Unlocked"}</span>
         </button>
       </div>
@@ -10562,7 +10703,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
                       ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
-                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
+                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
             `;
@@ -10665,7 +10806,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
 if (location.protocol === "file:") {
   const errEl = $("#login-error");
   if (errEl) {
-    errEl.innerHTML = `⚠️ <b>Local File Notice:</b> Google Sign-in requires an HTTP or HTTPS server and will not work from a <code>file://</code> URL.<br>Please run a local server (e.g. <code>npx serve .</code> or <code>firebase serve</code>) or deploy to Firebase Hosting.`;
+    errEl.innerHTML = `${ICONS.warn} <b>Local File Notice:</b> Google Sign-in requires an HTTP or HTTPS server and will not work from a <code>file://</code> URL.<br>Please run a local server (e.g. <code>npx serve .</code> or <code>firebase serve</code>) or deploy to Firebase Hosting.`;
   }
 }
 
@@ -10676,7 +10817,7 @@ $("#btn-login").onclick = async () => {
 
   if (location.protocol === "file:") {
     if (btn) btn.disabled = false;
-    $("#login-error").innerHTML = `⚠️ Google Sign-in cannot run directly from <code>file://</code>.<br>Please start a local web server (e.g. <code>npx serve .</code>) or deploy to Firebase Hosting.`;
+    $("#login-error").innerHTML = `${ICONS.warn} Google Sign-in cannot run directly from <code>file://</code>.<br>Please start a local web server (e.g. <code>npx serve .</code>) or deploy to Firebase Hosting.`;
     return;
   }
 
@@ -10752,6 +10893,7 @@ onAuthStateChanged(auth, async user => {
   const whoDesktop = $("#who-desktop");
   if (whoDesktop) whoDesktop.textContent = user.email;
   show("app");
+  renderNavigationElements();
   applyTab(currentTab);
   startListening();
 });
@@ -10791,6 +10933,7 @@ function startListening() {
     }, fail);
   watch("actions", v => (actions = v));
   watch("niyyahs", v => (niyyahs = v));
+  watch("dua", v => (duas = v));
   watch("locationTypes", v => (types = v));
   watch("languages", v => (languages = v));
   watch("jobTypes", v => (jobs = v));
@@ -10979,15 +11122,6 @@ function applyTab(name) {
   // Update Floating Action Button (FAB)
   const fab = $("#fab-create");
   if (fab) {
-    const fabLabels = {
-      actions: "Add action",
-      niyyahs: "Add niyyah",
-      types: "Add location",
-      jobs: "Add job",
-      tips: "Add tip category",
-      events: "Add event",
-      settings: "Add"
-    };
     const fl = fabLabels[name] || "Add item";
     fab.setAttribute("aria-label", fl);
     fab.setAttribute("title", fl);
@@ -11042,9 +11176,8 @@ window.addEventListener("beforeunload", () => {
 });
 
 /* ============================================================
-   PAGE SWIPE GESTURE (PHONES)
+   PAGE SWIPE GESTURE ENGINE (Full 8 pages sequence)
    ============================================================ */
-const NAV_PAGE_ORDER = ["actions", "niyyahs", "types", "jobs", "events"];
 
 let isSwipeAnimating = false;
 
@@ -11314,35 +11447,34 @@ initPageSwipeGesture();
 
 function openMoreSheet() {
   const userEmail = auth.currentUser?.email || $("#who")?.textContent || "";
+  const moreItemsHtml = Object.entries(ENTITIES)
+    .filter(([_, v]) => v.tab === "more")
+    .map(([k, v]) => `
+      <button type="button" class="more-item ${currentTab === k ? "active" : ""}" data-act="go-more-tab" data-tab="${k}">
+        <span class="m-icon" aria-hidden="true">${v.emoji}</span>
+        <div class="m-text">
+          <span class="m-title">${esc(v.title)}</span>
+          <span class="m-desc">${esc(k === "types" ? "Places, mosques, and travel" : "Languages, audit check, and data import")}</span>
+        </div>
+      </button>
+    `).join("");
+
   const content = `
     <div class="dlg more-sheet" data-noguard>
       <h2>More</h2>
       <div class="more-sheet-menu">
-        <button type="button" class="more-item ${currentTab === "tips" ? "active" : ""}" data-act="go-more-tab" data-tab="tips">
-          <span class="m-icon" aria-hidden="true">💡</span>
-          <div class="m-text">
-            <span class="m-title">Tips</span>
-            <span class="m-desc">Contextual reminders and guidance</span>
-          </div>
-        </button>
-        <button type="button" class="more-item ${currentTab === "settings" ? "active" : ""}" data-act="go-more-tab" data-tab="settings">
-          <span class="m-icon" aria-hidden="true">⚙️</span>
-          <div class="m-text">
-            <span class="m-title">Settings</span>
-            <span class="m-desc">Languages, audit check, and data import</span>
-          </div>
-        </button>
+        ${moreItemsHtml}
         <div class="more-divider"></div>
         ${userEmail ? `
         <div class="more-user-block">
-          <span class="m-u-icon" aria-hidden="true">👤</span>
+          <span class="m-u-icon" aria-hidden="true">${ICONS.user}</span>
           <div class="m-u-info">
             <span class="m-u-label">Signed in as</span>
             <span class="m-u-email">${esc(userEmail)}</span>
           </div>
         </div>` : ""}
         <button type="button" class="more-item danger" data-act="more-signout">
-          <span class="m-icon" aria-hidden="true">🚪</span>
+          <span class="m-icon" aria-hidden="true">${ICONS.signOut}</span>
           <div class="m-text">
             <span class="m-title">Sign out</span>
           </div>
@@ -11366,7 +11498,7 @@ function openLanguageSheet() {
               <span class="l-name">${esc(l.name)}</span>
               <span class="l-code">${esc(l.code.toUpperCase())}${l.rtl ? ' · RTL' : ''}</span>
             </div>
-            ${l.code === curCode ? '<span class="l-check" aria-hidden="true">✓</span>' : ''}
+            ${l.code === curCode ? '<span class="l-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
           </button>
         `).join("")}
       </div>
@@ -11389,7 +11521,7 @@ function openShortcutsSheet() {
         </div>
         <div class="shortcut-row">
           <span class="sc-desc">Switch tabs (Actions … Settings)</span>
-          <div class="sc-keys"><kbd>1</kbd> – <kbd>7</kbd></div>
+          <div class="sc-keys"><kbd>1</kbd> – <kbd>8</kbd></div>
         </div>
         <div class="shortcut-row">
           <span class="sc-desc">Close dialog or bottom sheet</span>
@@ -11500,7 +11632,7 @@ function syncHeaderSearchUI(tab = currentTab) {
 }
 
 function handleSearchTrigger() {
-  const tabsWithSearch = ["actions", "niyyahs", "types", "jobs", "tips", "events"];
+  const tabsWithSearch = ["actions", "niyyahs", "dua", "tips", "events", "jobs", "types"];
   if (!tabsWithSearch.includes(currentTab)) {
     goTab("niyyahs");
   }
@@ -11610,10 +11742,11 @@ function handleNewItemShortcut() {
   switch (currentTab) {
     case "actions": openAction(null, ""); break;
     case "niyyahs": openNiyyah(); break;
-    case "types": openNamed("types"); break;
-    case "jobs": openNamed("jobs"); break;
+    case "dua": openDua(); break;
     case "tips": openTipCategory(); break;
     case "events": openEvent(); break;
+    case "jobs": openNamed("jobs"); break;
+    case "types": openNamed("types"); break;
     case "settings": {
       if (window.innerWidth >= 721) {
         toggleSettingsPopover();
@@ -11631,6 +11764,7 @@ function handleNewItemShortcut() {
 const GATE_COLLECTIONS = [
   "actions",
   "niyyahs",
+  "dua",
   "locationTypes",
   "languages",
   "jobTypes",
@@ -12032,7 +12166,7 @@ window.addEventListener("keydown", e => {
   } else if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
     e.preventDefault();
     openShortcutsSheet();
-  } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ["1","2","3","4","5","6","7"].includes(e.key)) {
+  } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ["1","2","3","4","5","6","7","8"].includes(e.key)) {
     e.preventDefault();
     const idx = parseInt(e.key, 10) - 1;
     if (ALL_TABS[idx]) {
@@ -12101,14 +12235,8 @@ const isArabic = text => {
 };
 
 function collOf(type) {
-  if (type === "actions" || type === "action") return "actions";
-  if (type === "niyyahs" || type === "niyyah") return "niyyahs";
-  if (type === "types" || type === "type" || type === "locationTypes") return "locationTypes";
-  if (type === "jobs" || type === "job" || type === "jobTypes") return "jobTypes";
-  if (type === "maritalStatuses" || type === "maritalStatus") return "maritalStatuses";
-  if (type === "tipCategories" || type === "tipCategory") return "tipCategories";
-  if (type === "tips" || type === "tip") return "tips";
-  if (type === "events" || type === "event") return "events";
+  const e = ent(type);
+  if (e && e.coll) return e.coll;
   return type;
 }
 
@@ -12146,15 +12274,8 @@ let lastInputLocalTime = 0;
 let lastInputServerWriteTime = 0;
 
 function canonicalColl(typeOrColl) {
-  if (typeOrColl === "actions" || typeOrColl === "action") return "actions";
-  if (typeOrColl === "niyyahs" || typeOrColl === "niyyah") return "niyyahs";
-  if (typeOrColl === "types" || typeOrColl === "type" || typeOrColl === "locationTypes") return "locationTypes";
-  if (typeOrColl === "jobs" || typeOrColl === "job" || typeOrColl === "jobTypes") return "jobTypes";
-  if (typeOrColl === "maritalStatuses" || typeOrColl === "maritalStatus") return "maritalStatuses";
-  if (typeOrColl === "tipCategories" || typeOrColl === "tipCategory") return "tipCategories";
-  if (typeOrColl === "tips" || typeOrColl === "tip") return "tips";
-  if (typeOrColl === "events" || typeOrColl === "event") return "events";
-  if (typeOrColl === "languages" || typeOrColl === "language") return "languages";
+  const e = ent(typeOrColl);
+  if (e && e.coll) return e.coll;
   return typeOrColl;
 }
 
@@ -12368,7 +12489,7 @@ function openLockInfoPopup(type, id) {
   dlgEl.innerHTML = `
     <div class="lock-info-popup">
       <div class="lock-info-content">
-        <div class="lock-info-icon" aria-hidden="true">🔒</div>
+        <div class="lock-info-icon" aria-hidden="true">${ICONS.lock}</div>
         <div class="lock-info-title">Item Locked</div>
         <p class="lock-info-text">${esc(msg)}</p>
       </div>
@@ -12398,7 +12519,7 @@ function openViewerInfoPopup(type, id) {
   dlgEl.innerHTML = `
     <div class="lock-info-popup">
       <div class="lock-info-content">
-        <div class="lock-info-icon" aria-hidden="true">👁</div>
+        <div class="lock-info-icon" aria-hidden="true">${ICONS.viewers}</div>
         <div class="lock-info-title">Active Viewers (${viewers.length})</div>
         <ul class="lock-viewers-list">
           ${viewers.map(v => `<li><span>${esc(v.name || v.email || 'Anonymous viewer')}</span></li>`).join('')}
@@ -12839,7 +12960,7 @@ function showEditorSkeleton(coll, id) {
         <div class="editor-header-info">
           <h2 class="editor-title">Loading…</h2>
         </div>
-        <button type="button" class="btn-icon editor-close-btn" disabled>✕</button>
+        <button type="button" class="btn-icon editor-close-btn" disabled>${ICONS.close}</button>
       </header>
       <div class="editor-body" style="padding:var(--space-lg);display:flex;flex-direction:column;gap:var(--space-md)">
         <div class="sk-bar title" style="width:40%;height:22px"></div>
@@ -12945,7 +13066,7 @@ function updateEditorSlimBar(lockInfo, note = "") {
   } else if (lockInfo && !lockInfo.isMine) {
     const firstName = getFirstName(lockInfo.name);
     const timeStr = formatLockTime(lockInfo.since);
-    text = `🔒 Locked by ${firstName}${timeStr ? ` · since ${timeStr}` : ""}`;
+    text = `${ICONS.lock} Locked by ${firstName}${timeStr ? ` · since ${timeStr}` : ""}`;
   } else {
     text = "Review mode";
   }
@@ -13671,7 +13792,7 @@ function renderHistoryPreviewView(canonical, id, revisions, selectedIdx, selecte
   const ltabsHtml = L.map(l => {
     const isAct = l.code === curLang;
     const hasContent = hasRevLangContent(canonical, rev, l.code);
-    const statusIcon = hasContent ? "✓" : "○";
+    const statusIcon = hasContent ? STATUS_ICONS.published : STATUS_ICONS.placeholder;
     return `
       <button type="button" class="ltab ${isAct ? "is-active" : ""}" data-lang="${l.code}">
         ${l.code.toUpperCase()} ${statusIcon}
@@ -13790,6 +13911,7 @@ function getItem(type, id) {
   const c = canonicalColl(type);
   if (c === "actions") return actions.find(x => String(x.id) === String(id));
   if (c === "niyyahs") return niyyahs.find(x => String(x.id) === String(id));
+  if (c === "dua") return (typeof duas !== "undefined" ? duas : []).find(x => String(x.id) === String(id));
   if (c === "locationTypes") return types.find(x => String(x.id) === String(id));
   if (c === "jobTypes") return jobs.find(x => String(x.id) === String(id));
   if (c === "maritalStatuses") return maritalStatuses.find(x => String(x.id) === String(id));
@@ -13809,6 +13931,12 @@ function getItemTitle(type, item) {
     const pick = trs.find(x => x.l.code === viewCode() && x.t.text) || trs.find(x => x.t.text);
     return pick ? pick.t.text.slice(0, 45) : "Niyyah";
   }
+  if (c === "dua" || c === "duas") {
+    if (typeof item.number === "number") return `Du'a #${item.number}`;
+    const trs = langs().map(l => ({ l, t: trOf(item, l.code) }));
+    const pick = trs.find(x => x.l.code === viewCode() && x.t.text) || trs.find(x => x.t.text);
+    return pick ? pick.t.text.slice(0, 45) : "Du'a";
+  }
   if (c === "tips" || c === "tip") {
     const t = (item.texts || {})[viewCode()] || firstOf(item.texts || {}) || "Tip";
     return t.slice(0, 45);
@@ -13819,7 +13947,7 @@ function getItemTitle(type, item) {
 function renderLangProgress(item, L, type) {
   if (!L || !L.length) return "";
   let statuses;
-  if (type === "niyyahs") {
+  if (type === "niyyahs" || type === "dua") {
     statuses = L.map(l => ({ l, status: trOf(item, l.code).status }));
   } else if (type === "tips") {
     statuses = L.map(l => ({ l, status: langSt(item, l.code, (item.texts || {})[l.code]) }));
@@ -13846,7 +13974,7 @@ function renderLangProgress(item, L, type) {
 function renderLangTray(item, L, type) {
   if (!L || !L.length) return "";
   let statuses;
-  if (type === "niyyahs") {
+  if (type === "niyyahs" || type === "dua") {
     statuses = L.map(l => ({ l, status: trOf(item, l.code).status }));
   } else if (type === "tips") {
     statuses = L.map(l => ({ l, status: langSt(item, l.code, (item.texts || {})[l.code]) }));
@@ -13867,7 +13995,7 @@ function renderLangTray(item, L, type) {
     const rawActionIds = Array.isArray(item.actionIds) ? item.actionIds : Object.values(item.actionIds || {});
     let actionsHtml = "";
     if (item.general && !rawActionIds.length) {
-      actionsHtml = `<div class="tray-actions-body"><span class="chip chip-neutral" aria-label="Fits any action" title="Fits any action"><span class="chip-emoji" aria-hidden="true">🌍</span><span class="chip-text">Any action</span></span></div>`;
+      actionsHtml = `<div class="tray-actions-body"><span class="chip chip-neutral" aria-label="Fits any action" title="Fits any action"><span class="chip-emoji" aria-hidden="true">${ICONS.anyAction}</span><span class="chip-text">Any action</span></span></div>`;
     } else if (!rawActionIds.length) {
       actionsHtml = `<div class="tray-actions-body"><p class="muted" style="margin:0;font-size:13px;">No actions</p></div>`;
     } else {
@@ -13909,7 +14037,7 @@ function renderLangTray(item, L, type) {
           ${sortedGroups.map(group => `
             <div class="tray-action-group">
               <div class="tray-action-parent" dir="auto">
-                <span class="tray-parent-icon" aria-hidden="true">📁</span>
+                <span class="tray-parent-icon" aria-hidden="true">${ICONS.folder}</span>
                 <span class="tray-parent-name" dir="auto">${esc(group.parent ? (group.isDeletedParent ? "(deleted action)" : nm(group.parent)) : "(deleted action)")}</span>
               </div>
               ${group.children.length ? `
@@ -13926,7 +14054,7 @@ function renderLangTray(item, L, type) {
           ${deletedActions.map(() => `
             <div class="tray-action-group">
               <div class="tray-action-parent muted" dir="auto">
-                <span class="tray-parent-icon" aria-hidden="true">📁</span>
+                <span class="tray-parent-icon" aria-hidden="true">${ICONS.folder}</span>
                 <span class="tray-parent-name" dir="auto">(deleted action)</span>
               </div>
             </div>
@@ -14041,8 +14169,10 @@ function renderCard({
   let displayChips = chips;
   let displayPreview = preview;
 
-  const isNiyyah = type === "niyyahs";
+  const isNiyyah = type === "niyyahs" || type === "dua";
   if (isNiyyah) {
+    const isDua = type === "dua";
+    const entityLabel = isDua ? "Du'a" : "Niyyah";
     let niyyahText = (preview && preview !== "(no text)") ? preview : "";
     if (!niyyahText && item) {
       const trs = (L || langs()).map(l => ({ l, t: trOf(item, l.code) }));
@@ -14058,7 +14188,7 @@ function renderCard({
       displayChips = renderNiyyahChips(item);
     }
     const toolsHtml = tools || `
-      <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for Niyyah ${esc(numDisplay)}" title="Edit / options">✏️</button>
+      <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${entityLabel} ${esc(numDisplay)}" title="Edit / options">${ICONS.edit}</button>
     `;
 
     return `
@@ -14071,7 +14201,7 @@ function renderCard({
         <div class="card-main" dir="${nDir}">
           <div class="card-head" dir="${nDir}">
             <h3 class="card-title card-niyyah-title ${isNTextRtl ? 'rtl' : ''}" dir="${nDir}">
-              <span class="sr-only">Niyyah </span><span class="chip chip-code chip-niyyah-num" dir="ltr">${esc(numDisplay)}</span> ${esc(niyyahText)}
+              <span class="sr-only">${entityLabel} </span><span class="chip chip-code chip-niyyah-num" dir="ltr">${esc(numDisplay)}</span> ${esc(niyyahText)}
             </h3>
             <div class="card-head-tools">
               ${toolsHtml}
@@ -14095,10 +14225,12 @@ function renderCard({
       const isVis = item.inAppVisibility ?? item.visible ?? true;
       const isRestricted = !!item.restricted;
       const nCount = niyyahCount(id);
+      const dCount = duaCount(id);
       displayChips = `
         ${!isVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'}
         ${isRestricted ? '<span class="chip chip-info">Job-only</span>' : ''}
         ${chipCount("niyyahs", nCount)}
+        ${dCount > 0 ? ' ' + chipCount("dua", dCount) : ''}
       `.trim();
     }
   } else if (type === "types" || type === "jobs") {
@@ -14108,7 +14240,7 @@ function renderCard({
   }
 
   const toolsHtml = tools || `
-    <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(displayTitle || 'item')}" title="Edit / options">✏️</button>
+    <button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Options for ${esc(displayTitle || 'item')}" title="Edit / options">${ICONS.edit}</button>
   `;
 
   return `
@@ -14315,7 +14447,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   // 1. Edit
   items.push({
     act: "edit",
-    icon: "✏️",
+    icon: ICONS.edit,
     label: "Edit",
     disabled: editDisabled,
     sub: editDisabled ? disabledReason : ""
@@ -14327,7 +14459,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   if (!(type === "actions" && !item.parentId) && !isTipCategory) {
     items.push({
       act: "duplicate",
-      icon: "📋",
+      icon: ICONS.move,
       label: "Duplicate",
       disabled: editDisabled,
       sub: editDisabled ? disabledReason : ""
@@ -14338,7 +14470,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   if (type === "actions" && item.parentId) {
     items.push({
       act: "move",
-      icon: "📁",
+      icon: ICONS.folder,
       label: "Move to parent…",
       disabled: editDisabled,
       sub: editDisabled ? disabledReason : ""
@@ -14346,7 +14478,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   } else if (type === "tips") {
     items.push({
       act: "move",
-      icon: "📁",
+      icon: ICONS.folder,
       label: "Move to category…",
       disabled: editDisabled,
       sub: editDisabled ? disabledReason : ""
@@ -14357,7 +14489,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   if (!isTipCategory) {
     items.push({
       act: "publish",
-      icon: "🚀",
+      icon: ICONS.publish,
       label: "Publish",
       disabled: editDisabled,
       sub: editDisabled ? disabledReason : ""
@@ -14370,7 +14502,7 @@ function openCardMoreSheet(type, id, triggerEl = null) {
   // 6. Delete
   items.push({
     act: "delete",
-    icon: "🗑️",
+    icon: ICONS.del,
     label: "Delete",
     danger: true,
     disabled: editDisabled,
@@ -14397,6 +14529,7 @@ function openCardEditor(type, id) {
   if (!checkWritePermission()) return;
   if (type === "actions") openAction(id);
   else if (type === "niyyahs") openNiyyah(id);
+  else if (type === "dua") openDua(id);
   else if (type === "types") openNamed("types", id);
   else if (type === "jobs") openNamed("jobs", id);
   else if (type === "maritalStatuses" || type === "maritalStatus") openNamed("maritalStatus", id);
@@ -14449,7 +14582,7 @@ async function duplicateItem(type, id) {
   const copy = { ...item };
   delete copy.id;
 
-  if (type === "niyyahs") {
+  if (type === "niyyahs" || type === "dua") {
     delete copy.number;
     const trs = { ...(copy.translations || {}) };
     for (const c of Object.keys(trs)) {
@@ -14487,9 +14620,13 @@ async function duplicateItem(type, id) {
   copy.updatedAt = serverTimestamp();
 
   try {
-    if (type === "niyyahs") {
+    if (type === "niyyahs" || type === "dua") {
+      const isDua = type === "dua";
+      const targetColl = isDua ? "dua" : "niyyahs";
+      const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
+      const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
       if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
-        const counterRef = doc(db, "meta", "niyyahCounter");
+        const counterRef = doc(db, "meta", counterDocName);
         await runTransaction(db, async (tx) => {
           const counterSnap = await tx.get(counterRef);
           let nextNum = 1;
@@ -14497,20 +14634,20 @@ async function duplicateItem(type, id) {
             const cData = counterSnap.data();
             nextNum = (typeof cData.next === "number") ? cData.next : 1;
           } else {
-            const maxExisting = maxNumberOf(niyyahs);
+            const maxExisting = maxNumberOf(itemsList);
             nextNum = maxExisting + 1;
           }
           tx.set(counterRef, { next: nextNum + 1 }, { merge: true });
           copy.number = nextNum;
-          const newDocRef = doc(collection(db, "niyyahs"));
+          const newDocRef = doc(collection(db, targetColl));
           tx.set(newDocRef, copy);
         });
       } else {
-        const maxExisting = maxNumberOf(niyyahs);
+        const maxExisting = maxNumberOf(itemsList);
         copy.number = maxExisting + 1;
-        copy.id = "mock_dup_" + Date.now();
-        niyyahs.push(copy);
-        renderNiyyahs();
+        copy.id = (isDua ? "mock_dup_dua_" : "mock_dup_") + Date.now();
+        itemsList.push(copy);
+        if (isDua) renderDua(); else renderNiyyahs();
       }
     } else {
       await addDoc(collection(db, coll), copy);
@@ -14532,7 +14669,7 @@ async function publishItem(type, id) {
   const coll = collOf(type);
   const L = langs();
   try {
-    if (type === "niyyahs") {
+    if (type === "niyyahs" || type === "dua") {
       if (!niyyahHasScope(item)) {
         toast(NIYYAH_SCOPE_ERROR, true);
         return;
@@ -14585,7 +14722,7 @@ function showDependentsPopup({ title, message, isParentBlock, onShowSubs, onConf
         </div>
         <div class="discard-popup-actions">
           <button type="button" class="btn" id="del-cancel">Cancel</button>
-          <button type="button" class="btn danger" id="del-confirm">🗑️ Delete</button>
+          <button type="button" class="btn danger" id="del-confirm">${ICONS.del} Delete</button>
         </div>
       </div>
     `;
@@ -14605,6 +14742,16 @@ function showDependentsPopup({ title, message, isParentBlock, onShowSubs, onConf
   }, 10);
 }
 
+function usedByCombinedMessage(counts) {
+  const parts = counts.filter(c => c.n > 0).map(c => `${c.n} ${c.n === 1 ? c.singular : c.plural}`);
+  if (!parts.length) return "";
+  let joined = "";
+  if (parts.length === 1) joined = parts[0];
+  else if (parts.length === 2) joined = `${parts[0]} and ${parts[1]}`;
+  else joined = `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+  return `Used by ${joined}. It will be removed from them.`;
+}
+
 function getDependentsMessage(type, id, item) {
   const c = canonicalColl(type);
   if (c === "actions") {
@@ -14614,44 +14761,58 @@ function getDependentsMessage(type, id, item) {
       (x.beforeActionIds || []).includes(id) ||
       (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
     );
+    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x =>
+      (x.actionIds || []).includes(id) ||
+      (x.afterActionIds || []).includes(id) ||
+      (x.beforeActionIds || []).includes(id) ||
+      (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
+    );
     const depTypes = types.filter(x => (x.actionIds || []).includes(id));
     const depJobs = jobs.filter(x => (x.actionIds || []).includes(id));
-    if (depNiyyahs.length > 0) {
-      const n = depNiyyahs.length;
-      return usedByMessage(n, "niyyah", "niyyahs");
-    }
-    if (depJobs.length > 0) {
-      const n = depJobs.length;
-      return usedByMessage(n, "job", "jobs");
-    }
-    if (depTypes.length > 0) {
-      const n = depTypes.length;
-      return usedByMessage(n, "location", "locations");
+
+    const refCounts = [];
+    if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
+    if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
+    if (depJobs.length > 0) refCounts.push({ n: depJobs.length, singular: "job", plural: "jobs" });
+    if (depTypes.length > 0) refCounts.push({ n: depTypes.length, singular: "location", plural: "locations" });
+
+    if (refCounts.length > 0) {
+      return usedByCombinedMessage(refCounts);
     }
   } else if (c === "jobTypes") {
     const depNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
-    if (depNiyyahs.length > 0) {
-      const n = depNiyyahs.length;
-      return usedByMessage(n, "niyyah", "niyyahs");
-    }
+    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id));
+    const refCounts = [];
+    if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
+    if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
+    if (refCounts.length > 0) return usedByCombinedMessage(refCounts);
   } else if (c === "maritalStatuses") {
     const depNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
-    if (depNiyyahs.length > 0) {
-      const n = depNiyyahs.length;
-      return usedByMessage(n, "niyyah", "niyyahs");
-    }
+    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id));
+    const refCounts = [];
+    if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
+    if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
+    if (refCounts.length > 0) return usedByCombinedMessage(refCounts);
   } else if (c === "events") {
     const depNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
-    if (depNiyyahs.length > 0) {
-      const n = depNiyyahs.length;
-      return usedByMessage(n, "niyyah", "niyyahs");
-    }
+    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id));
+    const refCounts = [];
+    if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
+    if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
+    if (refCounts.length > 0) return usedByCombinedMessage(refCounts);
   } else if (c === "niyyahs") {
     const hasPublished = langs().some(l => trOf(item, l.code).status === "published") ||
       (item.translations && Object.values(item.translations).some(t => t.status === "published"));
     if (hasPublished) {
       const num = typeof item.number === "number" ? item.number : "–";
       return `Niyyah #${num} has a published text.`;
+    }
+  } else if (c === "dua") {
+    const hasPublished = langs().some(l => trOf(item, l.code).status === "published") ||
+      (item.translations && Object.values(item.translations).some(t => t.status === "published"));
+    if (hasPublished) {
+      const num = typeof item.number === "number" ? item.number : "–";
+      return `Du'a #${num} has a published text.`;
     }
   }
   return "";
@@ -14662,6 +14823,7 @@ async function executeDelete(type, id) {
   const opts = { confirmed: true };
   if (c === "actions") await delAction(id, opts);
   else if (c === "niyyahs") await delNiyyah(id, opts);
+  else if (c === "dua") await delDua(id, opts);
   else if (c === "locationTypes") await delNamed("types", id, opts);
   else if (c === "jobTypes") await delNamed("jobs", id, opts);
   else if (c === "tips") await delTip(id, opts);
@@ -14888,41 +15050,62 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       (x.beforeActionIds || []).includes(id) ||
       (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
     );
-    const lockedNiyyah = referencingNiyyahs.find(n => {
+    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x =>
+      (x.actionIds || []).includes(id) ||
+      (x.afterActionIds || []).includes(id) ||
+      (x.beforeActionIds || []).includes(id) ||
+      (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
+    );
+    const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
+    }) || referencingDuas.find(d => {
+      const l = lockOf("dua", d.id);
+      return l && !l.isMine;
     });
-    if (lockedNiyyah) {
+    if (lockedItem) {
       toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "jobs") {
     const referencingNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
-    const lockedNiyyah = referencingNiyyahs.find(n => {
+    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id));
+    const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
+    }) || referencingDuas.find(d => {
+      const l = lockOf("dua", d.id);
+      return l && !l.isMine;
     });
-    if (lockedNiyyah) {
+    if (lockedItem) {
       toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "maritalStatuses" || type === "maritalStatus") {
     const referencingNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
-    const lockedNiyyah = referencingNiyyahs.find(n => {
+    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id));
+    const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
+    }) || referencingDuas.find(d => {
+      const l = lockOf("dua", d.id);
+      return l && !l.isMine;
     });
-    if (lockedNiyyah) {
+    if (lockedItem) {
       toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "events") {
     const referencingNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
-    const lockedNiyyah = referencingNiyyahs.find(n => {
+    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id));
+    const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
+    }) || referencingDuas.find(d => {
+      const l = lockOf("dua", d.id);
+      return l && !l.isMine;
     });
-    if (lockedNiyyah) {
+    if (lockedItem) {
       toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
@@ -14959,6 +15142,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
 
   // Snapshot affected items for Undo restoration
   const affectedNiyyahs = [];
+  const affectedDuas = [];
   const affectedTypes = [];
   const affectedJobs = [];
 
@@ -15008,6 +15192,43 @@ async function deleteItemWithUndo(type, id, opts = {}) {
     });
   }
 
+  // Snapshot referencing duas
+  if (type === "actions") {
+    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      const hasAction = (x.actionIds || []).includes(id);
+      const hasBefore = (x.beforeActionIds || []).includes(id);
+      const hasAfter = (x.afterActionIds || []).includes(id);
+      const hasSit = Array.isArray(x.situations) && x.situations.some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id));
+      if (hasAction || hasBefore || hasAfter || hasSit) {
+        affectedDuas.push({
+          item: x,
+          actionIds: x.actionIds ? [...x.actionIds] : [],
+          beforeActionIds: x.beforeActionIds ? [...x.beforeActionIds] : [],
+          afterActionIds: x.afterActionIds ? [...x.afterActionIds] : [],
+          situations: x.situations ? JSON.parse(JSON.stringify(x.situations)) : []
+        });
+      }
+    });
+  } else if (type === "jobs") {
+    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      if ((x.jobIds || []).includes(id)) {
+        affectedDuas.push({ item: x, jobIds: [...x.jobIds] });
+      }
+    });
+  } else if (type === "maritalStatuses" || type === "maritalStatus") {
+    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      if ((x.maritalStatusIds || []).includes(id)) {
+        affectedDuas.push({ item: x, maritalStatusIds: [...x.maritalStatusIds] });
+      }
+    });
+  } else if (type === "events") {
+    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      if ((x.eventIds || []).includes(id)) {
+        affectedDuas.push({ item: x, eventIds: [...x.eventIds] });
+      }
+    });
+  }
+
   const removeFromLocal = () => {
     if (type === "actions") {
       actions = actions.filter(x => x.id !== id);
@@ -15032,18 +15253,40 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       jobs.forEach(j => {
         if (j.actionIds) j.actionIds = j.actionIds.filter(aId => aId !== id);
       });
+      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+        if (x.actionIds) x.actionIds = x.actionIds.filter(aId => aId !== id);
+        if (Array.isArray(x.situations)) {
+          x.situations.forEach(s => {
+            if (s.beforeActionIds) s.beforeActionIds = s.beforeActionIds.filter(aId => aId !== id);
+            if (s.afterActionIds) s.afterActionIds = s.afterActionIds.filter(aId => aId !== id);
+          });
+          x.situations = x.situations.filter(s => (s.beforeActionIds && s.beforeActionIds.length > 0) || (s.afterActionIds && s.afterActionIds.length > 0));
+          x.beforeActionIds = [...new Set(x.situations.flatMap(s => s.beforeActionIds || []))];
+          x.afterActionIds = [...new Set(x.situations.flatMap(s => s.afterActionIds || []))];
+        } else {
+          if (x.afterActionIds) x.afterActionIds = x.afterActionIds.filter(aId => aId !== id);
+          if (x.beforeActionIds) x.beforeActionIds = x.beforeActionIds.filter(aId => aId !== id);
+        }
+      });
     }
     else if (type === "niyyahs") niyyahs = niyyahs.filter(x => x.id !== id);
+    else if (type === "dua") duas = (typeof duas !== "undefined" ? duas : []).filter(x => x.id !== id);
     else if (type === "types") types = types.filter(x => x.id !== id);
     else if (type === "jobs") {
       jobs = jobs.filter(x => x.id !== id);
       niyyahs.forEach(x => {
         if (x.jobIds) x.jobIds = x.jobIds.filter(jId => jId !== id);
       });
+      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+        if (x.jobIds) x.jobIds = x.jobIds.filter(jId => jId !== id);
+      });
     }
     else if (type === "maritalStatuses" || type === "maritalStatus") {
       maritalStatuses = maritalStatuses.filter(x => x.id !== id);
       niyyahs.forEach(x => {
+        if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
+      });
+      (typeof duas !== "undefined" ? duas : []).forEach(x => {
         if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
       });
     }
@@ -15056,6 +15299,9 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       niyyahs.forEach(x => {
         if (x.eventIds) x.eventIds = x.eventIds.filter(eId => eId !== id);
       });
+      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+        if (x.eventIds) x.eventIds = x.eventIds.filter(eId => eId !== id);
+      });
     }
     else if (type === "languages") languages = languages.filter(x => x.id !== id);
     renderAll();
@@ -15063,13 +15309,22 @@ async function deleteItemWithUndo(type, id, opts = {}) {
 
   const restoreToLocal = () => {
     const restored = { id, ...copy };
-    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : ((type === "tipCategories" || type === "tipCategory") ? tipCategories : (type === "tips" ? tips : (type === "events" ? events : languages)))))));
+    const targetList = type === "actions" ? actions : (type === "niyyahs" ? niyyahs : (type === "dua" ? duas : (type === "types" ? types : (type === "jobs" ? jobs : ((type === "maritalStatuses" || type === "maritalStatus") ? maritalStatuses : ((type === "tipCategories" || type === "tipCategory") ? tipCategories : (type === "tips" ? tips : (type === "events" ? events : languages))))))));
     if (!targetList.some(x => x.id === id)) {
       if (origIdx >= 0 && origIdx <= targetList.length) targetList.splice(origIdx, 0, restored);
       else targetList.push(restored);
     }
     // Restore referenced arrays
     affectedNiyyahs.forEach(snap => {
+      if (snap.actionIds) snap.item.actionIds = [...snap.actionIds];
+      if (snap.beforeActionIds) snap.item.beforeActionIds = [...snap.beforeActionIds];
+      if (snap.afterActionIds) snap.item.afterActionIds = [...snap.afterActionIds];
+      if (snap.situations) snap.item.situations = JSON.parse(JSON.stringify(snap.situations));
+      if (snap.jobIds) snap.item.jobIds = [...snap.jobIds];
+      if (snap.maritalStatusIds) snap.item.maritalStatusIds = [...snap.maritalStatusIds];
+      if (snap.eventIds) snap.item.eventIds = [...snap.eventIds];
+    });
+    affectedDuas.forEach(snap => {
       if (snap.actionIds) snap.item.actionIds = [...snap.actionIds];
       if (snap.beforeActionIds) snap.item.beforeActionIds = [...snap.beforeActionIds];
       if (snap.afterActionIds) snap.item.afterActionIds = [...snap.afterActionIds];
@@ -15116,6 +15371,24 @@ async function deleteItemWithUndo(type, id, opts = {}) {
           }
           updates.push(b => b.update(doc(db, "niyyahs", x.id), upd));
         });
+        (typeof duas !== "undefined" ? duas : []).filter(x =>
+          (x.actionIds || []).includes(id) ||
+          (x.afterActionIds || []).includes(id) ||
+          (x.beforeActionIds || []).includes(id) ||
+          (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
+        ).forEach(x => {
+          const upd = {};
+          if ((x.actionIds || []).includes(id)) upd.actionIds = arrayRemove(id);
+          if (Array.isArray(x.situations)) {
+            upd.situations = x.situations;
+            upd.beforeActionIds = x.beforeActionIds;
+            upd.afterActionIds = x.afterActionIds;
+          } else {
+            if ((x.afterActionIds || []).includes(id)) upd.afterActionIds = arrayRemove(id);
+            if ((x.beforeActionIds || []).includes(id)) upd.beforeActionIds = arrayRemove(id);
+          }
+          updates.push(b => b.update(doc(db, "dua", x.id), upd));
+        });
         types.filter(x => (x.actionIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "locationTypes", x.id), { actionIds: arrayRemove(id) })));
         jobs.filter(x => (x.actionIds || []).includes(id))
@@ -15124,14 +15397,20 @@ async function deleteItemWithUndo(type, id, opts = {}) {
         updates.push(b => b.delete(doc(db, "jobTypes", id)));
         niyyahs.filter(x => (x.jobIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { jobIds: arrayRemove(id) })));
+        (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id))
+          .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { jobIds: arrayRemove(id) })));
       } else if (type === "maritalStatuses" || type === "maritalStatus") {
         updates.push(b => b.delete(doc(db, "maritalStatuses", id)));
         niyyahs.filter(x => (x.maritalStatusIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { maritalStatusIds: arrayRemove(id) })));
+        (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id))
+          .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { maritalStatusIds: arrayRemove(id) })));
       } else if (type === "events") {
         updates.push(b => b.delete(doc(db, "events", id)));
         niyyahs.filter(x => (x.eventIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { eventIds: arrayRemove(id) })));
+        (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id))
+          .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { eventIds: arrayRemove(id) })));
       } else {
         updates.push(b => b.delete(doc(db, coll, id)));
       }
@@ -15198,7 +15477,7 @@ function openMovePicker(type, id) {
             const isCur = String(c.id) === String(item.category);
             return `
               <button type="button" class="more-item ${isCur ? "is-selected" : ""}" data-act="move-tip-to-cat" data-cat="${esc(c.id)}" data-id="${esc(id)}">
-                <span class="m-icon" aria-hidden="true">${isCur ? "✓" : "📁"}</span>
+                <span class="m-icon" aria-hidden="true">${isCur ? STATUS_ICONS.published : ICONS.folder}</span>
                 <div class="m-text">
                   <span class="m-title">${esc(nm(c))}${isCur ? " <span class=\"muted\" style=\"font-weight:normal\">(current)</span>" : ""}</span>
                 </div>
@@ -15232,13 +15511,13 @@ function openMovePicker(type, id) {
       <div class="more-sheet-menu">
         ${childrenOf("").filter(c => c.id !== id).map(c => `
           <button type="button" class="more-item" data-act="reparent-action" data-cat="${esc(c.id)}" data-id="${esc(id)}">
-            <span class="m-icon" aria-hidden="true">📁</span>
+            <span class="m-icon" aria-hidden="true">${ICONS.folder}</span>
             <div class="m-text"><span class="m-title">${esc(nm(c))}</span></div>
           </button>
         `).join("")}
         ${item.parentId ? `
           <button type="button" class="more-item" data-act="reparent-action" data-cat="" data-id="${esc(id)}">
-            <span class="m-icon" aria-hidden="true">📂</span>
+            <span class="m-icon" aria-hidden="true">${ICONS.folderOpen}</span>
             <div class="m-text"><span class="m-title">Make Action Parent (top-level)</span></div>
           </button>
         ` : ''}
@@ -15311,7 +15590,7 @@ async function moveTipToCategory(id, catId) {
 /* ============================================================
    5. RENDERING
    ============================================================ */
-function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderNamed("types"); renderNamed("jobs"); renderTips(); renderEvents(); renderSettings(); }
+function renderAll() { renderViewLang(); renderActions(); renderNiyyahs(); renderDua(); renderNamed("types"); renderNamed("jobs"); renderTips(); renderEvents(); renderSettings(); }
 
 function renderActions() {
   const root = $("#tab-actions");
@@ -15340,7 +15619,7 @@ function renderActions() {
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
   } else if (!tops.length) {
-    listHtml = renderEmptyState("🌿", STRINGS.empty.actions.title, STRINGS.empty.actions.desc, STRINGS.empty.actions.btn, "seed-actions");
+    listHtml = renderEmptyState(ENTITIES.actions.emoji, STRINGS.empty.actions.title, STRINGS.empty.actions.desc, STRINGS.empty.actions.btn, "seed-actions");
   } else {
     let visibleTops = tops;
     if (cat) visibleTops = visibleTops.filter(c => c.id === cat);
@@ -15374,7 +15653,7 @@ function renderActions() {
       matchingContentHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-cat-${c.id}">
           ${renderGroupHead({
-            icon: "📁",
+            icon: ICONS.folder,
             title: nm(c),
             count: filteredKids.length,
             countLabel: "actions",
@@ -15387,7 +15666,7 @@ function renderActions() {
             chipsHtml: `${!cVis ? '<span class="chip chip-bad">Hidden</span>' : '<span class="chip chip-good">In app</span>'} ${chipCount("actions", filteredKids.length)}`,
             langHtml: renderLangProgress(c, L, "actions"),
             trayHtml: renderLangTray(c, L, "actions"),
-            editHtml: `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Options for ${esc(nm(c))}" title="Edit / options">✏️</button>`,
+            editHtml: `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="actions" data-id="${c.id}" aria-label="Options for ${esc(nm(c))}" title="Edit / options">${ICONS.edit}</button>`,
             lockBadgeHtml: catLockBadgeHtml,
             viewerBadgeHtml: catViewerBadgeHtml,
             isRtl: catRtl
@@ -15409,7 +15688,7 @@ function renderActions() {
     }
 
     if ((q || vis || rest || cat) && totalMatchingActions === 0) {
-      listHtml = renderEmptyState("🔍", "No matching actions", "No actions match your search or filter settings.", "Clear filters", "clear-actions-filters");
+      listHtml = renderEmptyState(ICONS.search, "No matching actions", "No actions match your search or filter settings.", "Clear filters", "clear-actions-filters");
     } else {
       listHtml = matchingContentHtml;
     }
@@ -15451,50 +15730,55 @@ function renderActions() {
   root.innerHTML = html;
 }
 
-let isBackfillingNiyyahs = false;
+const backfillState = { niyyahs: false, dua: false };
 
-async function checkAndBackfillNiyyahNumbers() {
-  if (isBackfillingNiyyahs) return;
+async function checkAndBackfillNumbers(entityKey = "niyyahs") {
+  if (backfillState[entityKey]) return;
   if (!checkWritePermission()) return;
-  if (!niyyahs || !niyyahs.length) return;
+  const isDua = entityKey === "dua";
+  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  if (!itemsList || !itemsList.length) return;
 
-  const unnumbered = niyyahs.filter(n => n.number == null || typeof n.number !== "number");
+  const unnumbered = itemsList.filter(n => n.number == null || typeof n.number !== "number");
   if (!unnumbered.length) return;
 
   // An admin holding a lock on any unnumbered item must not run backfill
   const user = getCurrentUser();
   if (user) {
     const holdsAnyLock = unnumbered.some(n => {
-      const l = lockOf("niyyahs", n.id);
+      const l = lockOf(entityKey, n.id);
       return l && l.isMine;
     });
     if (holdsAnyLock) return;
   }
 
-  isBackfillingNiyyahs = true;
+  backfillState[entityKey] = true;
+  const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
+  const targetColl = isDua ? "dua" : "niyyahs";
+  const renderTarget = isDua ? renderDua : renderNiyyahs;
 
   try {
     if (!window.__FIREBASE_EMULATOR__ && window.__TEST_MODE__) {
       // Local test-mode simulation
-      const toSort = [...niyyahs].sort((a, b) => {
+      const toSort = [...itemsList].sort((a, b) => {
         const tA = toMillis(a.createdAt) || 0;
         const tB = toMillis(b.createdAt) || 0;
         if (tA !== tB) return tA - tB;
         return String(a.id).localeCompare(String(b.id));
       });
-      let currentMax = maxNumberOf(niyyahs);
+      let currentMax = maxNumberOf(itemsList);
       for (const item of toSort) {
         if (item.number == null || typeof item.number !== "number") {
           currentMax++;
           item.number = currentMax;
         }
       }
-      isBackfillingNiyyahs = false;
-      renderNiyyahs();
+      backfillState[entityKey] = false;
+      renderTarget();
       return;
     }
 
-    const counterRef = doc(db, "meta", "niyyahCounter");
+    const counterRef = doc(db, "meta", counterDocName);
     const now = Date.now();
 
     // 1. Transaction to check & acquire backfill guard
@@ -15506,7 +15790,7 @@ async function checkAndBackfillNiyyahNumbers() {
       if (isLocked) {
         return false;
       }
-      const existingMax = maxNumberOf(niyyahs);
+      const existingMax = maxNumberOf(itemsList);
       startNext = (typeof cData.next === "number") ? cData.next : (existingMax + 1);
 
       tx.set(counterRef, {
@@ -15517,7 +15801,7 @@ async function checkAndBackfillNiyyahNumbers() {
     });
 
     if (!acquired) {
-      isBackfillingNiyyahs = false;
+      backfillState[entityKey] = false;
       return;
     }
 
@@ -15541,12 +15825,12 @@ async function checkAndBackfillNiyyahNumbers() {
       const chunk = assignments.slice(i, i + 400);
       const batch = writeBatch(db);
       for (const a of chunk) {
-        batch.update(doc(db, "niyyahs", a.id), { number: a.number });
+        batch.update(doc(db, targetColl, a.id), { number: a.number });
       }
       await batch.commit();
 
       for (const a of chunk) {
-        const local = niyyahs.find(x => x.id === a.id);
+        const local = itemsList.find(x => x.id === a.id);
         if (local) local.number = a.number;
       }
     }
@@ -15558,29 +15842,37 @@ async function checkAndBackfillNiyyahNumbers() {
       backfillLeaseUntil: 0
     });
 
-    renderNiyyahs();
+    renderTarget();
   } catch (err) {
-    console.warn("Backfill niyyah numbers failed:", err);
+    console.warn(`Backfill ${entityKey} numbers failed:`, err);
   } finally {
-    isBackfillingNiyyahs = false;
+    backfillState[entityKey] = false;
   }
 }
 
-function renderNiyyahs() {
-  const root = $("#tab-niyyahs");
-  const state = tabFilterState.niyyahs;
+const checkAndBackfillNiyyahNumbers = () => checkAndBackfillNumbers("niyyahs");
+const checkAndBackfillDuaNumbers = () => checkAndBackfillNumbers("dua");
+
+function renderNiyyahLike(entityKey) {
+  const isDua = entityKey === "dua";
+  const root = $(isDua ? "#tab-dua" : "#tab-niyyahs");
+  if (!root) return;
+  const state = (isDua ? tabFilterState.dua : tabFilterState.niyyahs) || {};
   const q = (state.q || "").toLowerCase().trim();
   const st = state.status || "";
   const ac = state.actionId || "";
   const sc = state.scope || "";
   const L = langs();
 
+  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+
   const haystack = n => {
     const textAndSources = L.map(l => { const t = trOf(n, l.code); return `${t.text} ${t.sources.join(" ")}`; }).join(" ");
     const numPart = (n.number != null && typeof n.number === "number") ? `#${n.number} ${n.number}` : "";
     return `${numPart} ${textAndSources}`.toLowerCase();
   };
-  let list = niyyahs.filter(n => {
+
+  let list = itemsList.filter(n => {
     if (st && !hasStatus(n, st)) return false;
     if (ac && !(n.actionIds || []).includes(ac)) return false;
     if (sc === "general" && !n.general) return false;
@@ -15596,13 +15888,17 @@ function renderNiyyahs() {
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
   } else if (!L.length) {
-    listHtml = renderEmptyState("🌐", STRINGS.empty.niyyahsNoLang.title, STRINGS.empty.niyyahsNoLang.desc, STRINGS.empty.niyyahsNoLang.btn, "go-settings");
-  } else if (!niyyahs.length) {
-    listHtml = renderEmptyState("🤲", STRINGS.empty.niyyahs.title, STRINGS.empty.niyyahs.desc, STRINGS.empty.niyyahs.btn, "new-niyyah");
+    listHtml = renderEmptyState(ICONS.globe, STRINGS.empty.niyyahsNoLang.title, STRINGS.empty.niyyahsNoLang.desc, STRINGS.empty.niyyahsNoLang.btn, "go-settings");
+  } else if (!itemsList.length) {
+    listHtml = renderEmptyState(isDua ? ENTITIES.dua.emoji : ENTITIES.niyyahs.emoji, isDua ? STRINGS.empty.dua.title : STRINGS.empty.niyyahs.title, isDua ? STRINGS.empty.dua.desc : STRINGS.empty.niyyahs.desc, isDua ? STRINGS.empty.dua.btn : STRINGS.empty.niyyahs.btn, isDua ? "new-dua" : "new-niyyah");
   } else if (!list.length) {
-    listHtml = renderEmptyState("🔍", STRINGS.empty.niyyahsFiltered.title, STRINGS.empty.niyyahsFiltered.desc, STRINGS.empty.niyyahsFiltered.btn, "clear-filters");
+    listHtml = renderEmptyState(ICONS.search, isDua ? STRINGS.empty.duaFiltered.title : STRINGS.empty.niyyahsFiltered.title, isDua ? STRINGS.empty.duaFiltered.desc : STRINGS.empty.niyyahsFiltered.desc, isDua ? STRINGS.empty.duaFiltered.btn : STRINGS.empty.niyyahsFiltered.btn, isDua ? "clear-dua-filters" : "clear-filters");
   } else {
-    shownN = list.map(n => n.id);
+    if (isDua) {
+      if (typeof shownDua !== "undefined") shownDua = list.map(n => n.id);
+    } else {
+      shownN = list.map(n => n.id);
+    }
     listHtml = `<div class="cards-grid">`;
     for (const n of list) {
       const trs = L.map(l => ({ l, t: trOf(n, l.code) }));
@@ -15612,10 +15908,10 @@ function renderNiyyahs() {
       const isRtl = pickTr ? isArabic(previewText) : false;
 
       listHtml += renderCard({
-        type: "niyyahs",
+        type: entityKey,
         id: n.id,
-        title: "Niyyah",
-        chips: renderNiyyahChips(n),
+        title: isDua ? "Du'a" : "Niyyah",
+        chips: renderNiyyahChips(n, entityKey),
         preview: previewText,
         previewRtl: isRtl,
         item: n,
@@ -15626,7 +15922,7 @@ function renderNiyyahs() {
   }
 
   // Preserve search and filter section if already in DOM
-  const existingSec = $("#sf-section-niyyahs", root);
+  const existingSec = $(`#sf-section-${entityKey}`, root);
   if (existingSec) {
     const oldTopBar = $(".tab-top-bar", root);
     if (oldTopBar) oldTopBar.remove();
@@ -15634,18 +15930,18 @@ function renderNiyyahs() {
     if (!$(".tab-top-actions", existingSec)) {
       $(".search-filter-bar", existingSec)?.insertAdjacentHTML("beforeend", `
         <div class="tab-top-actions">
-          <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">📥</button>
-          <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">📤</button>
-          <button type="button" class="btn-icon primary hdr-add-btn btn-add-niyyah-circle" data-act="new-niyyah" aria-label="Add niyyah" title="Add niyyah">+</button>
+          <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">${ICONS.import}</button>
+          <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">${ICONS.export}</button>
+          <button type="button" class="btn-icon primary hdr-add-btn ${isDua ? 'btn-add-dua-circle' : 'btn-add-niyyah-circle'}" data-act="${isDua ? 'new-dua' : 'new-niyyah'}" aria-label="${isDua ? ENTITIES.dua.fab : ENTITIES.niyyahs.fab}" title="${isDua ? ENTITIES.dua.fab : ENTITIES.niyyahs.fab}">+</button>
         </div>
       `);
     }
 
-    const chipsEl = $("#active-chips-niyyahs", root);
-    if (chipsEl) chipsEl.innerHTML = renderActiveFilterChipsContent("niyyahs");
-    const filterBtn = $("#filter-btn-niyyahs", root);
+    const chipsEl = $(`#active-chips-${entityKey}`, root);
+    if (chipsEl) chipsEl.innerHTML = renderActiveFilterChipsContent(entityKey);
+    const filterBtn = $(`#filter-btn-${entityKey}`, root);
     if (filterBtn) {
-      const cnt = getActiveFilterCount("niyyahs");
+      const cnt = getActiveFilterCount(entityKey);
       filterBtn.classList.toggle("has-active", cnt > 0);
       const badge = $(".filter-count-badge", filterBtn);
       if (cnt > 0) {
@@ -15655,28 +15951,31 @@ function renderNiyyahs() {
         badge.remove();
       }
     }
-    const listCont = $("#list-cont-niyyahs", root);
+    const listCont = $(`#list-cont-${entityKey}`, root);
     if (listCont) listCont.innerHTML = listHtml;
-    if (currentTab === "niyyahs") {
-      checkAndBackfillNiyyahNumbers();
+    if (currentTab === entityKey) {
+      checkAndBackfillNumbers(entityKey);
     }
     return;
   }
 
-  let html = `<h2 class="sr-only">Niyyahs</h2>
+  const entityTitle = isDua ? "Du'a" : "Niyyahs";
+  let html = `<h2 class="sr-only">${entityTitle}</h2>
   <div class="tab-top-row">
-    ${renderSearchFilterSection("niyyahs")}
+    ${renderSearchFilterSection(entityKey)}
   </div>
-    <div class="tab-list-content" id="list-cont-niyyahs">
+    <div class="tab-list-content" id="list-cont-${entityKey}">
       ${listHtml}
     </div>`;
 
   root.innerHTML = html;
-  if (currentTab === "niyyahs") {
-    checkAndBackfillNiyyahNumbers();
+  if (currentTab === entityKey) {
+    checkAndBackfillNumbers(entityKey);
   }
 }
 
+function renderNiyyahs() { renderNiyyahLike("niyyahs"); }
+function renderDua() { renderNiyyahLike("dua"); }
 function toggleN(id) {
   const open = !openN.has(id);
   open ? openN.add(id) : openN.delete(id);
@@ -15737,7 +16036,7 @@ function renderNamed(key) {
   const state = tabFilterState[key] || {};
   const q = (state.q || "").toLowerCase().trim();
   const linked = state.linked || "";
-  const icon = key === "types" ? "📍" : "💼";
+  const icon = ENTITIES[key]?.emoji || "";
 
   let list = [...K.list()].sort(compareByDisplayName);
   if (q) {
@@ -15756,7 +16055,7 @@ function renderNamed(key) {
     const emp = STRINGS.empty[key] || { title: `No ${K.many.toLowerCase()} yet`, desc: `Get started with a ready-to-use collection of starter ${K.many.toLowerCase()}.`, btn: K.seedLabel };
     listHtml = renderEmptyState(icon, emp.title, emp.desc, emp.btn, K.seed);
   } else if (!list.length) {
-    listHtml = renderEmptyState("🔍", `No ${K.many.toLowerCase()} match`, "Try different keywords or clear your filters.", "Clear filters", `clear-${key}-filters`);
+    listHtml = renderEmptyState(ICONS.search, `No ${K.many.toLowerCase()} match`, "Try different keywords or clear your filters.", "Clear filters", `clear-${key}-filters`);
   } else {
     listHtml = `<div class="cards-grid">`;
     for (const x of list) {
@@ -16012,8 +16311,11 @@ document.addEventListener("click", e => {
     "publish-all-names": openPublishAllNames,
     "view-lang": () => setViewLang(id),
     "go-settings": () => goTab("settings"),
-    "import-json": () => $("#import-file").click(),
-    "export-json": () => exportNiyyahs(),
+    "import-json": () => {
+      currentImportTarget = currentTab === "dua" ? "dua" : "niyyahs";
+      $("#import-file").click();
+    },
+    "export-json": () => exportNiyyahs(currentTab === "dua" ? "dua" : "niyyahs"),
     "toggle-niyyah": () => toggleN(id),
     "expand-all": () => {
       if (currentTab === "niyyahs") {
@@ -16118,6 +16420,9 @@ document.addEventListener("click", e => {
     "clear-tips-filters": () => { tabFilterState.tips = { q: "" }; syncHeaderSearchUI(); renderTips(); },
     "clear-events-filters": () => { tabFilterState.events = { q: "" }; syncHeaderSearchUI(); renderEvents(); },
     "clear-niyyahs-filters": () => { tabFilterState.niyyahs = { q: "" }; syncHeaderSearchUI(); renderNiyyahs(); },
+    "clear-dua-filters": () => { tabFilterState.dua = { q: "" }; syncHeaderSearchUI(); renderDua(); },
+    "new-dua": () => openDua(),
+    "edit-dua": () => openDua(b.dataset.id),
     "clear-filters": () => {
       tabFilterState.niyyahs = { q: "" };
       syncHeaderSearchUI();
@@ -16604,22 +16909,32 @@ const formatEventsLabel = (ids, emptyText = "None selected (tap to choose)") => 
   return `${names.length} selected: ${names[0]}, ${names[1]}…`;
 };
 
-function openNiyyah(id, _mode = null) {
+function openNiyyahLike(entityKey, id, _mode = null) {
   if (!checkWritePermission()) return;
+  const isDua = entityKey === "dua";
+  const coll = isDua ? "dua" : "niyyahs";
+  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const counterDoc = isDua ? "duaCounter" : "niyyahCounter";
+  const itemWord = isDua ? "du'a" : "niyyah";
+  const itemWordPlural = isDua ? "du'as" : "niyyahs";
+  const itemTitle = isDua ? "Du'a" : "Niyyah";
+  const renderFn = isDua ? renderDua : renderNiyyahs;
+  const delFn = isDua ? delDua : delNiyyah;
+
   if (id && _mode === null) {
-    requestOpenEditor("niyyahs", id, {}, (m) => openNiyyah(id, m));
+    requestOpenEditor(coll, id, {}, (m) => openNiyyahLike(entityKey, id, m));
     return;
   }
   if (_mode) {
     activeEditorLockState.mode = _mode;
     activeEditorLockState.id = id;
-    activeEditorLockState.type = "niyyahs";
+    activeEditorLockState.type = coll;
   }
   const L = langs();
   if (!L.length) { goTab("settings"); return toast("Add at least one language in Settings first.", true); }
-  const n = id ? niyyahs.find(x => String(x.id) === String(id)) : { general: false, hasChildren: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
+  const n = id ? itemsList.find(x => String(x.id) === String(id)) : { general: false, hasChildren: false, jobIds: [], maritalStatusIds: [], actionIds: [], situations: [], beforeActionIds: [], afterActionIds: [], eventIds: [] };
 
-  const isPublished = isItemPublished("niyyahs", n);
+  const isPublished = isItemPublished(coll, n);
   let isMainSettingsLocked = isPublished;
   const unlockedLangs = new Set();
 
@@ -16650,7 +16965,7 @@ function openNiyyah(id, _mode = null) {
   let cur = L[0].code;
   const stOf = c => (draft[c].text.trim() && langOk(c, draft[c].text) ? draft[c].status : "empty");
 
-  const title = id ? `${STRINGS.common.edit} niyyah` : `${STRINGS.common.add} niyyah`;
+  const title = id ? `${STRINGS.common.edit} ${itemWord}` : `${STRINGS.common.add} ${itemWord}`;
 
   const nFlags = niyyahFlags(n);
   const initJobOn = nFlags.jobs > 0;
@@ -16945,7 +17260,7 @@ function openNiyyah(id, _mode = null) {
               <button type="button" class="editor-settings-lock-btn ${isLangLocked ? 'is-locked' : 'is-unlocked'}"
                       id="n-lang-lock-btn"
                       aria-label="${isLangLocked ? 'Unlock ' + esc(l.name) + ' for editing' : esc(l.name) + ' is unlocked'}">
-                <span class="lock-emoji" aria-hidden="true">${isLangLocked ? "🔒" : "🔓"}</span>
+                <span class="lock-emoji" aria-hidden="true">${isLangLocked ? ICONS.lock : ICONS.unlock}</span>
                 <span class="lock-label">${esc(l.name)} ${isLangLocked ? "Locked" : "Unlocked"}</span>
               </button>
             ` : ""}
@@ -16981,7 +17296,7 @@ function openNiyyah(id, _mode = null) {
                       enterkeyhint="next"
                       data-idx="${i}"
                       ${(isReview || isLangLocked) ? "readonly" : ""}>${esc(s)}</textarea>
-            ${(isReview || isLangLocked) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>🗑️</button>`}
+            ${(isReview || isLangLocked) ? "" : `<button type="button" class="btn-icon danger src-del" data-rm="${i}" aria-label="Remove source" title="Remove source" ${hideDel ? 'style="display:none"' : ""}>${ICONS.del}</button>`}
           </div>
         `;
         }).join("")}
@@ -17149,7 +17464,7 @@ function openNiyyah(id, _mode = null) {
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
                       ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
-                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">✓</span>' : ''}
+                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
             `;
@@ -17368,7 +17683,7 @@ function openNiyyah(id, _mode = null) {
         <div class="situation-card" data-idx="${idx}">
           <div class="situation-card-header">
             <div class="situation-card-title">Situation ${num}</div>
-            ${canDel ? `<button type="button" class="btn-icon danger btn-del-situation" data-del-sit="${idx}" aria-label="Remove Situation ${num}" title="Remove situation">🗑️</button>` : ""}
+            ${canDel ? `<button type="button" class="btn-icon danger btn-del-situation" data-del-sit="${idx}" aria-label="Remove Situation ${num}" title="Remove situation">${ICONS.del}</button>` : ""}
           </div>
           <div class="f" style="margin-bottom:6px">
             <div class="f-head"><label class="f-label">Before action</label></div>
@@ -17521,7 +17836,7 @@ function openNiyyah(id, _mode = null) {
         multi: true,
         search: true,
         selected: curEventIds,
-        title: "Events for this Niyyah",
+        title: `Events for this ${itemTitle}`,
         readOnly: isReview,
         ...getPickerContext()
       });
@@ -17618,7 +17933,7 @@ function openNiyyah(id, _mode = null) {
       translations[l.code] = { text, sources: d.sources.map(s => s.trim()).filter(Boolean), status: text ? d.status : "empty" };
     });
     const filled = Object.values(translations).filter(t => t.text);
-    if (!filled.length) return toast("Write the niyyah in at least one language.", true);
+    if (!filled.length) return toast(`Write the ${itemWord} in at least one language.`, true);
     const general = $("#n-gen").checked;
     const hasChildren = $("#n-children-toggle")?.checked ?? false;
     const isJob = $("#n-job-toggle").checked;
@@ -17661,14 +17976,14 @@ function openNiyyah(id, _mode = null) {
     }
     await handleEditorSave({
       btn: $("#d-save"),
-      successToast: "Niyyah saved.",
+      successToast: `${itemTitle} saved.`,
       saveTask: async () => {
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           if (id) {
-            const sRes = await executeEditorSaveTransaction({ coll: "niyyahs", id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
+            const sRes = await executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt: activeEditorLockState.originalUpdatedAt });
             if (!sRes.ok) return false;
           } else {
-            const counterRef = doc(db, "meta", "niyyahCounter");
+            const counterRef = doc(db, "meta", counterDoc);
             await runTransaction(db, async (tx) => {
               const counterSnap = await tx.get(counterRef);
               let nextNum = 1;
@@ -17676,29 +17991,29 @@ function openNiyyah(id, _mode = null) {
                 const cData = counterSnap.data();
                 nextNum = (typeof cData.next === "number") ? cData.next : 1;
               } else {
-                const maxExisting = maxNumberOf(niyyahs);
+                const maxExisting = maxNumberOf(itemsList);
                 nextNum = maxExisting + 1;
               }
               tx.set(counterRef, { next: nextNum + 1 }, { merge: true });
               data.number = nextNum;
               data.createdAt = serverTimestamp();
               data.updatedAt = serverTimestamp();
-              const newDocRef = doc(collection(db, "niyyahs"));
+              const newDocRef = doc(collection(db, coll));
               tx.set(newDocRef, data);
             });
           }
         } else {
           if (id) {
             if (n.number != null) data.number = n.number;
-            const existing = niyyahs.find(x => String(x.id) === String(id));
+            const existing = itemsList.find(x => String(x.id) === String(id));
             if (existing) Object.assign(existing, data);
           } else {
-            const maxExisting = maxNumberOf(niyyahs);
+            const maxExisting = maxNumberOf(itemsList);
             data.number = maxExisting + 1;
-            const newId = "test_n_" + Date.now();
-            niyyahs.push({ id: newId, ...data });
+            const newId = (isDua ? "test_dua_" : "test_n_") + Date.now();
+            itemsList.push({ id: newId, ...data });
           }
-          renderNiyyahs();
+          renderFn();
         }
         return true;
       }
@@ -17712,8 +18027,15 @@ function openNiyyah(id, _mode = null) {
   }
 }
 
+function openNiyyah(id, _mode = null) { return openNiyyahLike("niyyahs", id, _mode); }
+function openDua(id, _mode = null) { return openNiyyahLike("dua", id, _mode); }
+
 async function delNiyyah(id, opts = {}) {
   await deleteItemWithUndo("niyyahs", id, opts);
+}
+
+async function delDua(id, opts = {}) {
+  await deleteItemWithUndo("dua", id, opts);
 }
 
 /* ============================================================
@@ -18171,6 +18493,7 @@ function renderGroupHead({
     status: "maritalStatuses", marital: "maritalStatuses",
     action: "actions", actions: "actions",
     niyyah: "niyyahs", niyyahs: "niyyahs",
+    dua: "dua", duas: "dua",
     tipCategory: "tipCategories", tipCategories: "tipCategories"
   };
   const kind = LABEL_TO_KIND[countLabel] || countLabel;
@@ -18250,9 +18573,9 @@ function renderTips() {
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
   } else if (!tips.length && !tipCategories.length) {
-    listHtml = renderEmptyState("💡", STRINGS.empty.tips.title, STRINGS.empty.tips.desc, STRINGS.empty.tips.btn, "new-tip");
+    listHtml = renderEmptyState(ENTITIES.tips.emoji, STRINGS.empty.tips.title, STRINGS.empty.tips.desc, STRINGS.empty.tips.btn, "new-tip");
   } else if (isSearchActive && !list.length) {
-    listHtml = renderEmptyState("🔍", "No tips match", "Try different keywords or clear your filters.", "Clear filters", "clear-tips-filters");
+    listHtml = renderEmptyState(ICONS.search, "No tips match", "Try different keywords or clear your filters.", "Clear filters", "clear-tips-filters");
   } else {
     const cats = effectiveTipCategories().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999) || nm(a).localeCompare(nm(b)));
     const knownCatIds = new Set(cats.map(c => String(c.id)));
@@ -18273,7 +18596,7 @@ function renderTips() {
       const catViewers = viewersOf("tipCategories", c.id).filter(v => !v.isMine);
       const catViewerBadgeHtml = buildViewerBadgeHtml(catViewers, "tipCategories", c.id);
 
-      const editHtml = `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="tipCategories" data-id="${c.id}" aria-label="Options for ${esc(catTitle)}" title="Edit / options">✏️</button>`;
+      const editHtml = `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="tipCategories" data-id="${c.id}" aria-label="Options for ${esc(catTitle)}" title="Edit / options">${ICONS.edit}</button>`;
 
       const bodyContentHtml = catTips.length === 0
         ? `<div class="g-body" style="padding:var(--space-md) var(--space-base)"><p class="muted" style="margin:0;font-size:13.5px">No tips in this category yet.</p></div>`
@@ -18283,7 +18606,7 @@ function renderTips() {
               const isRtl = isArabic(rawText);
               const catName = tipCategoryLabel(t.category) || catTitle;
               const sourceChip = t.source
-                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">📎</span><span class="chip-text">${esc(t.source)}</span></span>`
+                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">${ICONS.source}</span><span class="chip-text">${esc(t.source)}</span></span>`
                 : "";
               const chips = `<span class="chip chip-neutral">${esc(catName)}</span><span class="chip ${t.published ? 'chip-status-good' : 'chip-status-warn'}">${t.published ? 'Published' : 'Draft'}</span>${sourceChip ? ' ' + sourceChip : ''}`;
               return renderCard({
@@ -18302,7 +18625,7 @@ function renderTips() {
       matchingHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-${c.id}">
           ${renderGroupHead({
-            icon: "💡",
+            icon: ENTITIES.tips.emoji,
             title: catTitle,
             count: catTips.length,
             countLabel: "tip",
@@ -18330,7 +18653,7 @@ function renderTips() {
       matchingHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-tip-uncategorized">
           ${renderGroupHead({
-            icon: "💡",
+            icon: ENTITIES.tips.emoji,
             title: "Uncategorized",
             count: uncatTips.length,
             countLabel: "tip",
@@ -18350,7 +18673,7 @@ function renderTips() {
               const rawText = (t.texts || {})[viewCode()] || firstOf(t.texts || {}) || "(no text)";
               const isRtl = isArabic(rawText);
               const sourceChip = t.source
-                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">📎</span><span class="chip-text">${esc(t.source)}</span></span>`
+                ? `<span class="chip chip-source chip-info" title="${esc(t.source)}"><span class="chip-emoji" aria-hidden="true">${ICONS.source}</span><span class="chip-text">${esc(t.source)}</span></span>`
                 : "";
               const chips = `<span class="chip chip-neutral">Uncategorized</span><span class="chip ${t.published ? 'chip-status-good' : 'chip-status-warn'}">${t.published ? 'Published' : 'Draft'}</span>${sourceChip ? ' ' + sourceChip : ''}`;
               return renderCard({
@@ -18444,7 +18767,7 @@ function openTip(id, _mode = null, opts = {}) {
     type: "tip",
     id,
     bodyHtml,
-    headerExtraHtml: `<span class="chip chip-neutral" style="font-size:12px">💡 ${esc(catName)}</span>`,
+    headerExtraHtml: `<span class="chip chip-neutral" style="font-size:12px">${ENTITIES.tips.emoji} ${esc(catName)}</span>`,
     saveLabel: STRINGS.common.save
   });
 
@@ -18584,16 +18907,16 @@ function renderEventList() {
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
   } else if (!events.length) {
-    listHtml = renderEmptyState("📅", STRINGS.empty.events.title, STRINGS.empty.events.desc, STRINGS.empty.events.btn, "seed-events");
+    listHtml = renderEmptyState(ENTITIES.events.emoji, STRINGS.empty.events.title, STRINGS.empty.events.desc, STRINGS.empty.events.btn, "seed-events");
   } else if (!list.length) {
-    listHtml = renderEmptyState("🔍", "No events match", "Try different keywords or clear your filters.", "Clear filters", "clear-events-filters");
+    listHtml = renderEmptyState(ICONS.search, "No events match", "Try different keywords or clear your filters.", "Clear filters", "clear-events-filters");
   } else {
     const weekly = list.filter(e => e.rule?.type === "weekly").sort(compareByDisplayName);
     const hijri = list.filter(e => e.rule?.type !== "weekly").sort(compareByDisplayName);
 
     const groups = [
-      { id: "weekly", title: "Weekly Recurring Events", items: weekly, icon: "🔄", ruleType: "weekly" },
-      { id: "hijri", title: "Hijri Calendar Dates", items: hijri, icon: "🌙", ruleType: "hijri" }
+      { id: "weekly", title: "Weekly Recurring Events", items: weekly, icon: ICONS.weekly, ruleType: "weekly" },
+      { id: "hijri", title: "Hijri Calendar Dates", items: hijri, icon: ICONS.hijri, ruleType: "hijri" }
     ].sort(compareByDisplayName);
 
     let groupHtml = "";
@@ -18604,7 +18927,7 @@ function renderEventList() {
       groupHtml += `
         <div class="sticky-group ${isCollapsed ? 'collapsed' : ''}" id="group-ev-${g.id}">
           ${renderGroupHead({
-            icon: g.icon || "📅",
+            icon: g.icon || ENTITIES.events.emoji,
             title: g.title,
             count: g.items.length,
             countLabel: "event",
@@ -18618,8 +18941,9 @@ function renderEventList() {
           <div class="g-body cards-grid">
             ${g.items.map(e => {
               const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
+              const duaCnt = (typeof duas !== "undefined" ? duas : []).filter(d => (d.eventIds || []).includes(e.id)).length;
               const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
-              const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}`;
+              const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}${duaCnt > 0 ? ' ' + chipCount("dua", duaCnt) : ''}`;
               return renderCard({
                 type: "events",
                 id: e.id,
@@ -19137,7 +19461,7 @@ function renderEvents() {
         <button type="button" class="btn small" data-act="cal-today">Today</button>
         <button type="button" class="btn small" data-act="cal-view">List view</button>
         <button type="button" class="btn small ${calRange ? "on" : ""}" data-act="cal-range" title="Tap a second day to extend selection">Range</button>
-        <button type="button" class="btn small" data-act="open-cal-settings" aria-label="Hijri & Calendar Settings">⚙️ Hijri Settings</button>
+        <button type="button" class="btn small" data-act="open-cal-settings" aria-label="Hijri & Calendar Settings">${ICONS.settings || ENTITIES.settings.emoji} Hijri Settings</button>
       </div>
     </div>
     <div class="cal">${WEEKDAYS.map(w => `<div class="dow">${w.slice(0, 3)}</div>`).join("")}`;
@@ -19159,7 +19483,7 @@ function renderEvents() {
     </button>`;
   }
   html += `</div>`;
-  if (!events.length) html += renderEmptyState("📅", STRINGS.empty.events.title, STRINGS.empty.events.desc, STRINGS.empty.events.btn, "seed-events");
+  if (!events.length) html += renderEmptyState(ENTITIES.events.emoji, STRINGS.empty.events.title, STRINGS.empty.events.desc, STRINGS.empty.events.btn, "seed-events");
   if (r) {
     const a = dateOf(r[0]), z = dateOf(r[1]), n = Math.round((z - a) / 864e5) + 1;
     const seen = new Map();
@@ -19170,8 +19494,9 @@ function renderEvents() {
     html += seen.size ? `<div class="cards-grid">` + [...seen.values()].map(e => {
         const L = langs();
         const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
+        const duaCnt = (typeof duas !== "undefined" ? duas : []).filter(d => (d.eventIds || []).includes(e.id)).length;
         const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
-        const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}`;
+        const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}${duaCnt > 0 ? ' ' + chipCount("dua", duaCnt) : ''}`;
         return renderCard({
           type: "events",
           id: e.id,
@@ -19251,6 +19576,11 @@ function getLanguageCounts(code) {
     return (tr?.text || "").trim().length > 0 || (tr?.sources && tr.sources.length > 0);
   }).length;
 
+  const nDuas = (typeof duas !== "undefined" ? duas : []).filter(d => {
+    const tr = trOf(d, c);
+    return (tr?.text || "").trim().length > 0 || (tr?.sources && tr.sources.length > 0);
+  }).length;
+
   const nActions = actions.filter(a => {
     const nm = (nameMap(a)[c] || "").trim();
     const onb = ((a.onboardingNames || {})[c] || "").trim();
@@ -19264,9 +19594,10 @@ function getLanguageCounts(code) {
   const nTips = tips.filter(t => ((t.texts || {})[c] || "").trim().length > 0).length;
   const nEvents = events.filter(e => (nameMap(e)[c] || "").trim().length > 0).length;
 
-  const total = nNiyyahs + nActions + nTypes + nJobs + nMarital + nTipCats + nTips + nEvents;
+  const total = nNiyyahs + nDuas + nActions + nTypes + nJobs + nMarital + nTipCats + nTips + nEvents;
   const parts = [];
   if (nNiyyahs) parts.push(`${nNiyyahs} niyyah${nNiyyahs === 1 ? "" : "s"}`);
+  if (nDuas) parts.push(`${nDuas} du'a${nDuas === 1 ? "" : "s"}`);
   if (nActions) parts.push(`${nActions} action${nActions === 1 ? "" : "s"}`);
   if (nTypes) parts.push(`${nTypes} location${nTypes === 1 ? "" : "s"}`);
   if (nJobs) parts.push(`${nJobs} job${nJobs === 1 ? "" : "s"}`);
@@ -19278,6 +19609,7 @@ function getLanguageCounts(code) {
   return {
     total,
     niyyahs: nNiyyahs,
+    dua: nDuas,
     actions: nActions,
     types: nTypes,
     jobs: nJobs,
@@ -19299,7 +19631,7 @@ function renderSettings() {
 
   // ── Language cards ────────────────────────────────────────────────────────
   const langCardsHtml = !L.length
-    ? renderEmptyState("🌐", STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
+    ? renderEmptyState(ENTITIES.languages.emoji, STRINGS.empty.languages.title, STRINGS.empty.languages.desc, STRINGS.empty.languages.btn, "seed-langs")
     : `<div class="cards-grid">` +
       sortedLangs.map(l => {
         const counts = getLanguageCounts(l.code);
@@ -19317,6 +19649,7 @@ function renderSettings() {
             parts.push(`<span class="chip chip-muted">0 in use</span>`);
           }
           if (counts.niyyahs) parts.push(chipCount("niyyahs", counts.niyyahs));
+          if (counts.dua) parts.push(chipCount("dua", counts.dua));
           if (counts.actions) parts.push(chipCount("actions", counts.actions));
           if (counts.types) parts.push(chipCount("locations", counts.types));
           if (counts.jobs) parts.push(chipCount("jobs", counts.jobs));
@@ -19328,8 +19661,8 @@ function renderSettings() {
 
         const chips = `<span class="chip chip-code">${esc(l.code)}</span>${l.rtl ? ' <span class="chip chip-info">RTL</span>' : ''} ${usageChips}`;
         const tools = `
-          <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">✏️</button>
-          <button type="button" class="btn-icon danger ${isGuarded ? 'is-disabled' : ''}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}" ${isGuarded ? 'disabled' : ''}>🗑️</button>
+          <button type="button" class="btn-icon" data-act="edit-lang" data-id="${esc(l.id)}" aria-label="Edit ${esc(l.name)}" title="Edit">${ICONS.edit}</button>
+          <button type="button" class="btn-icon danger ${isGuarded ? 'is-disabled' : ''}" data-act="del-lang" data-id="${esc(l.id)}" aria-label="Delete ${esc(l.name)}" title="${esc(deleteTooltip)}" ${isGuarded ? 'disabled' : ''}>${ICONS.del}</button>
         `;
 
         return renderCard({
@@ -19346,7 +19679,7 @@ function renderSettings() {
 
   // ── Marital status cards ──────────────────────────────────────────────────
   const maritalCardsHtml = !maritalStatuses.length
-    ? renderEmptyState("💍", STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
+    ? renderEmptyState(ENTITIES.maritalStatuses.emoji, STRINGS.empty.maritalStatuses.title, STRINGS.empty.maritalStatuses.desc, STRINGS.empty.maritalStatuses.btn, "seed-marital-statuses")
     : `<div class="cards-grid">` +
       sortedMarital.map(m => {
         const displayName = getItemDisplayName(m, viewCode()) || getItemDisplayName(m, "en") || firstOf(nameMap(m)) || "(no name)";
@@ -19355,8 +19688,8 @@ function renderSettings() {
         const isLockedByOther = !!(lock && !lock.isMine);
         const deleteTooltip = isLockedByOther ? "Locked by another user" : `Delete ${esc(displayName)}`;
         const tools = `
-          <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}>✏️</button>
-          <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>🗑️</button>
+          <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}></button>
+          <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>${ICONS.del}</button>
         `;
 
         return renderCard({
@@ -19378,11 +19711,11 @@ function renderSettings() {
         <button type="button" id="btn-settings-add" class="btn-icon primary hdr-add-btn" data-act="toggle-settings-popover" aria-label="Add" title="Add" aria-haspopup="menu" aria-expanded="false">＋</button>
         <div id="settings-add-popover" class="settings-add-popover" role="menu" aria-label="Add options" hidden>
           <button type="button" class="settings-popover-item" role="menuitem" tabindex="-1" data-act="settings-add-lang">
-            <span class="popover-icon" aria-hidden="true">🌐</span>
+            <span class="popover-icon" aria-hidden="true">${ENTITIES.languages.emoji}</span>
             <span>Language</span>
           </button>
           <button type="button" class="settings-popover-item" role="menuitem" tabindex="-1" data-act="settings-add-marital">
-            <span class="popover-icon" aria-hidden="true">💍</span>
+            <span class="popover-icon" aria-hidden="true">${ENTITIES.maritalStatuses.emoji}</span>
             <span>Marital status</span>
           </button>
         </div>
@@ -19393,7 +19726,7 @@ function renderSettings() {
     <!-- 1. Languages Group -->
     <div class="sticky-group ${langsCollapsed ? 'collapsed' : ''}" id="group-settings-languages">
       ${renderGroupHead({
-        icon: '🌐', title: 'Languages',
+        icon: ENTITIES.languages.emoji, title: 'Languages',
         count: L.length, countLabel: 'language',
         groupKey: 'settings_languages', collapsed: langsCollapsed,
         addAct: 'settings-add-lang', addLabel: 'Add language',
@@ -19408,7 +19741,7 @@ function renderSettings() {
     <!-- 2. Marital Status Group -->
     <div class="sticky-group ${maritalCollapsed ? 'collapsed' : ''}" id="group-settings-marital">
       ${renderGroupHead({
-        icon: '💍', title: 'Marital status',
+        icon: ENTITIES.maritalStatuses.emoji, title: 'Marital status',
         count: maritalStatuses.length, countLabel: 'status',
         groupKey: 'settings_marital', collapsed: maritalCollapsed,
         addAct: 'settings-add-marital', addLabel: 'Add marital status',
@@ -19447,6 +19780,9 @@ function renderCatalogCheck() {
   // 1. Published niyyahs with no actions and not general
   const orphanNiyyahs = niyyahs.filter(n => publishedNiyyah(n) && !n.general && (!n.actionIds || !n.actionIds.length));
 
+  // 1b. Published du'as with no actions and not general
+  const orphanDuas = (typeof duas !== "undefined" ? duas : []).filter(d => publishedNiyyah(d) && !d.general && (!d.actionIds || !d.actionIds.length));
+
   // 2. Actions with no published niyyah (actionable leaves or standalone)
   const isLeaf = a => childrenOf(a.id).length === 0;
   const actionsNoPub = actions.filter(a => isLeaf(a) && !niyyahs.some(n => publishedNiyyah(n) && (n.actionIds || []).includes(a.id)));
@@ -19458,14 +19794,14 @@ function renderCatalogCheck() {
   // 4. Events with no niyyahs
   const eventsNoNiyyah = events.filter(e => !niyyahs.some(n => (n.eventIds || []).includes(e.id)));
 
-  const totalIssues = orphanNiyyahs.length + actionsNoPub.length + unlistedRestricted.length + eventsNoNiyyah.length;
+  const totalIssues = orphanNiyyahs.length + orphanDuas.length + actionsNoPub.length + unlistedRestricted.length + eventsNoNiyyah.length;
 
   let h = `<div class="bar" style="margin-top:28px"><h3>Catalog check</h3></div>
     <p class="muted" style="margin-top:0">Identifies gaps, unlinked content, and configuration oversights before publishing.</p>`;
 
   if (totalIssues === 0) {
     h += `<div class="empty" style="border-style:solid;border-color:var(--green);background:var(--green-soft)">
-      <p style="color:var(--green);font-weight:600;margin:0">✓ All published niyyahs, actions, restricted actions, and events are healthy.</p></div>`;
+      <p style="color:var(--green);font-weight:600;margin:0">${STATUS_ICONS.published} All published niyyahs, du'as, actions, restricted actions, and events are healthy.</p></div>`;
     return h;
   }
 
@@ -19476,21 +19812,28 @@ function renderCatalogCheck() {
 
   // Section 1: Orphan niyyahs
   if (orphanNiyyahs.length) {
-    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Published niyyahs with no actions and not general</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">⚠</span> ${orphanNiyyahs.length}</span></h4>
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Published niyyahs with no actions and not general</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">${ICONS.warn}</span> ${orphanNiyyahs.length}</span></h4>
       <ul class="check-list">${orphanNiyyahs.map(n => `<li><span>${esc(snipN(n))}</span>
         <button class="btn small" data-act="edit-niyyah" data-id="${n.id}">Edit</button></li>`).join("")}</ul></div>`;
   }
 
+  // Section 1b: Orphan du'as
+  if (orphanDuas.length) {
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Published du'as with no actions and not general</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">${ICONS.warn}</span> ${orphanDuas.length}</span></h4>
+      <ul class="check-list">${orphanDuas.map(d => `<li><span>${esc(snipN(d))}</span>
+        <button class="btn small" data-act="edit-dua" data-id="${d.id}">Edit</button></li>`).join("")}</ul></div>`;
+  }
+
   // Section 2: Actions without published niyyah
   if (actionsNoPub.length) {
-    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Actions with no published niyyah</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">⚠</span> ${actionsNoPub.length}</span></h4>
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Actions with no published niyyah</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">${ICONS.warn}</span> ${actionsNoPub.length}</span></h4>
       <ul class="check-list">${actionsNoPub.map(a => `<li><span>${esc(actionLabel(a.id))}</span>
         <button class="btn small" data-act="edit-action" data-id="${a.id}">Edit</button></li>`).join("")}</ul></div>`;
   }
 
   // Section 3: Restricted actions with no job
   if (unlistedRestricted.length) {
-    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Restricted actions that no job lists</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">⚠</span> ${unlistedRestricted.length}</span></h4>
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Restricted actions that no job lists</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">${ICONS.warn}</span> ${unlistedRestricted.length}</span></h4>
       <p class="muted" style="margin:0 0 6px;font-size:13px">Users will never see these actions until a job type adds them.</p>
       <ul class="check-list">${unlistedRestricted.map(a => `<li><span>${esc(actionLabel(a.id))}</span>
         <button class="btn small" data-act="edit-action" data-id="${a.id}">Edit</button></li>`).join("")}</ul></div>`;
@@ -19498,7 +19841,7 @@ function renderCatalogCheck() {
 
   // Section 4: Events with no niyyahs
   if (eventsNoNiyyah.length) {
-    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Events with no niyyahs</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">⚠</span> ${eventsNoNiyyah.length}</span></h4>
+    h += `<div class="check-card"><h4 style="color:var(--danger)"><span>Events with no niyyahs</span> <span class="badge st-empty"><span class="st-icon" aria-hidden="true">${ICONS.warn}</span> ${eventsNoNiyyah.length}</span></h4>
       <ul class="check-list">${eventsNoNiyyah.map(e => `<li><span>${esc(nm(e))}</span>
         <button class="btn small" data-act="edit-event" data-id="${e.id}">Edit</button></li>`).join("")}</ul></div>`;
   }
@@ -19830,7 +20173,7 @@ function openCleanupActions() {
       <p style="margin:0 0 var(--space-sm)">Removes obsolete notification templates, legacy visibility fields, and restriction fields on Action Parents in chunks of 400 without modifying last-edited information.</p>
       ${targets.length === 0 ? `
         <div class="empty" style="padding:16px;border-color:var(--green);background:var(--green-soft)">
-          <p style="color:var(--green);font-weight:600;margin:0">✓ All actions are already cleaned up!</p>
+          <p style="color:var(--green);font-weight:600;margin:0">${STATUS_ICONS.published} All actions are already cleaned up!</p>
         </div>
         <div class="actions" style="margin-top:16px">
           <button type="button" class="btn primary" id="d-cancel">Done</button>
@@ -20098,13 +20441,17 @@ function buildImportPlan(json) {
   };
 }
 
-function openImport(plan, fileName) {
+function openImport(plan, fileName, targetColl = "niyyahs") {
+  const isDua = targetColl === "dua";
+  const entitySingular = isDua ? "du'a" : "niyyah";
+  const entityPlural = isDua ? "du'as" : "niyyahs";
+  const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
   const fresh = plan.items.filter(x => !x.skip), skipped = plan.items.length - fresh.length;
   const missing = plan.codes.filter(c => !languages.some(l => l.code === c));
   const snip = it => { const t = it.translations; const c = ["en", "ar", ...Object.keys(t)].find(k => t[k]?.text); return c ? t[c].text : ""; };
   dlg.innerHTML = `<div class="dlg" style="overflow:auto;max-height:90vh">
-    <h2 data-noguard>Import niyyahs</h2>
-    <p style="margin:0"><b>${esc(fileName)}</b>: ${fresh.length} niyyah${fresh.length === 1 ? "" : "s"} to add${skipped ? `, ${skipped} already imported (skipped)` : ""}.
+    <h2 data-noguard>Import ${entityPlural} (collection: "${targetColl}")</h2>
+    <p style="margin:0"><b>${esc(fileName)}</b>: ${fresh.length} ${fresh.length === 1 ? entitySingular : entityPlural} to add${skipped ? `, ${skipped} already imported (skipped)` : ""}.
       Languages in the file: ${plan.codes.map(esc).join(", ") || "none"}.</p>
     <p class="muted" style="margin:0">All texts are added as draft, with no actions yet. A language with no text for a niyyah shows red.</p>
     ${missing.length ? `<p style="margin:0;color:var(--danger)">Not in Settings yet: ${missing.map(esc).join(", ")}. Their texts are still saved and appear once you add that language.</p>` : ""}
@@ -20122,8 +20469,12 @@ function openImport(plan, fileName) {
   $("#d-save").onclick = async () => {
     try {
       await withButtonLoading($("#d-save"), async () => {
+        const isDua = targetColl === "dua";
+        const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
+        const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
-          const counterRef = doc(db, "meta", "niyyahCounter");
+          const counterRef = doc(db, "meta", counterDocName);
           let startNum = 1;
           await runTransaction(db, async (tx) => {
             const counterSnap = await tx.get(counterRef);
@@ -20132,7 +20483,7 @@ function openImport(plan, fileName) {
               const cData = counterSnap.data();
               nextNum = (typeof cData.next === "number") ? cData.next : 1;
             } else {
-              const maxExisting = maxNumberOf(niyyahs);
+              const maxExisting = maxNumberOf(itemsList);
               nextNum = maxExisting + 1;
             }
             startNum = nextNum;
@@ -20141,7 +20492,7 @@ function openImport(plan, fileName) {
 
           for (let i = 0; i < fresh.length; i += 400) {
             const batch = writeBatch(db);
-            fresh.slice(i, i + 400).forEach((it, idx) => batch.set(doc(collection(db, "niyyahs")), {
+            fresh.slice(i, i + 400).forEach((it, idx) => batch.set(doc(collection(db, targetColl)), {
               number: startNum + i + idx,
               translations: it.translations,
               general: false,
@@ -20162,10 +20513,10 @@ function openImport(plan, fileName) {
             await batch.commit();
           }
         } else {
-          let startNum = maxNumberOf(niyyahs) + 1;
+          let startNum = maxNumberOf(itemsList) + 1;
           fresh.forEach((it, idx) => {
             const copy = {
-              id: "mock_imp_" + Date.now() + "_" + idx,
+              id: (isDua ? "mock_imp_dua_" : "mock_imp_") + Date.now() + "_" + idx,
               number: startNum + idx,
               translations: it.translations,
               general: false,
@@ -20181,9 +20532,9 @@ function openImport(plan, fileName) {
               importIndex: it.importIndex,
               ...mirrorFields(it.translations)
             };
-            niyyahs.push(copy);
+            itemsList.push(copy);
           });
-          renderNiyyahs();
+          if (isDua) renderDua(); else renderNiyyahs();
         }
       });
       dlg.close();
@@ -20226,13 +20577,17 @@ function promptExportScope(allCount, filteredCount) {
   });
 }
 
-async function exportNiyyahs() {
+async function exportNiyyahs(targetEntity = (currentTab === "dua" ? "dua" : "niyyahs")) {
   if (syncState.gateOpen) {
     toast("Updating, one moment", false);
     return;
   }
 
-  const state = tabFilterState.niyyahs || {};
+  const isDua = targetEntity === "dua";
+  const entitySingular = isDua ? "du'a" : "niyyah";
+  const entityPlural = isDua ? "du'as" : "niyyahs";
+  const sourceList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const state = (tabFilterState[targetEntity]) || {};
   const q = (state.q || "").toLowerCase().trim();
   const st = state.status || "";
   const ac = state.actionId || "";
@@ -20246,7 +20601,7 @@ async function exportNiyyahs() {
     return `${numPart} ${textAndSources}`.toLowerCase();
   };
 
-  const filteredList = niyyahs.filter(n => {
+  const filteredList = sourceList.filter(n => {
     if (st && !hasStatus(n, st)) return false;
     if (ac && !(n.actionIds || []).includes(ac)) return false;
     if (sc === "general" && !n.general) return false;
@@ -20257,16 +20612,16 @@ async function exportNiyyahs() {
     return true;
   });
 
-  let targetList = niyyahs;
+  let targetList = sourceList;
 
-  if (isFilterActive && filteredList.length !== niyyahs.length) {
-    const choice = await promptExportScope(niyyahs.length, filteredList.length);
+  if (isFilterActive && filteredList.length !== sourceList.length) {
+    const choice = await promptExportScope(sourceList.length, filteredList.length);
     if (!choice) return;
-    targetList = (choice === "filtered") ? filteredList : niyyahs;
+    targetList = (choice === "filtered") ? filteredList : sourceList;
   }
 
   if (!targetList || !targetList.length) {
-    toast("No niyyahs to export", true);
+    toast(`No ${entityPlural} to export`, true);
     return;
   }
 
@@ -20313,7 +20668,7 @@ async function exportNiyyahs() {
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
-  const filename = `niyyahs-${y}-${m}-${d}.json`;
+  const filename = `${isDua ? 'dua' : 'niyyahs'}-${y}-${m}-${d}.json`;
 
   const jsonStr = JSON.stringify(cleanList, null, 2);
   const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
@@ -20325,8 +20680,8 @@ async function exportNiyyahs() {
       if (navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: "Niyyahs Export",
-          text: `Export of ${cleanList.length} niyyahs`
+          title: `${entityTitle} Export`,
+          text: `Export of ${cleanList.length} ${entityPlural}`
         });
         shared = true;
       }
@@ -20349,13 +20704,15 @@ async function exportNiyyahs() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  toast(`Exported ${cleanList.length} niyyahs`);
+  toast(`Exported ${cleanList.length} ${entityPlural}`);
 }
+let currentImportTarget = "niyyahs";
 $("#import-file").onchange = async e => {
   const f = e.target.files[0];
   e.target.value = "";
   if (!f) return;
-  try { openImport(buildImportPlan(JSON.parse(await f.text())), f.name); }
+  const target = currentImportTarget || (currentTab === "dua" ? "dua" : "niyyahs");
+  try { openImport(buildImportPlan(JSON.parse(await f.text())), f.name, target); }
   catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message, true); }
 };
 
@@ -20369,18 +20726,20 @@ window.__ADMIN__ = {
   get languages() { return languages; }, set languages(v) { languages = v; },
   get tips() { return tips; }, set tips(v) { tips = v; },
   get events() { return events; }, set events(v) { events = v; },
+  get duas() { return duas; }, set duas(v) { duas = v; },
   get hijriDocs() { return hijriDocs; }, set hijriDocs(v) { hijriDocs = v; },
   get currentTab() { return currentTab; },
   get tabHistory() { return tabHistory; },
   get scrollPositions() { return tabScrollPositions; },
   get expandedGroups() { return expandedGroups; },
   get tabFilterState() { return tabFilterState; },
-  TAB_TITLES,
+  ENTITIES, ICONS, STATUS_ICONS, ent, emojiOf, titleOf, collOfKind, collOf, canonicalColl, renderNavigationElements,
+  TAB_TITLES, ALL_TABS, PRIMARY_PHONE_TABS, SECONDARY_PHONE_TABS,
   chipCount, chipFlag, niyyahFlags, renderNiyyahChips, CHIP_KINDS,
   niyyahHasScope, NIYYAH_SCOPE_ERROR,
   isReviewMode, guardMainSettings, logDebug,
   fitTextToBox, observeTextFit,
-  renderAll, renderActions, renderNiyyahs, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, moveTipToCategory, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers,
+  renderAll, renderActions, renderNiyyahs, renderDua, renderNamed, renderCard, renderTips, renderEvents, renderSettings, goTab, show, setViewLang, openAction, openNiyyah, openDua, openNamed, openMaritalStatus, seedMaritalStatuses, deleteMaritalStatus, seedTipCategories, deleteTipCategory, openTipCategory, effectiveTipCategories, moveTipToCategory, openSettingsSpeedDial, closeSettingsSpeedDial, toggleSettingsSpeedDial, openSettingsPopover, closeSettingsPopover, toggleSettingsPopover, isSettingsSpeedDialOpen, isSettingsPopoverOpen, openTip, openEvent, openLanguage, openCardEditor, getLanguageCounts, delLanguage, checkAndBackfillNiyyahNumbers, checkAndBackfillDuaNumbers, delDua,
   openSheet, closeSheet, confirmSheet, toast, withButtonLoading,
   openMoreSheet, openLanguageSheet, openShortcutsSheet, buildImportPlan, openImport, exportNiyyahs, promptExportScope,
   handleSearchTrigger, handleNewItemShortcut,
