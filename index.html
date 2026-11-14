@@ -6868,6 +6868,42 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       transform: none !important;
     }
   }
+  /* ============================================================
+     CATALOG CHECK & EXPORT SCOPE STYLING (TOKEN-BASED)
+     ============================================================ */
+  .catalog-check-bar { margin-top: var(--space-7, 28px); }
+  .catalog-check-desc { margin-top: 0; }
+  .catalog-check-all-good { border-style: solid; border-color: var(--green); background: var(--green-soft); }
+  .catalog-check-good-msg { color: var(--green); font-weight: 600; margin: 0; }
+  .check-card-title.text-danger { color: var(--danger); }
+  .check-card-sub { margin: 0 0 var(--space-1, 6px); font-size: var(--font-xs, 13px); }
+
+  .export-scope-dlg {
+    padding: var(--space-5, 20px) var(--space-4, 16px);
+    text-align: center;
+  }
+  .export-scope-dlg h2 {
+    margin: 0 0 var(--space-2, 8px);
+    font-size: var(--font-lg, 18px);
+  }
+  .export-scope-dlg p {
+    margin: 0 0 var(--space-4, 16px);
+    font-size: var(--font-sm, 14px);
+  }
+  .export-scope-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+  }
+  .export-scope-actions .btn {
+    width: 100%;
+  }
+  .export-scope-cancel {
+    margin-top: var(--space-1, 4px);
+    border: none;
+    background: transparent;
+    color: var(--muted);
+  }
 </style>
 </head>
 <body>
@@ -7464,6 +7500,17 @@ let calView = "cal", calSel = null, calRange = false, calCountry = "";
 let hijriDocs = {};
 const openN = new Set();
 let shownN = [];
+
+const NIYYAH_LIKE = Object.freeze(["niyyahs", "dua"]);
+const itemsOf = kind => ({ niyyahs, dua: duas })[kind] || [];
+function referencingItems(predicate) {
+  const result = [];
+  for (const kind of NIYYAH_LIKE) {
+    const list = itemsOf(kind);
+    for (const item of list) if (predicate(item, kind)) result.push({ kind, item });
+  }
+  return result;
+}
 
 /* ============================================================
    SEARCH & FILTER STATE (REMEMBERED PER TAB)
@@ -9888,7 +9935,7 @@ function actionLabel(id) {
   return p ? `${nm(p)} › ${nm(a)}` : nm(a);
 }
 const niyyahCount = id => niyyahs.filter(n => Array.isArray(n.actionIds) ? n.actionIds.includes(id) : Object.values(n.actionIds || {}).includes(id)).length;
-const duaCount = id => (typeof duas !== "undefined" ? duas : []).filter(d => Array.isArray(d.actionIds) ? d.actionIds.includes(id) : Object.values(d.actionIds || {}).includes(id)).length;
+const duaCount = id => duas.filter(d => Array.isArray(d.actionIds) ? d.actionIds.includes(id) : Object.values(d.actionIds || {}).includes(id)).length;
 
 /* ---------- count chips & action chips ---------- */
 const CHIP_KINDS = Object.fromEntries(
@@ -10703,7 +10750,7 @@ function langFields(L, fields, initial, onChange = () => {}, initialStatus = {},
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
                       ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
-                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
+                ${isSel ? `<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>` : ""}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
             `;
@@ -11498,7 +11545,7 @@ function openLanguageSheet() {
               <span class="l-name">${esc(l.name)}</span>
               <span class="l-code">${esc(l.code.toUpperCase())}${l.rtl ? ' · RTL' : ''}</span>
             </div>
-            ${l.code === curCode ? '<span class="l-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
+            ${l.code === curCode ? `<span class="l-check" aria-hidden="true">${STATUS_ICONS.published}</span>` : ""}
           </button>
         `).join("")}
       </div>
@@ -13911,7 +13958,7 @@ function getItem(type, id) {
   const c = canonicalColl(type);
   if (c === "actions") return actions.find(x => String(x.id) === String(id));
   if (c === "niyyahs") return niyyahs.find(x => String(x.id) === String(id));
-  if (c === "dua") return (typeof duas !== "undefined" ? duas : []).find(x => String(x.id) === String(id));
+  if (c === "dua") return duas.find(x => String(x.id) === String(id));
   if (c === "locationTypes") return types.find(x => String(x.id) === String(id));
   if (c === "jobTypes") return jobs.find(x => String(x.id) === String(id));
   if (c === "maritalStatuses") return maritalStatuses.find(x => String(x.id) === String(id));
@@ -14624,7 +14671,7 @@ async function duplicateItem(type, id) {
       const isDua = type === "dua";
       const targetColl = isDua ? "dua" : "niyyahs";
       const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
-      const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+      const itemsList = isDua ? duas : niyyahs;
       if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
         const counterRef = doc(db, "meta", counterDocName);
         await runTransaction(db, async (tx) => {
@@ -14761,7 +14808,7 @@ function getDependentsMessage(type, id, item) {
       (x.beforeActionIds || []).includes(id) ||
       (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
     );
-    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x =>
+    const depDuas = duas.filter(x =>
       (x.actionIds || []).includes(id) ||
       (x.afterActionIds || []).includes(id) ||
       (x.beforeActionIds || []).includes(id) ||
@@ -14781,21 +14828,21 @@ function getDependentsMessage(type, id, item) {
     }
   } else if (c === "jobTypes") {
     const depNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
-    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id));
+    const depDuas = duas.filter(x => (x.jobIds || []).includes(id));
     const refCounts = [];
     if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
     if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
     if (refCounts.length > 0) return usedByCombinedMessage(refCounts);
   } else if (c === "maritalStatuses") {
     const depNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
-    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id));
+    const depDuas = duas.filter(x => (x.maritalStatusIds || []).includes(id));
     const refCounts = [];
     if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
     if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
     if (refCounts.length > 0) return usedByCombinedMessage(refCounts);
   } else if (c === "events") {
     const depNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
-    const depDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id));
+    const depDuas = duas.filter(x => (x.eventIds || []).includes(id));
     const refCounts = [];
     if (depNiyyahs.length > 0) refCounts.push({ n: depNiyyahs.length, singular: "niyyah", plural: "niyyahs" });
     if (depDuas.length > 0) refCounts.push({ n: depDuas.length, singular: "du'a", plural: "du'as" });
@@ -15050,7 +15097,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       (x.beforeActionIds || []).includes(id) ||
       (x.situations || []).some(s => (s.beforeActionIds || []).includes(id) || (s.afterActionIds || []).includes(id))
     );
-    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x =>
+    const referencingDuas = duas.filter(x =>
       (x.actionIds || []).includes(id) ||
       (x.afterActionIds || []).includes(id) ||
       (x.beforeActionIds || []).includes(id) ||
@@ -15069,7 +15116,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
     }
   } else if (type === "jobs") {
     const referencingNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
-    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id));
+    const referencingDuas = duas.filter(x => (x.jobIds || []).includes(id));
     const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
@@ -15083,7 +15130,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
     }
   } else if (type === "maritalStatuses" || type === "maritalStatus") {
     const referencingNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
-    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id));
+    const referencingDuas = duas.filter(x => (x.maritalStatusIds || []).includes(id));
     const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
@@ -15097,7 +15144,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
     }
   } else if (type === "events") {
     const referencingNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
-    const referencingDuas = (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id));
+    const referencingDuas = duas.filter(x => (x.eventIds || []).includes(id));
     const lockedItem = referencingNiyyahs.find(n => {
       const l = lockOf("niyyahs", n.id);
       return l && !l.isMine;
@@ -15194,7 +15241,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
 
   // Snapshot referencing duas
   if (type === "actions") {
-    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+    duas.forEach(x => {
       const hasAction = (x.actionIds || []).includes(id);
       const hasBefore = (x.beforeActionIds || []).includes(id);
       const hasAfter = (x.afterActionIds || []).includes(id);
@@ -15210,19 +15257,19 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       }
     });
   } else if (type === "jobs") {
-    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+    duas.forEach(x => {
       if ((x.jobIds || []).includes(id)) {
         affectedDuas.push({ item: x, jobIds: [...x.jobIds] });
       }
     });
   } else if (type === "maritalStatuses" || type === "maritalStatus") {
-    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+    duas.forEach(x => {
       if ((x.maritalStatusIds || []).includes(id)) {
         affectedDuas.push({ item: x, maritalStatusIds: [...x.maritalStatusIds] });
       }
     });
   } else if (type === "events") {
-    (typeof duas !== "undefined" ? duas : []).forEach(x => {
+    duas.forEach(x => {
       if ((x.eventIds || []).includes(id)) {
         affectedDuas.push({ item: x, eventIds: [...x.eventIds] });
       }
@@ -15253,7 +15300,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       jobs.forEach(j => {
         if (j.actionIds) j.actionIds = j.actionIds.filter(aId => aId !== id);
       });
-      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      duas.forEach(x => {
         if (x.actionIds) x.actionIds = x.actionIds.filter(aId => aId !== id);
         if (Array.isArray(x.situations)) {
           x.situations.forEach(s => {
@@ -15270,14 +15317,14 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       });
     }
     else if (type === "niyyahs") niyyahs = niyyahs.filter(x => x.id !== id);
-    else if (type === "dua") duas = (typeof duas !== "undefined" ? duas : []).filter(x => x.id !== id);
+    else if (type === "dua") duas = duas.filter(x => x.id !== id);
     else if (type === "types") types = types.filter(x => x.id !== id);
     else if (type === "jobs") {
       jobs = jobs.filter(x => x.id !== id);
       niyyahs.forEach(x => {
         if (x.jobIds) x.jobIds = x.jobIds.filter(jId => jId !== id);
       });
-      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      duas.forEach(x => {
         if (x.jobIds) x.jobIds = x.jobIds.filter(jId => jId !== id);
       });
     }
@@ -15286,7 +15333,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       niyyahs.forEach(x => {
         if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
       });
-      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      duas.forEach(x => {
         if (x.maritalStatusIds) x.maritalStatusIds = x.maritalStatusIds.filter(mId => mId !== id);
       });
     }
@@ -15299,7 +15346,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       niyyahs.forEach(x => {
         if (x.eventIds) x.eventIds = x.eventIds.filter(eId => eId !== id);
       });
-      (typeof duas !== "undefined" ? duas : []).forEach(x => {
+      duas.forEach(x => {
         if (x.eventIds) x.eventIds = x.eventIds.filter(eId => eId !== id);
       });
     }
@@ -15371,7 +15418,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
           }
           updates.push(b => b.update(doc(db, "niyyahs", x.id), upd));
         });
-        (typeof duas !== "undefined" ? duas : []).filter(x =>
+        duas.filter(x =>
           (x.actionIds || []).includes(id) ||
           (x.afterActionIds || []).includes(id) ||
           (x.beforeActionIds || []).includes(id) ||
@@ -15397,19 +15444,19 @@ async function deleteItemWithUndo(type, id, opts = {}) {
         updates.push(b => b.delete(doc(db, "jobTypes", id)));
         niyyahs.filter(x => (x.jobIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { jobIds: arrayRemove(id) })));
-        (typeof duas !== "undefined" ? duas : []).filter(x => (x.jobIds || []).includes(id))
+        duas.filter(x => (x.jobIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { jobIds: arrayRemove(id) })));
       } else if (type === "maritalStatuses" || type === "maritalStatus") {
         updates.push(b => b.delete(doc(db, "maritalStatuses", id)));
         niyyahs.filter(x => (x.maritalStatusIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { maritalStatusIds: arrayRemove(id) })));
-        (typeof duas !== "undefined" ? duas : []).filter(x => (x.maritalStatusIds || []).includes(id))
+        duas.filter(x => (x.maritalStatusIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { maritalStatusIds: arrayRemove(id) })));
       } else if (type === "events") {
         updates.push(b => b.delete(doc(db, "events", id)));
         niyyahs.filter(x => (x.eventIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "niyyahs", x.id), { eventIds: arrayRemove(id) })));
-        (typeof duas !== "undefined" ? duas : []).filter(x => (x.eventIds || []).includes(id))
+        duas.filter(x => (x.eventIds || []).includes(id))
           .forEach(x => updates.push(b => b.update(doc(db, "dua", x.id), { eventIds: arrayRemove(id) })));
       } else {
         updates.push(b => b.delete(doc(db, coll, id)));
@@ -15736,7 +15783,7 @@ async function checkAndBackfillNumbers(entityKey = "niyyahs") {
   if (backfillState[entityKey]) return;
   if (!checkWritePermission()) return;
   const isDua = entityKey === "dua";
-  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const itemsList = isDua ? duas : niyyahs;
   if (!itemsList || !itemsList.length) return;
 
   const unnumbered = itemsList.filter(n => n.number == null || typeof n.number !== "number");
@@ -15864,7 +15911,7 @@ function renderNiyyahLike(entityKey) {
   const sc = state.scope || "";
   const L = langs();
 
-  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const itemsList = isDua ? duas : niyyahs;
 
   const haystack = n => {
     const textAndSources = L.map(l => { const t = trOf(n, l.code); return `${t.text} ${t.sources.join(" ")}`; }).join(" ");
@@ -15888,7 +15935,7 @@ function renderNiyyahLike(entityKey) {
   if (isInitialLoading) {
     listHtml = renderSkeletons(4);
   } else if (!L.length) {
-    listHtml = renderEmptyState(ICONS.globe, STRINGS.empty.niyyahsNoLang.title, STRINGS.empty.niyyahsNoLang.desc, STRINGS.empty.niyyahsNoLang.btn, "go-settings");
+    listHtml = renderEmptyState(emojiOf("languages"), STRINGS.empty.niyyahsNoLang.title, STRINGS.empty.niyyahsNoLang.desc, STRINGS.empty.niyyahsNoLang.btn, "go-settings");
   } else if (!itemsList.length) {
     listHtml = renderEmptyState(isDua ? ENTITIES.dua.emoji : ENTITIES.niyyahs.emoji, isDua ? STRINGS.empty.dua.title : STRINGS.empty.niyyahs.title, isDua ? STRINGS.empty.dua.desc : STRINGS.empty.niyyahs.desc, isDua ? STRINGS.empty.dua.btn : STRINGS.empty.niyyahs.btn, isDua ? "new-dua" : "new-niyyah");
   } else if (!list.length) {
@@ -15930,8 +15977,8 @@ function renderNiyyahLike(entityKey) {
     if (!$(".tab-top-actions", existingSec)) {
       $(".search-filter-bar", existingSec)?.insertAdjacentHTML("beforeend", `
         <div class="tab-top-actions">
-          <button type="button" class="btn-icon btn-import-json" data-act="import-json" aria-label="Import JSON" title="Import JSON">${ICONS.import}</button>
-          <button type="button" class="btn-icon btn-export-json" data-act="export-json" aria-label="Export JSON" title="Export JSON">${ICONS.export}</button>
+          <button type="button" class="btn-icon btn-import-json" data-act="import-json" data-target="${entityKey}" aria-label="Import JSON" title="Import JSON">${ICONS.importJson}</button>
+          <button type="button" class="btn-icon btn-export-json" data-act="export-json" data-target="${entityKey}" aria-label="Export JSON" title="Export JSON">${ICONS.exportJson}</button>
           <button type="button" class="btn-icon primary hdr-add-btn ${isDua ? 'btn-add-dua-circle' : 'btn-add-niyyah-circle'}" data-act="${isDua ? 'new-dua' : 'new-niyyah'}" aria-label="${isDua ? ENTITIES.dua.fab : ENTITIES.niyyahs.fab}" title="${isDua ? ENTITIES.dua.fab : ENTITIES.niyyahs.fab}">+</button>
         </div>
       `);
@@ -16913,7 +16960,7 @@ function openNiyyahLike(entityKey, id, _mode = null) {
   if (!checkWritePermission()) return;
   const isDua = entityKey === "dua";
   const coll = isDua ? "dua" : "niyyahs";
-  const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const itemsList = isDua ? duas : niyyahs;
   const counterDoc = isDua ? "duaCounter" : "niyyahCounter";
   const itemWord = isDua ? "du'a" : "niyyah";
   const itemWordPlural = isDua ? "du'as" : "niyyahs";
@@ -17464,7 +17511,7 @@ function openNiyyahLike(entityKey, id, _mode = null) {
                       class="editor-status-btn st-${st} ${isSel ? "is-selected" : ""}"
                       data-st="${st}" tabindex="${isSel ? "0" : "-1"}"
                       ${(isReview || isLangLocked) ? 'aria-disabled="true"' : ""}>
-                ${isSel ? '<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>' : ''}
+                ${isSel ? `<span class="editor-status-btn-check" aria-hidden="true">${STATUS_ICONS.published}</span>` : ""}
                 <span>${st.charAt(0).toUpperCase() + st.slice(1)}</span>
               </button>
             `;
@@ -18941,7 +18988,7 @@ function renderEventList() {
           <div class="g-body cards-grid">
             ${g.items.map(e => {
               const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
-              const duaCnt = (typeof duas !== "undefined" ? duas : []).filter(d => (d.eventIds || []).includes(e.id)).length;
+              const duaCnt = duas.filter(d => (d.eventIds || []).includes(e.id)).length;
               const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
               const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}${duaCnt > 0 ? ' ' + chipCount("dua", duaCnt) : ''}`;
               return renderCard({
@@ -19461,7 +19508,7 @@ function renderEvents() {
         <button type="button" class="btn small" data-act="cal-today">Today</button>
         <button type="button" class="btn small" data-act="cal-view">List view</button>
         <button type="button" class="btn small ${calRange ? "on" : ""}" data-act="cal-range" title="Tap a second day to extend selection">Range</button>
-        <button type="button" class="btn small" data-act="open-cal-settings" aria-label="Hijri & Calendar Settings">${ICONS.settings || ENTITIES.settings.emoji} Hijri Settings</button>
+        <button type="button" class="btn small" data-act="open-cal-settings" aria-label="Hijri & Calendar Settings">${emojiOf("settings")} Hijri Settings</button>
       </div>
     </div>
     <div class="cal">${WEEKDAYS.map(w => `<div class="dow">${w.slice(0, 3)}</div>`).join("")}`;
@@ -19494,7 +19541,7 @@ function renderEvents() {
     html += seen.size ? `<div class="cards-grid">` + [...seen.values()].map(e => {
         const L = langs();
         const cnt = niyyahs.filter(n => (n.eventIds || []).includes(e.id)).length;
-        const duaCnt = (typeof duas !== "undefined" ? duas : []).filter(d => (d.eventIds || []).includes(e.id)).length;
+        const duaCnt = duas.filter(d => (d.eventIds || []).includes(e.id)).length;
         const preview = `${e.remindDaysBefore ? `${e.remindDaysBefore}d before` : 'On the day'}, ${e.notifyTime || '09:00'}`;
         const chips = `<span class="chip chip-neutral">${esc(ruleText(e))}</span><span class="chip ${e.published ? 'chip-status-good' : 'chip-status-warn'}">${e.published ? 'Published' : 'Draft'}</span>${chipCount("niyyahs", cnt)}${duaCnt > 0 ? ' ' + chipCount("dua", duaCnt) : ''}`;
         return renderCard({
@@ -19576,7 +19623,7 @@ function getLanguageCounts(code) {
     return (tr?.text || "").trim().length > 0 || (tr?.sources && tr.sources.length > 0);
   }).length;
 
-  const nDuas = (typeof duas !== "undefined" ? duas : []).filter(d => {
+  const nDuas = duas.filter(d => {
     const tr = trOf(d, c);
     return (tr?.text || "").trim().length > 0 || (tr?.sources && tr.sources.length > 0);
   }).length;
@@ -19688,7 +19735,7 @@ function renderSettings() {
         const isLockedByOther = !!(lock && !lock.isMine);
         const deleteTooltip = isLockedByOther ? "Locked by another user" : `Delete ${esc(displayName)}`;
         const tools = `
-          <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}></button>
+          <button type="button" class="btn-icon ${isLockedByOther ? 'is-disabled' : ''}" data-act="edit-marital-status" data-id="${esc(m.id)}" aria-label="Edit ${esc(displayName)}" title="${isLockedByOther ? 'Locked by another user' : 'Edit'}" ${isLockedByOther ? 'disabled' : ''}>${ICONS.edit}</button>
           <button type="button" class="btn-icon danger ${isLockedByOther ? 'is-disabled' : ''}" data-act="del-marital-status" data-id="${esc(m.id)}" aria-label="Delete ${esc(displayName)}" title="${esc(deleteTooltip)}" ${isLockedByOther ? 'disabled' : ''}>${ICONS.del}</button>
         `;
 
@@ -19781,7 +19828,7 @@ function renderCatalogCheck() {
   const orphanNiyyahs = niyyahs.filter(n => publishedNiyyah(n) && !n.general && (!n.actionIds || !n.actionIds.length));
 
   // 1b. Published du'as with no actions and not general
-  const orphanDuas = (typeof duas !== "undefined" ? duas : []).filter(d => publishedNiyyah(d) && !d.general && (!d.actionIds || !d.actionIds.length));
+  const orphanDuas = duas.filter(d => publishedNiyyah(d) && !d.general && (!d.actionIds || !d.actionIds.length));
 
   // 2. Actions with no published niyyah (actionable leaves or standalone)
   const isLeaf = a => childrenOf(a.id).length === 0;
@@ -20471,7 +20518,7 @@ function openImport(plan, fileName, targetColl = "niyyahs") {
       await withButtonLoading($("#d-save"), async () => {
         const isDua = targetColl === "dua";
         const counterDocName = isDua ? "duaCounter" : "niyyahCounter";
-        const itemsList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+        const itemsList = isDua ? duas : niyyahs;
 
         if (window.__FIREBASE_EMULATOR__ || !window.__TEST_MODE__) {
           const counterRef = doc(db, "meta", counterDocName);
@@ -20538,7 +20585,8 @@ function openImport(plan, fileName, targetColl = "niyyahs") {
         }
       });
       dlg.close();
-      toast(`${fresh.length} niyyahs imported.`, { type: "success" });
+      const n = fresh.length;
+      toast(`${n} ${n === 1 ? ent(targetColl).singular : ent(targetColl).plural} imported.`, { type: "success" });
     } catch (e) { fail(e); }
   };
   showDlg();
@@ -20586,7 +20634,7 @@ async function exportNiyyahs(targetEntity = (currentTab === "dua" ? "dua" : "niy
   const isDua = targetEntity === "dua";
   const entitySingular = isDua ? "du'a" : "niyyah";
   const entityPlural = isDua ? "du'as" : "niyyahs";
-  const sourceList = isDua ? (typeof duas !== "undefined" ? duas : []) : niyyahs;
+  const sourceList = isDua ? duas : niyyahs;
   const state = (tabFilterState[targetEntity]) || {};
   const q = (state.q || "").toLowerCase().trim();
   const st = state.status || "";
@@ -20615,7 +20663,7 @@ async function exportNiyyahs(targetEntity = (currentTab === "dua" ? "dua" : "niy
   let targetList = sourceList;
 
   if (isFilterActive && filteredList.length !== sourceList.length) {
-    const choice = await promptExportScope(sourceList.length, filteredList.length);
+    const choice = await promptExportScope(sourceList.length, filteredList.length, targetEntity);
     if (!choice) return;
     targetList = (choice === "filtered") ? filteredList : sourceList;
   }
@@ -20668,7 +20716,7 @@ async function exportNiyyahs(targetEntity = (currentTab === "dua" ? "dua" : "niy
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, "0");
   const d = String(now.getDate()).padStart(2, "0");
-  const filename = `${isDua ? 'dua' : 'niyyahs'}-${y}-${m}-${d}.json`;
+  const filename = `${targetEntity}-${y}-${m}-${d}.json`;
 
   const jsonStr = JSON.stringify(cleanList, null, 2);
   const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
@@ -20704,7 +20752,7 @@ async function exportNiyyahs(targetEntity = (currentTab === "dua" ? "dua" : "niy
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  toast(`Exported ${cleanList.length} ${entityPlural}`);
+  toast(`${cleanList.length} ${cleanList.length === 1 ? entitySingular : entityPlural} exported`);
 }
 let currentImportTarget = "niyyahs";
 $("#import-file").onchange = async e => {
@@ -20712,7 +20760,7 @@ $("#import-file").onchange = async e => {
   e.target.value = "";
   if (!f) return;
   const target = currentImportTarget || (currentTab === "dua" ? "dua" : "niyyahs");
-  try { openImport(buildImportPlan(JSON.parse(await f.text())), f.name, target); }
+  try { openImport(buildImportPlan(JSON.parse(await f.text()), target), f.name, target); }
   catch (err) { toast(err instanceof SyntaxError ? "That file is not valid JSON." : err.message, true); }
 };
 
@@ -20733,7 +20781,7 @@ window.__ADMIN__ = {
   get scrollPositions() { return tabScrollPositions; },
   get expandedGroups() { return expandedGroups; },
   get tabFilterState() { return tabFilterState; },
-  ENTITIES, ICONS, STATUS_ICONS, ent, emojiOf, titleOf, collOfKind, collOf, canonicalColl, renderNavigationElements,
+  ENTITIES, ICONS, STATUS_ICONS, ent, emojiOf, titleOf, collOfKind, collOf, canonicalColl, renderNavigationElements, NIYYAH_LIKE, itemsOf, referencingItems,
   TAB_TITLES, ALL_TABS, PRIMARY_PHONE_TABS, SECONDARY_PHONE_TABS,
   chipCount, chipFlag, niyyahFlags, renderNiyyahChips, CHIP_KINDS,
   niyyahHasScope, NIYYAH_SCOPE_ERROR,
