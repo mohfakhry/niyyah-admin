@@ -197,6 +197,46 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     --shadow-lg: 0 8px 24px rgba(0,0,0,.18);
     --shadow-xl: 0 20px 60px rgba(0,0,0,.28);
     --shadow-tabs: 0 -2px 12px rgba(0,0,0,.06);
+
+    /* Primitives */
+    --white: #ffffff;
+    --on-accent: #ffffff;          /* text/icon colour on brand, status and danger fills */
+
+    /* Extended palette (previously referenced but never declared) */
+    --gold: #fab005;
+    --gold-soft: #fff9db;
+    --blue: #1c7ed6;
+    --blue-soft: #e7f5ff;
+    --danger-soft: #fbeae6;
+    --border-dark: #b5c7c2;
+    --surface-hover: rgba(0, 0, 0, 0.04);
+    --primary-subtle: rgba(20, 88, 77, 0.12);
+
+    /* Layout & stacking */
+    --bottom-bar-h: 60px;
+    --z-modal: 1000;
+
+    /* Motion */
+    --transition-fast: 0.15s ease;
+    --transition-ui: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+
+    /* Typography */
+    --font-arabic: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+  }
+
+  /* Semantic aliases. Declared on :root AND body.dark so they re-resolve
+     against the active theme (var() inside custom properties is resolved
+     where it is declared, not where it is used). */
+  :root, body.dark {
+    --primary: var(--green);
+    --text: var(--ink);
+    --text-muted: var(--muted);
+    --border: var(--line);
+    --line-strong: var(--muted);
+    --ink-soft: var(--muted);
+    --paper-2: var(--card);
+    --input-bg: var(--card);
+    --surface: var(--card);
   }
 
   *, *::before, *::after {
@@ -267,13 +307,13 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: var(--ink);
     border: 1px solid var(--line);
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+    transition: var(--transition-ui);
   }
 
   /* Level 1: Primary (filled green) - Maximum 1 per screen or sheet */
   .btn.primary, .btn-primary {
     background: var(--green);
-    color: #ffffff;
+    color: var(--on-accent);
     border: 1px solid var(--green);
     box-shadow: 0 1px 3px rgba(17, 56, 50, 0.2);
   }
@@ -322,11 +362,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     flex-shrink: 0;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+    transition: var(--transition-ui);
   }
   .btn-icon.primary {
     background: var(--green);
-    color: #ffffff;
+    color: var(--on-accent);
     border: 1px solid var(--green);
     box-shadow: 0 1px 3px rgba(17, 56, 50, 0.2);
   }
@@ -341,7 +381,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   header.top .icon-btn:not(.primary):not(.danger) {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+    color: var(--on-accent);
   }
 
   /* Hover states strictly inside @media (hover: hover) */
@@ -355,7 +395,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .btn-primary:hover:not([disabled]):not(.disabled) {
       background: var(--green-dark);
       border-color: var(--green-dark);
-      color: #ffffff;
+      color: var(--on-accent);
     }
     .btn.text:hover:not([disabled]):not(.disabled),
     .btn-text:hover:not([disabled]):not(.disabled) {
@@ -376,7 +416,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .btn-icon.primary:hover:not([disabled]):not(.disabled) {
       background: var(--green-dark);
       border-color: var(--green-dark);
-      color: #ffffff;
+      color: var(--on-accent);
     }
     .btn-icon.danger:hover:not([disabled]):not(.disabled) {
       background: var(--danger-soft);
@@ -388,7 +428,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     header.top .icon-btn:not(.primary):not(.danger):hover:not([disabled]):not(.disabled) {
       background: rgba(255, 255, 255, 0.15);
       border-color: rgba(255, 255, 255, 0.8);
-      color: #ffffff;
+      color: var(--on-accent);
     }
   }
 
@@ -453,7 +493,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .btn-icon.is-success {
     background: var(--green) !important;
     border-color: var(--green) !important;
-    color: #ffffff !important;
+    color: var(--on-accent) !important;
     pointer-events: none;
   }
 
@@ -462,14 +502,14 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: none;
     position: fixed;
     right: 18px;
-    bottom: calc(var(--bottom-bar-h, 60px) + env(safe-area-inset-bottom, 0px) + 16px);
+    bottom: calc(var(--bottom-bar-h) + env(safe-area-inset-bottom, 0px) + 16px);
     width: 56px;
     height: 56px;
     min-height: 56px;
     min-width: 56px;
     border-radius: var(--radius-full);
     background: var(--green);
-    color: #ffffff;
+    color: var(--on-accent);
     border: none;
     box-shadow: 0 4px 16px rgba(17, 56, 50, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
     font-size: 32px;
@@ -502,7 +542,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     width: 250px;
     min-width: 250px;
     background: #113832;
-    color: #fff;
+    color: var(--on-accent);
     display: flex;
     flex-direction: column;
     position: sticky;
@@ -526,7 +566,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .sidebar-head h2 {
     font-size: var(--font-lg);
     margin: 0;
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 700;
   }
   .sidebar-nav {
@@ -556,11 +596,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .sidebar-nav button:hover {
     background: rgba(255,255,255,.12);
-    color: #fff;
+    color: var(--on-accent);
   }
   .sidebar-nav button[aria-current="page"] {
     background: rgba(255,255,255,.2);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 700;
     box-shadow: inset 4px 0 0 var(--sand);
   }
@@ -594,7 +634,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .btn-shortcuts {
     background: rgba(255,255,255,.1);
     border: 1px solid rgba(255,255,255,.2);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: var(--radius-sm);
     padding: 5px 9px;
     font-size: 13px;
@@ -628,7 +668,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     gap: var(--space-base);
     padding: var(--space-sm) var(--space-3xl);
     background: var(--green);
-    color: #fff;
+    color: var(--on-accent);
     box-shadow: 0 1px 3px rgba(0,0,0,.08);
   }
   header.top h1 {
@@ -648,7 +688,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .icon-btn {
     background: transparent;
     border: 1px solid rgba(255,255,255,.4);
-    color: #fff;
+    color: var(--on-accent);
     width: 44px;
     height: 44px;
     border-radius: var(--radius-full);
@@ -693,7 +733,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     justify-content: center;
     background: transparent !important;
     border: 0 !important;
-    color: #fff;
+    color: var(--on-accent);
     cursor: pointer;
     padding: 0;
     margin: 0;
@@ -796,7 +836,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   .hdr-search.is-expanded {
     width: 360px;
-    background: #ffffff;
+    background: var(--white);
     border-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
@@ -849,7 +889,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .lang-trigger-btn {
     background: transparent;
     border: 1px solid rgba(255,255,255,.45);
-    color: #fff;
+    color: var(--on-accent);
     min-height: 44px;
     padding: 0 12px;
     border-radius: var(--radius-md);
@@ -1009,7 +1049,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: none !important;
   }
   .db-sync-modal {
-    background: var(--card, #ffffff);
+    background: var(--card, var(--white));
     color: var(--ink, #1a202c);
     border: 1px solid var(--line, #e2e8e5);
     border-radius: var(--radius-lg, 14px);
@@ -1079,7 +1119,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   /* Grouped Settings Cards in Editors */
   .editor-settings-card {
-    background: var(--card, #ffffff);
+    background: var(--card, var(--white));
     border: 1px solid var(--line, #e2e8e5);
     border-radius: var(--radius-md, 10px);
     padding: 12px 14px;
@@ -1088,7 +1128,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     display: flex;
     flex-direction: column;
     gap: 10px;
-    transition: border-color var(--trans-fast), opacity var(--trans-fast);
+    transition: border-color var(--transition-fast), opacity var(--transition-fast);
   }
   body.dark .editor-settings-card {
     background: var(--card, #1c2624);
@@ -1134,9 +1174,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     font-weight: 600;
     cursor: pointer;
     border: 1px solid var(--line, #e2e8e5);
-    background: var(--paper, #ffffff);
+    background: var(--paper, var(--white));
     color: var(--ink, #1a202c);
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
   body.dark .editor-settings-lock-btn {
     background: #23312e;
@@ -1144,8 +1184,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: #f0fdf4;
   }
   .editor-settings-lock-btn.is-locked {
-    background: var(--gold-soft, #fff9db);
-    border-color: var(--gold, #fab005);
+    background: var(--gold-soft);
+    border-color: var(--gold);
     color: #854d0e;
   }
   body.dark .editor-settings-lock-btn.is-locked {
@@ -1691,7 +1731,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .card-named-title.rtl {
     direction: rtl;
     text-align: start;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    font-family: var(--font-arabic);
     font-size: 16px;
     line-height: 1.35;
     font-weight: 600;
@@ -1729,7 +1769,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .card-preview.rtl {
     direction: rtl;
     text-align: right;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    font-family: var(--font-arabic);
     font-size: 14px;
     line-height: 1.4;
   }
@@ -2329,7 +2369,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     margin-top: 0 !important;
   }
   .sticky-group-head:hover {
-    border-color: var(--line-strong, var(--muted));
+    border-color: var(--line-strong);
   }
   .sticky-group-head .g-title {
     font-size: 16px;
@@ -2439,7 +2479,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     text-align: start;
   }
   .card-niyyah .card-title.card-niyyah-title.rtl {
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    font-family: var(--font-arabic);
     line-height: 1.6;
   }
   .card-niyyah:not(.is-expanded) .card-niyyah-title {
@@ -2591,7 +2631,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   /* Skeleton loading cards */
   .skeleton-card {
     pointer-events: none;
-    background: #fff;
+    background: var(--white);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: var(--space-base) var(--space-lg);
@@ -2672,9 +2712,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .dlg h2 { font-size: 19px; padding-right: 40px; overflow-wrap: anywhere; }
   .dlg label.f { display: grid; gap: var(--space-2xs); font-weight: 500; }
   .dlg label.f small { font-weight: 400; color: var(--muted); }
-  .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; box-sizing: border-box; font-size: 16px; }
+  .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { width: 100%; padding: var(--space-sm) var(--space-md); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--white); box-sizing: border-box; font-size: 16px; }
   .dlg textarea { min-height: 76px; resize: vertical; font-size: 16px; }
-  .dlg textarea.rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 21px; font-weight: 600; }
+  .dlg textarea.rtl { direction: rtl; font-family: var(--font-arabic); font-size: 21px; font-weight: 600; }
   .dlg .actions { display: flex; justify-content: flex-end; gap: var(--space-sm); }
   .checklist, .evlist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-base); }
   .grp-h { font-weight: 600; margin-top: var(--space-xs); }
@@ -2717,7 +2757,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .seg-item:active { transform: scale(0.97); }
   .seg-item.is-selected {
-    background: #ffffff;
+    background: var(--white);
     color: var(--ink);
     box-shadow: 0 1px 4px rgba(0,0,0,0.12);
   }
@@ -2764,7 +2804,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     padding: 10px 14px;
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
-    background: #ffffff;
+    background: var(--white);
     color: var(--ink);
     display: flex;
     align-items: center;
@@ -2821,7 +2861,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .filter-chip:hover { border-color: var(--green); }
   .filter-chip.is-active {
     background: var(--ink);
-    color: #ffffff;
+    color: var(--on-accent);
     border-color: var(--ink);
   }
 
@@ -2833,7 +2873,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     width: min(540px, 94vw);
     max-height: 88vh;
     box-shadow: var(--shadow-xl);
-    background: #ffffff;
+    background: var(--white);
     overscroll-behavior: contain;
   }
   #dlg-picker::backdrop { background: rgba(20, 35, 33, 0.45); }
@@ -2851,7 +2891,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     justify-content: space-between;
     border-bottom: 1px solid var(--line);
     gap: var(--space-sm);
-    background: #ffffff;
+    background: var(--white);
     position: sticky;
     top: 0;
     z-index: 2;
@@ -2875,7 +2915,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     font-size: 16px !important;
-    background: #ffffff;
+    background: var(--white);
     box-sizing: border-box;
   }
   .picker-search input:focus-visible { outline: 2px solid var(--green); }
@@ -2940,12 +2980,12 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     color: transparent;
     font-size: 14px;
     font-weight: 800;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
   }
   .picker-row.is-selected .p-check {
     background: var(--green);
     border-color: var(--green);
-    color: #ffffff;
+    color: var(--on-accent);
   }
   .picker-row .p-radio {
     width: 20px;
@@ -2977,7 +3017,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .picker-footer {
     padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--line);
-    background: #ffffff;
+    background: var(--white);
     position: sticky;
     bottom: 0;
     display: flex;
@@ -3231,7 +3271,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
 
   .tree-row:hover {
-    background: var(--surface-hover, rgba(0, 0, 0, 0.03));
+    background: var(--surface-hover);
   }
 
   body.dark .tree-row:hover {
@@ -3241,7 +3281,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tree-row.is-active,
   .tree-row:focus-visible {
     outline: none;
-    background: var(--primary-subtle, rgba(22, 101, 52, 0.08));
+    background: var(--primary-subtle);
   }
 
   .tree-chevron-btn {
@@ -3326,7 +3366,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .tree-label.rtl {
     direction: rtl;
     text-align: right;
-    font-family: var(--font-arabic, inherit);
+    font-family: var(--font-arabic);
   }
 
   .tree-sub-match {
@@ -3337,7 +3377,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .tree-sub-match.rtl {
     direction: rtl;
-    font-family: var(--font-arabic, inherit);
+    font-family: var(--font-arabic);
   }
 
   .tree-hl {
@@ -3350,7 +3390,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   body.dark .tree-hl {
     background: rgba(234, 179, 8, 0.4);
-    color: #fff;
+    color: var(--on-accent);
   }
 
 
@@ -3652,7 +3692,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     box-sizing: border-box;
-    z-index: calc(var(--z-modal, 1000) + 20);
+    z-index: calc(var(--z-modal) + 20);
   }
   #dlg-history[open] {
     display: block;
@@ -3738,7 +3778,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     min-height: 54px;
     border-radius: var(--radius-md, 12px);
     border: 1px solid var(--line);
-    background: var(--surface, #fff);
+    background: var(--surface);
     color: var(--ink);
     text-align: left;
     cursor: pointer;
@@ -3747,7 +3787,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .history-item-btn:hover {
     background: var(--sand);
-    border-color: var(--border-dark, #b5c7c2);
+    border-color: var(--border-dark);
   }
   body.dark .history-item-btn {
     background: rgba(255, 255, 255, 0.04);
@@ -4018,7 +4058,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     user-select: none;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+    transition: var(--transition-ui);
     box-sizing: border-box;
   }
   .editor-status-btn:active {
@@ -4132,7 +4172,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     border-radius: var(--radius-sm, 6px);
     cursor: pointer;
     user-select: none;
-    transition: background-color var(--trans-fast, 0.15s), border-color var(--trans-fast, 0.15s);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
   }
   .editor-toggle-tile::before {
     content: "";
@@ -4180,8 +4220,8 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     gap: 10px;
     padding: 10px 12px;
     margin-bottom: 10px;
-    background: var(--gold-soft, #fff9db);
-    border: 1px solid var(--gold, #fab005);
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
     border-radius: var(--radius-sm, 6px);
     color: var(--ink);
     font-size: 13px;
@@ -4340,7 +4380,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     font-weight: 800;
     cursor: pointer;
     margin: 8px auto 0;
-    transition: all var(--trans-fast);
+    transition: all var(--transition-fast);
   }
   .btn-add-situation:hover {
     border-color: var(--green);
@@ -4474,7 +4514,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .pinned-niyyah-text.rtl {
     direction: rtl;
     text-align: right;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    font-family: var(--font-arabic);
     font-size: 20px;
     line-height: 1.45;
   }
@@ -4508,7 +4548,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .picker-pinned-text.rtl {
     direction: rtl;
     text-align: right;
-    font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+    font-family: var(--font-arabic);
     font-size: 20px;
     line-height: 1.45;
   }
@@ -4563,7 +4603,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .editor-compact-preview-btn:hover,
   .editor-compact-preview-btn:active {
-    background: var(--surface-hover, rgba(0, 0, 0, 0.04));
+    background: var(--surface-hover);
   }
   body.dark {
     --ink: #e8f1ee;
@@ -4580,6 +4620,14 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     --focus-ring: #48b8a3;
     --primary: #26937e;
     --text: #e8f1ee;
+    --gold: #fcc419;
+    --gold-soft: #382a04;
+    --blue: #74c0fc;
+    --blue-soft: #12293a;
+    --danger-soft: #3a1a14;
+    --border-dark: #3a4d49;
+    --surface-hover: rgba(255, 255, 255, 0.06);
+    --primary-subtle: rgba(38, 147, 126, 0.18);
   }
   body.dark .editor-compact-preview-btn:hover,
   body.dark .editor-compact-preview-btn:active {
@@ -4608,7 +4656,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .editor-compact-preview-text.rtl {
     direction: rtl;
     text-align: right;
-    font-family: var(--font-arabic, inherit);
+    font-family: var(--font-arabic);
   }
 
   .ltabs-bar {
@@ -4635,7 +4683,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     padding: 0;
     margin: 0;
     cursor: pointer;
-    color: #ffffff;
+    color: var(--on-accent);
     font-size: 28px;
     font-weight: 800;
     line-height: 1;
@@ -4729,7 +4777,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     cursor: pointer;
     user-select: none;
     touch-action: manipulation;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans CJK SC", "Noto Sans CJK JP", "Noto Sans CJK TC", "Source Han Sans", sans-serif;
   }
   .ltab .ltab-code {
@@ -5004,7 +5052,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .editor-body .src-row textarea.src-in.rtl {
     direction: rtl;
     text-align: right;
-    font-family: var(--font-arabic, inherit);
+    font-family: var(--font-arabic);
   }
   .editor-body .src-row textarea.src-in:focus {
     border-color: var(--primary);
@@ -5038,9 +5086,9 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .preview { background: var(--sand); border-radius: var(--radius-md); padding: 10px var(--space-lg); }
   .preview b { display: block; }
   .preview small { color: var(--muted); }
-  header.top select { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius-md); padding: 3px var(--space-xs); font-size: var(--font-base); }
+  header.top select { background: transparent; color: var(--on-accent); border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius-md); padding: 3px var(--space-xs); font-size: var(--font-base); }
   header.top select option { color: var(--ink); }
-  .dlg input[type=text].rtl { direction: rtl; font-family: "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif; font-size: 19px; }
+  .dlg input[type=text].rtl { direction: rtl; font-family: var(--font-arabic); font-size: 19px; }
 
   /* Dialog close button (inherits 44px circular .btn-icon) */
   .dlg-x { position: absolute; top: var(--space-base); right: var(--space-lg); font-size: 20px; z-index: 2; }
@@ -5069,7 +5117,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 4px 12px rgba(0, 0, 0, 0.12);
     overflow: hidden;
     box-sizing: border-box;
-    z-index: var(--z-modal, 1000);
+    z-index: var(--z-modal);
   }
 
   /* Red Warning Popups (deletes, discard, draft-change, inactivity) */
@@ -5086,7 +5134,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .warn-popup .discard-popup-actions .btn.danger,
   .warn-popup .actions .btn.danger {
     background: var(--danger-dark);
-    color: #ffffff;
+    color: var(--on-accent);
     border-color: var(--danger-dark);
   }
   /* Safe/cancel button inside warn-popup: red outline */
@@ -5100,7 +5148,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .warn-popup .discard-popup-actions .btn:only-child,
   .warn-popup .actions .btn:only-child {
     background: var(--danger-dark);
-    color: #ffffff;
+    color: var(--on-accent);
     border-color: var(--danger-dark);
   }
   @media (hover: hover) {
@@ -5108,7 +5156,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .warn-popup .actions .btn.danger:hover:not([disabled]) {
       background: var(--danger);
       border-color: var(--danger);
-      color: #ffffff;
+      color: var(--on-accent);
     }
     .warn-popup .discard-popup-actions .btn:not(.danger):not(.primary):hover:not([disabled]),
     .warn-popup .actions .btn:not(.danger):not(.primary):hover:not([disabled]) {
@@ -5332,11 +5380,11 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
 
   .dlg label.f small.lwarn { color: var(--danger); font-weight: 600; }
   .langpick { position: relative; }
-  .langpick .cur { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius-md); padding: 3px var(--space-md); font-size: var(--font-base); }
+  .langpick .cur { background: transparent; color: var(--on-accent); border: 1px solid rgba(255,255,255,.5); border-radius: var(--radius-md); padding: 3px var(--space-md); font-size: var(--font-base); }
   .langpick .menu { position: absolute; right: 0; top: 100%; padding-top: var(--space-xs); display: none; z-index: var(--z-dropdown); min-width: 100%; }
   .langpick.open .menu { display: block; }
   @media (hover: hover) { .langpick:hover .menu { display: block; } }
-  .langpick .menu-in { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); overflow: hidden; display: grid; }
+  .langpick .menu-in { background: var(--white); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); overflow: hidden; display: grid; }
   .langpick .menu button { border: 0; background: transparent; color: var(--ink); text-align: start; padding: var(--space-sm) var(--space-lg); font-size: var(--font-base); white-space: nowrap; }
   .langpick .menu button:hover { background: var(--green-soft); }
   .langpick .menu button.is-cur { background: var(--green-soft); font-weight: 700; box-shadow: inset 3px 0 0 var(--green); }
@@ -5346,7 +5394,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     left: 50%;
     transform: translateX(-50%);
     background: var(--ink);
-    color: #fff;
+    color: var(--on-accent);
     padding: 10px 16px;
     border-radius: var(--radius-lg);
     max-width: min(92vw, 480px);
@@ -5384,7 +5432,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .toast-undo {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: var(--radius-sm);
     padding: 6px 14px;
     font-size: var(--font-base);
@@ -5573,7 +5621,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   }
   .filter-count-badge {
     background: var(--green);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: var(--radius-full);
     font-size: 11px;
     font-weight: 700;
@@ -5779,7 +5827,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .cday .g { font-weight: 600; align-self: flex-start; line-height: 1.2; font-size: 13px; }
   .cday.today .g {
     background: var(--green);
-    color: #fff;
+    color: var(--on-accent);
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -6114,7 +6162,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     }
     #dlg-help .help-sheet { width: 100%; max-width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; border: 0; padding: 20px 16px; }
     .dlg { padding: 20px 16px 0; scroll-padding-bottom: 96px; max-width: 100%; box-sizing: border-box; }
-    .dlg .actions { position: sticky; bottom: 0; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid var(--line); z-index: var(--z-actions); width: calc(100% + 32px); box-sizing: border-box; }
+    .dlg .actions { position: sticky; bottom: 0; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--white); border-top: 1px solid var(--line); z-index: var(--z-actions); width: calc(100% + 32px); box-sizing: border-box; }
     .dlg .actions .btn { flex: 1; min-height: var(--tap, 48px); }
     .dlg input[type=text], .dlg input[type=number], .dlg input[type=time], .dlg select, .dlg textarea { min-height: var(--tap, 48px); font-size: 16px; }
     .checklist, .evlist, .imp-list { max-height: 38dvh; }
@@ -6181,6 +6229,16 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
       --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+
+      /* Extended palette (dark) */
+      --gold: #fcc419;
+      --gold-soft: #382a04;
+      --blue: #74c0fc;
+      --blue-soft: #12293a;
+      --danger-soft: #3a1a14;
+      --border-dark: #3a4d49;
+      --surface-hover: rgba(255, 255, 255, 0.06);
+      --primary-subtle: rgba(38, 147, 126, 0.18);
     }
 
     body {
@@ -6230,7 +6288,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     .btn-icon.primary {
       background: #136959;
       border-color: #228b77;
-      color: #ffffff;
+      color: var(--on-accent);
     }
     @media (hover: hover) {
       .btn.primary:hover:not([disabled]):not(.disabled),
@@ -6238,7 +6296,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
       .btn-icon.primary:hover:not([disabled]):not(.disabled) {
         background: #177b69;
         border-color: #2ba68e;
-        color: #ffffff;
+        color: var(--on-accent);
       }
     }
 
@@ -6371,7 +6429,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
     }
     .picker-row .p-check {
       border-color: var(--line);
-      color: #ffffff;
+      color: var(--on-accent);
     }
     .picker-row .p-radio {
       border-color: var(--line);
@@ -6633,7 +6691,7 @@ A single-file admin web app for Niyyah (Firebase 10.12.2 Auth with Google sign-i
   .settings-speed-dial-menu {
     position: fixed;
     right: 18px;
-    bottom: calc(var(--bottom-bar-h, 60px) + env(safe-area-inset-bottom, 0px) + 82px);
+    bottom: calc(var(--bottom-bar-h) + env(safe-area-inset-bottom, 0px) + 82px);
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -6985,6 +7043,34 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRe
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, collection, doc, getDoc, getDocFromServer, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot,
          serverTimestamp, Timestamp, runTransaction, writeBatch, arrayRemove, arrayUnion, connectFirestoreEmulator, deleteField }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+/* ============================================================
+   APP CONSTANTS (single source of truth: no inline literals)
+   ============================================================ */
+const STORAGE_KEYS = Object.freeze({
+  lastTab: "admin_last_tab",
+  scrollPrefix: "admin_scroll_",
+  swipeHint: "admin_swipe_hint_shown",
+  calCountry: "admin_cal_country",
+  viewLang: "viewLang"
+});
+
+/* Shared UI glyphs (extend here instead of typing emoji in markup) */
+const ICONS = Object.freeze({
+  lock: "🔒",
+  unlock: "🔓",
+  viewers: "👁",
+  close: "✕"
+});
+
+/* Repeated user-facing messages */
+const MESSAGES = Object.freeze({
+  mainSettingsLocked: `Main settings are locked. Tap the ${ICONS.lock} lock button above to unlock.`,
+  deleteBlockedByLock: "Cannot delete: a referencing niyyah is currently locked by someone else."
+});
+
+const HISTORY_CLOSE_BTN_HTML = `<button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">${ICONS.close}</button>`;
 
 /* ============================================================
    1. PASTE YOUR FIREBASE WEB CONFIG HERE
@@ -7393,7 +7479,7 @@ let tabHistory = ["actions"];
 const tabScrollPositions = {};
 
 try {
-  const savedTab = localStorage.getItem("admin_last_tab");
+  const savedTab = localStorage.getItem(STORAGE_KEYS.lastTab);
   if (savedTab && TAB_TITLES[savedTab]) {
     currentTab = savedTab;
     tabHistory = [savedTab];
@@ -7858,7 +7944,7 @@ function isReviewMode(_mode = null) {
 
 function guardMainSettings(isLocked) {
   if (isLocked) {
-    toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+    toast(MESSAGES.mainSettingsLocked, true);
     return true;
   }
   return false;
@@ -10119,7 +10205,7 @@ function openCalSettingsSheet() {
     });
     if (picked !== undefined) {
       calCountry = picked;
-      try { localStorage.setItem("admin_cal_country", calCountry); } catch(e) {}
+      try { localStorage.setItem(STORAGE_KEYS.calCountry, calCountry); } catch(e) {}
       renderEvents();
       openCalSettingsSheet();
     }
@@ -10264,7 +10350,7 @@ const lcodes = (L, m, x = {}) => `<span class="dots">${L.map(l => {
 }).join("")}</span>`;
 
 let viewLang = "";
-try { viewLang = localStorage.getItem("viewLang") || ""; } catch (e) {}
+try { viewLang = localStorage.getItem(STORAGE_KEYS.viewLang) || ""; } catch (e) {}
 const defLang = () => (langs().find(l => l.code === "en") || langs()[0])?.code || "en";
 const viewCode = () => (langs().some(l => l.code === viewLang) ? viewLang : defLang());
 const nameMap = x => x.names || (x.name ? { [defLang()]: x.name } : {});
@@ -10294,7 +10380,7 @@ function renderViewLang() {
 }
 function setViewLang(code) {
   viewLang = code;
-  try { localStorage.setItem("viewLang", viewLang); } catch (err) {}
+  try { localStorage.setItem(STORAGE_KEYS.viewLang, viewLang); } catch (err) {}
   renderAll();
 }
 
@@ -10862,7 +10948,7 @@ function applyTab(name) {
   if (titleEl) titleEl.textContent = title;
   document.title = `${title} — Niyyah Admin`;
 
-  try { localStorage.setItem("admin_last_tab", name); } catch (e) {}
+  try { localStorage.setItem(STORAGE_KEYS.lastTab, name); } catch (e) {}
 
   // Desktop sidebar navigation
   document.querySelectorAll("aside.sidebar nav button[data-tab]").forEach(b => {
@@ -10925,7 +11011,7 @@ function applyTab(name) {
   }
 
   // Restore scroll position
-  const savedPos = tabScrollPositions[name] ?? Number(sessionStorage.getItem("admin_scroll_" + name) || 0);
+  const savedPos = tabScrollPositions[name] ?? Number(sessionStorage.getItem(STORAGE_KEYS.scrollPrefix + name) || 0);
   window.scrollTo({ top: savedPos, behavior: "instant" });
 }
 
@@ -10933,7 +11019,7 @@ function goTab(name, pushHistory = true) {
   if (!TAB_TITLES[name]) return;
   if (currentTab) {
     tabScrollPositions[currentTab] = window.scrollY;
-    try { sessionStorage.setItem("admin_scroll_" + currentTab, String(window.scrollY)); } catch (e) {}
+    try { sessionStorage.setItem(STORAGE_KEYS.scrollPrefix + currentTab, String(window.scrollY)); } catch (e) {}
   }
   if (pushHistory && currentTab !== name) {
     tabHistory.push(name);
@@ -10951,7 +11037,7 @@ window.addEventListener("scroll", () => {
 
 window.addEventListener("beforeunload", () => {
   if (currentTab) {
-    try { sessionStorage.setItem("admin_scroll_" + currentTab, String(window.scrollY)); } catch (e) {}
+    try { sessionStorage.setItem(STORAGE_KEYS.scrollPrefix + currentTab, String(window.scrollY)); } catch (e) {}
   }
 });
 
@@ -10966,8 +11052,8 @@ function showPhoneSwipeHintIfNeeded() {
   const isPhone = window.innerWidth <= 720 && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
   if (!isPhone) return;
   try {
-    if (!localStorage.getItem("admin_swipe_hint_shown")) {
-      localStorage.setItem("admin_swipe_hint_shown", "1");
+    if (!localStorage.getItem(STORAGE_KEYS.swipeHint)) {
+      localStorage.setItem(STORAGE_KEYS.swipeHint, "1");
       setTimeout(() => {
         toast("Swipe left or right to switch pages");
       }, 1000);
@@ -12137,6 +12223,68 @@ function isMine(lock) {
   return lock.sessionId === mySessionId;
 }
 
+/* ============================================================
+   SHARED HELPERS (de-duplicated from repeated inline blocks)
+   ============================================================ */
+function getCurrentUser() {
+  return auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+}
+
+function maxNumberOf(list) {
+  return list.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+}
+
+function usedByMessage(n, singular, plural) {
+  return `Used by ${n} ${n === 1 ? singular : plural}. It will be removed from them.`;
+}
+
+function buildLockBadgeHtml(lock, type, id) {
+  if (!lock) return "";
+  let lockLabel;
+  let lockClass;
+  if (lock.isMine) {
+    lockLabel = `${ICONS.lock} You`;
+    lockClass = "is-mine";
+  } else if (lock.isMineOtherSession) {
+    lockLabel = `${ICONS.lock} You (other device)`;
+    lockClass = "is-mine-other";
+  } else {
+    lockLabel = `${ICONS.lock} ${getFirstName(lock.name || lock.email)}`;
+    lockClass = "is-other";
+  }
+  return `
+      <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
+        <span class="badge-text">${esc(lockLabel)}</span>
+      </button>
+    `;
+}
+
+function buildViewerBadgeHtml(viewers, type, id) {
+  const others = viewers.filter(v => !v.isMine);
+  if (others.length === 0) return "";
+  const viewerLabel = others.length > 1 ? `${ICONS.viewers} ${others.length}` : ICONS.viewers;
+  return `
+      <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
+        <span class="badge-text">${esc(viewerLabel)}</span>
+      </button>
+    `;
+}
+
+function applyMainSettingsLockUI(prefix, locked) {
+  const card = $(`#${prefix}-main-settings`);
+  if (card) card.classList.toggle("is-main-settings-locked", locked);
+  const btn = $(`#${prefix}-main-settings-lock-btn`);
+  if (!btn) return;
+  btn.className = "editor-settings-lock-btn " + (locked ? "is-locked" : "is-unlocked");
+  btn.setAttribute("aria-pressed", locked);
+  btn.setAttribute("aria-label", locked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
+  btn.title = locked ? "Unlock main settings" : "Lock main settings";
+  const emoji = $(".lock-emoji", btn);
+  if (emoji) emoji.textContent = locked ? ICONS.lock : ICONS.unlock;
+  const lbl = $(".lock-label", btn);
+  if (lbl) lbl.textContent = locked ? "Locked" : "Unlocked";
+}
+
 function lockOf(coll, id) {
   const canonical = canonicalColl(coll);
   const lockKey = `${canonical}__${id}`;
@@ -12274,7 +12422,7 @@ async function acquireLock(coll, id) {
   const canonical = canonicalColl(coll);
   const lockKey = `${canonical}__${id}`;
   const lockRef = doc(db, "locks", lockKey);
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   if (!user) {
     console.warn(`[LockSystem] acquireLock rejected: Not authenticated`);
     return { ok: false, error: "Not authenticated" };
@@ -12372,7 +12520,7 @@ async function acquireViewer(coll, id) {
   const canonical = canonicalColl(coll);
   const viewerKey = `${canonical}__${id}__${mySessionId}`;
   const viewerRef = doc(db, "viewers", viewerKey);
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
   if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
@@ -12427,7 +12575,7 @@ async function takeOverLock(coll, id) {
   const canonical = canonicalColl(coll);
   const lockKey = `${canonical}__${id}`;
   const lockRef = doc(db, "locks", lockKey);
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
   if (window.__TEST_MODE__ && !window.__FIREBASE_EMULATOR__) {
@@ -12906,7 +13054,7 @@ async function promptLockToEdit(targetControl, skipPrompt = false) {
 
 async function executeEditorCreateItem({ coll, data, extraWrites = null, revExtra = null }) {
   const canonical = canonicalColl(coll);
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   const userEmail = user?.email || "";
   const userName = getLockDisplayName(user);
 
@@ -12959,7 +13107,7 @@ async function executeEditorSaveTransaction({ coll, id, data, originalUpdatedAt,
   const canonical = canonicalColl(coll);
   const lockRef = doc(db, "locks", `${canonical}__${id}`);
   const itemRef = doc(db, canonical, id);
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   const userEmail = user?.email || "";
   const userName = getLockDisplayName(user);
 
@@ -13407,7 +13555,7 @@ async function openHistorySheet(coll, id) {
     <div class="history-sheet">
       <header class="history-header">
         <h3 class="history-title">Version History</h3>
-        <button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">✕</button>
+        ${HISTORY_CLOSE_BTN_HTML}
       </header>
       <div class="history-body" style="padding: 24px; text-align: center; color: var(--muted);">
         Loading versions…
@@ -13430,7 +13578,7 @@ async function openHistorySheet(coll, id) {
       <div class="history-sheet">
         <header class="history-header">
           <h3 class="history-title">Version History</h3>
-          <button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">✕</button>
+          ${HISTORY_CLOSE_BTN_HTML}
         </header>
         <div class="history-body" style="padding: 24px; text-align: center; color: var(--danger);">
           Failed to load version history.
@@ -13450,7 +13598,7 @@ function renderHistoryListView(canonical, id, revisions) {
       <div class="history-sheet">
         <header class="history-header">
           <h3 class="history-title">Version History</h3>
-          <button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">✕</button>
+          ${HISTORY_CLOSE_BTN_HTML}
         </header>
         <div class="history-body" style="padding: 32px 16px; text-align: center; color: var(--muted);">
           No saved versions yet.
@@ -13487,7 +13635,7 @@ function renderHistoryListView(canonical, id, revisions) {
     <div class="history-sheet">
       <header class="history-header">
         <h3 class="history-title">Version History</h3>
-        <button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">✕</button>
+        ${HISTORY_CLOSE_BTN_HTML}
       </header>
       <div class="history-body">
         <div class="history-list">
@@ -13539,7 +13687,7 @@ function renderHistoryPreviewView(canonical, id, revisions, selectedIdx, selecte
       <header class="history-header">
         <button type="button" class="btn-icon history-back-btn" id="dh-btn-back" aria-label="Back">←</button>
         <h3 class="history-title">${esc(revSeqNum)} · ${esc(author)}</h3>
-        <button type="button" class="btn-icon history-close-btn" id="dh-btn-close" aria-label="Close">✕</button>
+        ${HISTORY_CLOSE_BTN_HTML}
       </header>
       <div class="history-body">
         <div class="history-preview-header">
@@ -13884,38 +14032,10 @@ function renderCard({
   const trayHtml = (type !== "languages" && L && L.length && item) ? renderLangTray(item, L, type) : "";
 
   const lock = lockOf(type, id);
-  let lockBadgeHtml = "";
-  if (lock) {
-    let lockLabel = "";
-    let lockClass = "";
-    if (lock.isMine) {
-      lockLabel = "🔒 You";
-      lockClass = "is-mine";
-    } else if (lock.isMineOtherSession) {
-      lockLabel = "🔒 You (other device)";
-      lockClass = "is-mine-other";
-    } else {
-      const fn = getFirstName(lock.name || lock.email);
-      lockLabel = `🔒 ${fn}`;
-      lockClass = "is-other";
-    }
-    lockBadgeHtml = `
-      <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
-        <span class="badge-text">${esc(lockLabel)}</span>
-      </button>
-    `;
-  }
+  const lockBadgeHtml = buildLockBadgeHtml(lock, type, id);
 
   const viewers = viewersOf(type, id).filter(v => !v.isMine);
-  let viewerBadgeHtml = "";
-  if (viewers.length > 0) {
-    const viewerLabel = viewers.length > 1 ? `👁 ${viewers.length}` : "👁";
-    viewerBadgeHtml = `
-      <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="${esc(type)}" data-id="${esc(id)}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
-        <span class="badge-text">${esc(viewerLabel)}</span>
-      </button>
-    `;
-  }
+  const viewerBadgeHtml = buildViewerBadgeHtml(viewers, type, id);
 
   let displayTitle = title;
   let displayChips = chips;
@@ -14377,7 +14497,7 @@ async function duplicateItem(type, id) {
             const cData = counterSnap.data();
             nextNum = (typeof cData.next === "number") ? cData.next : 1;
           } else {
-            const maxExisting = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+            const maxExisting = maxNumberOf(niyyahs);
             nextNum = maxExisting + 1;
           }
           tx.set(counterRef, { next: nextNum + 1 }, { merge: true });
@@ -14386,7 +14506,7 @@ async function duplicateItem(type, id) {
           tx.set(newDocRef, copy);
         });
       } else {
-        const maxExisting = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+        const maxExisting = maxNumberOf(niyyahs);
         copy.number = maxExisting + 1;
         copy.id = "mock_dup_" + Date.now();
         niyyahs.push(copy);
@@ -14498,33 +14618,33 @@ function getDependentsMessage(type, id, item) {
     const depJobs = jobs.filter(x => (x.actionIds || []).includes(id));
     if (depNiyyahs.length > 0) {
       const n = depNiyyahs.length;
-      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+      return usedByMessage(n, "niyyah", "niyyahs");
     }
     if (depJobs.length > 0) {
       const n = depJobs.length;
-      return `Used by ${n} ${n === 1 ? "job" : "jobs"}. It will be removed from them.`;
+      return usedByMessage(n, "job", "jobs");
     }
     if (depTypes.length > 0) {
       const n = depTypes.length;
-      return `Used by ${n} ${n === 1 ? "location" : "locations"}. It will be removed from them.`;
+      return usedByMessage(n, "location", "locations");
     }
   } else if (c === "jobTypes") {
     const depNiyyahs = niyyahs.filter(x => (x.jobIds || []).includes(id));
     if (depNiyyahs.length > 0) {
       const n = depNiyyahs.length;
-      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+      return usedByMessage(n, "niyyah", "niyyahs");
     }
   } else if (c === "maritalStatuses") {
     const depNiyyahs = niyyahs.filter(x => (x.maritalStatusIds || []).includes(id));
     if (depNiyyahs.length > 0) {
       const n = depNiyyahs.length;
-      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+      return usedByMessage(n, "niyyah", "niyyahs");
     }
   } else if (c === "events") {
     const depNiyyahs = niyyahs.filter(x => (x.eventIds || []).includes(id));
     if (depNiyyahs.length > 0) {
       const n = depNiyyahs.length;
-      return `Used by ${n} ${n === 1 ? "niyyah" : "niyyahs"}. It will be removed from them.`;
+      return usedByMessage(n, "niyyah", "niyyahs");
     }
   } else if (c === "niyyahs") {
     const hasPublished = langs().some(l => trOf(item, l.code).status === "published") ||
@@ -14582,7 +14702,7 @@ async function requestDelete(type, id) {
         isParentBlock: true,
         onShowSubs: () => {
           expandedGroups.add("cat_" + id);
-          if (activeTab !== "actions") goTab("actions");
+          if (currentTab !== "actions") goTab("actions");
           renderAll();
         }
       });
@@ -14682,7 +14802,7 @@ async function handleEditorDelete(type, id) {
           cleanupEditorViewport();
           if (activeLangStripCleanup) { activeLangStripCleanup(); activeLangStripCleanup = null; }
           expandedGroups.add("cat_" + id);
-          if (activeTab !== "actions") goTab("actions");
+          if (currentTab !== "actions") goTab("actions");
           renderAll();
         }
       });
@@ -14773,7 +14893,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       return l && !l.isMine;
     });
     if (lockedNiyyah) {
-      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "jobs") {
@@ -14783,7 +14903,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       return l && !l.isMine;
     });
     if (lockedNiyyah) {
-      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "maritalStatuses" || type === "maritalStatus") {
@@ -14793,7 +14913,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       return l && !l.isMine;
     });
     if (lockedNiyyah) {
-      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "events") {
@@ -14803,7 +14923,7 @@ async function deleteItemWithUndo(type, id, opts = {}) {
       return l && !l.isMine;
     });
     if (lockedNiyyah) {
-      toast("Cannot delete: a referencing niyyah is currently locked by someone else.", true);
+      toast(MESSAGES.deleteBlockedByLock, true);
       return;
     }
   } else if (type === "languages") {
@@ -15244,37 +15364,9 @@ function renderActions() {
       const catRtl = isArabic(nm(c));
 
       const catLock = lockOf("actions", c.id);
-      let catLockBadgeHtml = "";
-      if (catLock) {
-        let lockLabel = "";
-        let lockClass = "";
-        if (catLock.isMine) {
-          lockLabel = "🔒 You";
-          lockClass = "is-mine";
-        } else if (catLock.isMineOtherSession) {
-          lockLabel = "🔒 You (other device)";
-          lockClass = "is-mine-other";
-        } else {
-          const fn = getFirstName(catLock.name || catLock.email);
-          lockLabel = `🔒 ${fn}`;
-          lockClass = "is-other";
-        }
-        catLockBadgeHtml = `
-          <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="actions" data-id="${c.id}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
-            <span class="badge-text">${esc(lockLabel)}</span>
-          </button>
-        `;
-      }
+      const catLockBadgeHtml = buildLockBadgeHtml(catLock, "actions", c.id);
       const catViewers = viewersOf("actions", c.id).filter(v => !v.isMine);
-      let catViewerBadgeHtml = "";
-      if (catViewers.length > 0) {
-        const viewerLabel = catViewers.length > 1 ? `👁 ${catViewers.length}` : "👁";
-        catViewerBadgeHtml = `
-          <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="actions" data-id="${c.id}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
-            <span class="badge-text">${esc(viewerLabel)}</span>
-          </button>
-        `;
-      }
+      const catViewerBadgeHtml = buildViewerBadgeHtml(catViewers, "actions", c.id);
 
       const cVis = c.inAppVisibility ?? c.visible ?? true;
       const canAdd = !syncState.gateOpen && !syncState.isOffline && (typeof navigator === "undefined" || navigator.onLine);
@@ -15370,7 +15462,7 @@ async function checkAndBackfillNiyyahNumbers() {
   if (!unnumbered.length) return;
 
   // An admin holding a lock on any unnumbered item must not run backfill
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   if (user) {
     const holdsAnyLock = unnumbered.some(n => {
       const l = lockOf("niyyahs", n.id);
@@ -15390,7 +15482,7 @@ async function checkAndBackfillNiyyahNumbers() {
         if (tA !== tB) return tA - tB;
         return String(a.id).localeCompare(String(b.id));
       });
-      let currentMax = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+      let currentMax = maxNumberOf(niyyahs);
       for (const item of toSort) {
         if (item.number == null || typeof item.number !== "number") {
           currentMax++;
@@ -15414,7 +15506,7 @@ async function checkAndBackfillNiyyahNumbers() {
       if (isLocked) {
         return false;
       }
-      const existingMax = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+      const existingMax = maxNumberOf(niyyahs);
       startNext = (typeof cData.next === "number") ? cData.next : (existingMax + 1);
 
       tx.set(counterRef, {
@@ -16188,19 +16280,7 @@ function openAction(id, presetParent = "", _mode = null) {
   const lf = langFields(L, actionFields, initial, onFieldChange, statusInit(a, L, names), { isPublished: isActionPublished });
 
   const updateActionMainSettingsUI = () => {
-    const card = $("#action-main-settings");
-    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
-    const btn = $("#action-main-settings-lock-btn");
-    if (btn) {
-      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
-      btn.setAttribute("aria-pressed", isMainSettingsLocked);
-      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
-      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
-      const emoji = $(".lock-emoji", btn);
-      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
-      const lbl = $(".lock-label", btn);
-      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
-    }
+    applyMainSettingsLockUI("action", isMainSettingsLocked);
     const visChk = $("#a-visible");
     if (visChk) visChk.disabled = isMainSettingsLocked;
     const restChk = $("#a-restricted");
@@ -16428,7 +16508,7 @@ function openAction(id, presetParent = "", _mode = null) {
               jObj.actionIds = jObj.actionIds.filter(x => x !== actionId);
             }
           });
-          if (currentTab === "jobs") renderJobs();
+          if (currentTab === "jobs") renderNamed("jobs");
           if (currentTab === "actions") renderActions();
         }
         return true;
@@ -17126,19 +17206,7 @@ function openNiyyah(id, _mode = null) {
   };
 
   const updateMainSettingsUI = () => {
-    const card = $("#niyyah-main-settings");
-    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
-    const btn = $("#niyyah-main-settings-lock-btn");
-    if (btn) {
-      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
-      btn.setAttribute("aria-pressed", isMainSettingsLocked);
-      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
-      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
-      const emoji = $(".lock-emoji", btn);
-      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
-      const lbl = $(".lock-label", btn);
-      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
-    }
+    applyMainSettingsLockUI("niyyah", isMainSettingsLocked);
     const toggles = [
       "#n-gen", "#n-job-toggle", "#n-marital-toggle",
       "#n-children-toggle", "#n-chain-toggle", "#n-event-toggle"
@@ -17323,7 +17391,7 @@ function openNiyyah(id, _mode = null) {
     container.querySelectorAll(".btn-pick-sit-before").forEach(btn => {
       btn.onclick = async () => {
         if (isMainSettingsLocked) {
-          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+          toast(MESSAGES.mainSettingsLocked, true);
           return;
         }
         const idx = +btn.dataset.sitIdx;
@@ -17349,7 +17417,7 @@ function openNiyyah(id, _mode = null) {
     container.querySelectorAll(".btn-pick-sit-after").forEach(btn => {
       btn.onclick = async () => {
         if (isMainSettingsLocked) {
-          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+          toast(MESSAGES.mainSettingsLocked, true);
           return;
         }
         const idx = +btn.dataset.sitIdx;
@@ -17375,7 +17443,7 @@ function openNiyyah(id, _mode = null) {
     container.querySelectorAll(".btn-del-situation").forEach(btn => {
       btn.onclick = async (e) => {
         if (isMainSettingsLocked) {
-          toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+          toast(MESSAGES.mainSettingsLocked, true);
           return;
         }
         const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -17417,7 +17485,7 @@ function openNiyyah(id, _mode = null) {
   if (btnAddSit) {
     btnAddSit.onclick = () => {
       if (isMainSettingsLocked) {
-        toast("Main settings are locked. Tap the 🔒 lock button above to unlock.", true);
+        toast(MESSAGES.mainSettingsLocked, true);
         return;
       }
       const reviewNow = (activeEditorLockState && activeEditorLockState.mode === "review") || Boolean(document.querySelector(".editor-page.review-mode")) || _mode === "review";
@@ -17608,7 +17676,7 @@ function openNiyyah(id, _mode = null) {
                 const cData = counterSnap.data();
                 nextNum = (typeof cData.next === "number") ? cData.next : 1;
               } else {
-                const maxExisting = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+                const maxExisting = maxNumberOf(niyyahs);
                 nextNum = maxExisting + 1;
               }
               tx.set(counterRef, { next: nextNum + 1 }, { merge: true });
@@ -17625,7 +17693,7 @@ function openNiyyah(id, _mode = null) {
             const existing = niyyahs.find(x => String(x.id) === String(id));
             if (existing) Object.assign(existing, data);
           } else {
-            const maxExisting = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+            const maxExisting = maxNumberOf(niyyahs);
             data.number = maxExisting + 1;
             const newId = "test_n_" + Date.now();
             niyyahs.push({ id: newId, ...data });
@@ -17743,19 +17811,7 @@ function openNamed(key, id, _mode = null) {
 
   if (hasActions) {
     const updateNamedMainSettingsUI = () => {
-      const card = $("#named-main-settings");
-      if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
-      const btn = $("#named-main-settings-lock-btn");
-      if (btn) {
-        btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
-        btn.setAttribute("aria-pressed", isMainSettingsLocked);
-        btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
-        btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
-        const emoji = $(".lock-emoji", btn);
-        if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
-        const lbl = $(".lock-label", btn);
-        if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
-      }
+      applyMainSettingsLockUI("named", isMainSettingsLocked);
       const pickAct = $("#btn-pick-named-actions");
       if (pickAct) pickAct.disabled = isMainSettingsLocked;
     };
@@ -17891,7 +17947,7 @@ async function seedMaritalStatuses() {
     return { created: 0, skipped: defaultNames.length };
   }
 
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   const userEmail = user?.email || "";
   const userName = getLockDisplayName(user);
 
@@ -18006,7 +18062,7 @@ async function seedTipCategories() {
     return { created: 0, skipped: builtins.length };
   }
 
-  const user = auth.currentUser || (window.__TEST_MODE__ ? window.__MOCK_USER__ : null);
+  const user = getCurrentUser();
   const userEmail = user?.email || "";
   const userName = getLockDisplayName(user);
 
@@ -18212,38 +18268,10 @@ function renderTips() {
       const isCollapsed = catTips.length === 0 ? false : (isSearchActive ? false : !expandedGroups.has("tipcat_" + c.id));
 
       const catLock = lockOf("tipCategories", c.id);
-      let catLockBadgeHtml = "";
-      if (catLock) {
-        let lockLabel = "";
-        let lockClass = "";
-        if (catLock.isMine) {
-          lockLabel = "🔒 You";
-          lockClass = "is-mine";
-        } else if (catLock.isMineOtherSession) {
-          lockLabel = "🔒 You (other device)";
-          lockClass = "is-mine-other";
-        } else {
-          const fn = getFirstName(catLock.name || catLock.email);
-          lockLabel = `🔒 ${fn}`;
-          lockClass = "is-other";
-        }
-        catLockBadgeHtml = `
-          <button type="button" class="card-lock-badge ${lockClass}" data-act="show-lock-info" data-type="tipCategories" data-id="${c.id}" aria-label="Lock status: ${esc(lockLabel)}" title="View lock details">
-            <span class="badge-text">${esc(lockLabel)}</span>
-          </button>
-        `;
-      }
+      const catLockBadgeHtml = buildLockBadgeHtml(catLock, "tipCategories", c.id);
 
       const catViewers = viewersOf("tipCategories", c.id).filter(v => !v.isMine);
-      let catViewerBadgeHtml = "";
-      if (catViewers.length > 0) {
-        const viewerLabel = catViewers.length > 1 ? `👁 ${catViewers.length}` : "👁";
-        catViewerBadgeHtml = `
-          <button type="button" class="card-viewer-badge" data-act="show-viewer-info" data-type="tipCategories" data-id="${c.id}" aria-label="Viewers: ${esc(viewerLabel)}" title="View active viewers">
-            <span class="badge-text">${esc(viewerLabel)}</span>
-          </button>
-        `;
-      }
+      const catViewerBadgeHtml = buildViewerBadgeHtml(catViewers, "tipCategories", c.id);
 
       const editHtml = `<button type="button" class="btn-icon card-edit-btn" data-act="card-more" data-type="tipCategories" data-id="${c.id}" aria-label="Options for ${esc(catTitle)}" title="Edit / options">✏️</button>`;
 
@@ -18886,19 +18914,7 @@ function openEvent(id, preset = null, _mode = null) {
   });
 
   const updateEventMainSettingsUI = () => {
-    const card = $("#event-main-settings");
-    if (card) card.classList.toggle("is-main-settings-locked", isMainSettingsLocked);
-    const btn = $("#event-main-settings-lock-btn");
-    if (btn) {
-      btn.className = "editor-settings-lock-btn " + (isMainSettingsLocked ? "is-locked" : "is-unlocked");
-      btn.setAttribute("aria-pressed", isMainSettingsLocked);
-      btn.setAttribute("aria-label", isMainSettingsLocked ? "Main settings are locked. Tap to unlock" : "Main settings are unlocked. Tap to lock");
-      btn.title = isMainSettingsLocked ? "Unlock main settings" : "Lock main settings";
-      const emoji = $(".lock-emoji", btn);
-      if (emoji) emoji.textContent = isMainSettingsLocked ? "🔒" : "🔓";
-      const lbl = $(".lock-label", btn);
-      if (lbl) lbl.textContent = isMainSettingsLocked ? "Locked" : "Unlocked";
-    }
+    applyMainSettingsLockUI("event", isMainSettingsLocked);
     $$("#e-type-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
     $$("#e-before-ctrl .seg-item").forEach(b => { b.disabled = isMainSettingsLocked; });
     $$("#e-wd-chips .radio-chip").forEach(b => { b.disabled = isMainSettingsLocked; });
@@ -20116,7 +20132,7 @@ function openImport(plan, fileName) {
               const cData = counterSnap.data();
               nextNum = (typeof cData.next === "number") ? cData.next : 1;
             } else {
-              const maxExisting = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0);
+              const maxExisting = maxNumberOf(niyyahs);
               nextNum = maxExisting + 1;
             }
             startNum = nextNum;
@@ -20146,7 +20162,7 @@ function openImport(plan, fileName) {
             await batch.commit();
           }
         } else {
-          let startNum = niyyahs.reduce((m, x) => Math.max(m, (typeof x.number === "number" ? x.number : 0)), 0) + 1;
+          let startNum = maxNumberOf(niyyahs) + 1;
           fresh.forEach((it, idx) => {
             const copy = {
               id: "mock_imp_" + Date.now() + "_" + idx,

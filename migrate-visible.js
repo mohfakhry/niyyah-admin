@@ -21,26 +21,15 @@
  *   (or set FIRESTORE_EMULATOR_HOST="localhost:8080" for local emulator)
  */
 
-const admin = require("firebase-admin");
+const { parseArgs, initAdmin, has, chunk, printBanner } = require("./admin-lib");
 
-const isLive = process.argv.includes("--live") || process.argv.includes("--apply");
-const isDryRun = !isLive || process.argv.includes("--dry-run");
+const { isDryRun } = parseArgs();
+const { db, FieldValue } = initAdmin();
 
-if (!admin.apps.length) {
-  const projectId = process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || "niyyah-4618a";
-  admin.initializeApp({
-    projectId
-  });
-}
-
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
+const BATCH_SIZE = 450; // Firestore hard limit is 500 writes per batch
 
 async function runMigration() {
-  console.log("============================================================");
-  console.log(`Starting migration: actions collection (visible -> inAppVisibility)`);
-  console.log(`Mode: ${isDryRun ? "DRY RUN (no writes will be performed)" : "LIVE"}`);
-  console.log("============================================================\n");
+  printBanner("Starting migration: actions collection (visible -> inAppVisibility)", isDryRun);
 
   const actionsRef = db.collection("actions");
   const snapshot = await actionsRef.get();
@@ -54,8 +43,8 @@ async function runMigration() {
 
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
-    const hasVisible = Object.prototype.hasOwnProperty.call(data, "visible");
-    const hasInAppVisibility = Object.prototype.hasOwnProperty.call(data, "inAppVisibility");
+    const hasVisible = has(data, "visible");
+    const hasInAppVisibility = has(data, "inAppVisibility");
 
     if (hasVisible || !hasInAppVisibility) {
       needMigrationCount++;
@@ -82,29 +71,28 @@ async function runMigration() {
     return;
   }
 
-  const BATCH_SIZE = 450; // Firestore limit is 500
   let committedCount = 0;
 
-  for (let i = 0; i < updates.length; i += BATCH_SIZE) {
-    const chunk = updates.slice(i, i + BATCH_SIZE);
+  const groups = chunk(updates, BATCH_SIZE);
+  for (let index = 0; index < groups.length; index++) {
+    const group = groups[index];
+    const batchNo = index + 1;
+
+    if (isDryRun) {
+      console.log(`[DRY RUN] Would commit batch ${batchNo} (${group.length} docs)`);
+      continue;
+    }
+
     const batch = db.batch();
-
-    for (const item of chunk) {
-      if (!isDryRun) {
-        batch.update(item.ref, {
-          inAppVisibility: item.targetVisibility,
-          visible: FieldValue.delete()
-        });
-      }
+    for (const item of group) {
+      batch.update(item.ref, {
+        inAppVisibility: item.targetVisibility,
+        visible: FieldValue.delete()
+      });
     }
-
-    if (!isDryRun) {
-      await batch.commit();
-      committedCount += chunk.length;
-      console.log(`Committed batch ${Math.floor(i / BATCH_SIZE) + 1} (${chunk.length} docs, total committed: ${committedCount}/${needMigrationCount})`);
-    } else {
-      console.log(`[DRY RUN] Would commit batch ${Math.floor(i / BATCH_SIZE) + 1} (${chunk.length} docs)`);
-    }
+    await batch.commit();
+    committedCount += group.length;
+    console.log(`Committed batch ${batchNo} (${group.length} docs, total committed: ${committedCount}/${needMigrationCount})`);
   }
 
   console.log("\n============================================================");

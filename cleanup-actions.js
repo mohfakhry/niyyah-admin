@@ -24,26 +24,17 @@
  *   (or set FIRESTORE_EMULATOR_HOST="localhost:8080" for local emulator)
  */
 
-const admin = require("firebase-admin");
+const { parseArgs, initAdmin, has, chunk, printBanner } = require("./admin-lib");
 
-const isLive = process.argv.includes("--live") || process.argv.includes("--apply");
-const isDryRun = !isLive || process.argv.includes("--dry-run");
+const { isDryRun } = parseArgs();
+const { db, FieldValue } = initAdmin();
 
-if (!admin.apps.length) {
-  const projectId = process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || "niyyah-4618a";
-  admin.initializeApp({
-    projectId
-  });
-}
-
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
+// Obsolete notification-template fields removed from every action document.
+const OBSOLETE_TEMPLATE_FIELDS = ["titleTemplates", "bodyTemplates", "titleTemplate", "bodyTemplate"];
+const BATCH_SIZE = 400; // Firestore hard limit is 500 writes per batch
 
 async function runCleanup() {
-  console.log("============================================================");
-  console.log("Starting Action Cleanup (Notification Templates, Visible, Parent Restricted)");
-  console.log(`Mode: ${isDryRun ? "DRY RUN (no writes will be performed)" : "LIVE"}`);
-  console.log("============================================================\n");
+  printBanner("Starting Action Cleanup (Notification Templates, Visible, Parent Restricted)", isDryRun);
 
   const actionsRef = db.collection("actions");
   const snapshot = await actionsRef.get();
@@ -64,31 +55,17 @@ async function runCleanup() {
     const data = docSnap.data();
     const isParent = !data.parentId;
 
-    const hasTitleTemplates = Object.prototype.hasOwnProperty.call(data, "titleTemplates");
-    const hasBodyTemplates = Object.prototype.hasOwnProperty.call(data, "bodyTemplates");
-    const hasTitleTemplate = Object.prototype.hasOwnProperty.call(data, "titleTemplate");
-    const hasBodyTemplate = Object.prototype.hasOwnProperty.call(data, "bodyTemplate");
-    const hasVisible = Object.prototype.hasOwnProperty.call(data, "visible");
-    const hasInAppVisibility = Object.prototype.hasOwnProperty.call(data, "inAppVisibility");
-    const hasParentRestricted = isParent && Object.prototype.hasOwnProperty.call(data, "restricted");
+        const hasVisible = has(data, "visible");
+    const hasInAppVisibility = has(data, "inAppVisibility");
+    const hasParentRestricted = isParent && has(data, "restricted");
 
     const updatePayload = {};
 
-    if (hasTitleTemplates) {
-      updatePayload.titleTemplates = FieldValue.delete();
-      templateFieldsCount++;
-    }
-    if (hasBodyTemplates) {
-      updatePayload.bodyTemplates = FieldValue.delete();
-      templateFieldsCount++;
-    }
-    if (hasTitleTemplate) {
-      updatePayload.titleTemplate = FieldValue.delete();
-      templateFieldsCount++;
-    }
-    if (hasBodyTemplate) {
-      updatePayload.bodyTemplate = FieldValue.delete();
-      templateFieldsCount++;
+    for (const field of OBSOLETE_TEMPLATE_FIELDS) {
+      if (has(data, field)) {
+        updatePayload[field] = FieldValue.delete();
+        templateFieldsCount++;
+      }
     }
     if (hasVisible) {
       if (!hasInAppVisibility) {
@@ -135,7 +112,7 @@ async function runCleanup() {
     console.log("[DRY RUN] Sample of documents that would be cleaned:");
     updates.slice(0, 10).forEach((u, i) => {
       const parts = [];
-      if (Object.prototype.hasOwnProperty.call(u.updatePayload, "inAppVisibility")) {
+      if (has(u.updatePayload, "inAppVisibility")) {
         parts.push(`convert visible -> inAppVisibility: ${u.updatePayload.inAppVisibility}`);
       }
       const deletedKeys = Object.keys(u.updatePayload).filter(k => k !== "inAppVisibility");
@@ -152,24 +129,15 @@ async function runCleanup() {
     return;
   }
 
-  // Chunk batches by 400
-  const BATCH_SIZE = 400;
-  let batch = db.batch();
-  let countInBatch = 0;
+  const chunks = chunk(updates, BATCH_SIZE);
   let batchesCommitted = 0;
 
-  for (let i = 0; i < updates.length; i++) {
-    const item = updates[i];
-    batch.update(item.ref, item.updatePayload);
-    countInBatch++;
-
-    if (countInBatch >= BATCH_SIZE || i === updates.length - 1) {
-      console.log(`Committing batch ${batchesCommitted + 1} with ${countInBatch} document(s)...`);
-      await batch.commit();
-      batchesCommitted++;
-      countInBatch = 0;
-      batch = db.batch();
-    }
+  for (const group of chunks) {
+    const batch = db.batch();
+    group.forEach((item) => batch.update(item.ref, item.updatePayload));
+    console.log(`Committing batch ${batchesCommitted + 1} with ${group.length} document(s)...`);
+    await batch.commit();
+    batchesCommitted++;
   }
 
   console.log(`\nCleanup complete! Updated ${updates.length} document(s) across ${batchesCommitted} batch(es).`);
